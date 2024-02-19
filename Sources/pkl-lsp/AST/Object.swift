@@ -1,82 +1,47 @@
 import Foundation
 
-class ObjectLiteral: ASTNode {
-    var properties: [String: ASTNode]
-    
-    init(properties: [String: ASTNode]) {
+class PklProperty : ASTNode {
+    var name: String
+    var value: ASTNode?
+
+    init(name: String, value: ASTNode? = nil) {
+        self.name = name
+        self.value = value
+        super.init()
+    }
+}
+
+class PklObject : ASTNode {
+    var name: String
+    var properties: [PklProperty]
+
+    init(name: String, properties: [PklProperty]) {
+        self.name = name
         self.properties = properties
         super.init()
     }
 }
 
-class Property: ASTNode {
-    let name: String
-    let value: ASTNode
-    let isHidden: Bool
-    let isLocal: Bool
-    
-    init(name: String, value: ASTNode, isHidden: Bool = false, isLocal: Bool = false) {
-        self.name = name
-        self.value = value
-        self.isHidden = isHidden
-        self.isLocal = isLocal
-        super.init()
+class PklAmendedObject : PklObject {
+    var parent: PklObject
+
+    init(name: String, parent: PklObject) {
+        self.parent = parent
+        super.init(name: name, properties: parent.properties)
     }
 }
 
-class ObjectAmendment: ASTNode {
-    let baseObject: ASTNode
-    let amendedProperties: [String: ASTNode]
-    
-    init(baseObject: ASTNode, amendedProperties: [String: ASTNode]) {
-        self.baseObject = baseObject
-        self.amendedProperties = amendedProperties
-        super.init()
+class PklClassObject : PklObject {
+    var parent: PklClass
+
+    init(name: String, parent: PklClass) {
+        self.parent = parent
+        var properties = [PklProperty]()
+        for property in parent.properties {
+            if !property.isHidden {
+                properties.append(PklProperty(name: property.name, value: property.type))
+            }
+        }
+        super.init(name: name, properties: properties)
     }
 }
-
-class LateBindingProperty: Property {
-    // Inherits everything from Property, but signifies the intent for late binding
-}
-
-protocol ObjectTransformation: ASTNode {
-    var targetObject: ASTNode { get set }
-}
-
-class ObjectToMapTransformation: ASTNode, ObjectTransformation {
-    var targetObject: ASTNode
-    
-    init(targetObject: ASTNode) {
-        self.targetObject = targetObject
-        super.init()
-    }
-}
-
-class ObjectToDynamicTransformation: ASTNode, ObjectTransformation {
-    var targetObject: ASTNode
-    
-    init(targetObject: ASTNode) {
-        self.targetObject = targetObject
-        super.init()
-    }
-}
-
-// Usage Examples
-// Defining a simple object
-let dodoObject = ObjectLiteral(properties: [
-    "name": Property(name: "name", value: StringLiteral(value: "Dodo")),
-    "extinct": Property(name: "extinct", value: BooleanLiteral(value: true))
-])
-
-// Amending an object
-let amendedDodo = ObjectAmendment(baseObject: dodoObject, amendedProperties: [
-    "name": Property(name: "name", value: StringLiteral(value: "Galápagos tortoise")),
-    "taxonomy": ObjectLiteral(properties: [
-        "`class`": Property(name: "`class`", value: StringLiteral(value: "Reptilia"))
-    ])
-])
-
-// Transforming an object
-let dodoToMap = ObjectToMapTransformation(targetObject: dodoObject)
-let dodoToDynamic = ObjectToDynamicTransformation(targetObject: dodoObject)
-

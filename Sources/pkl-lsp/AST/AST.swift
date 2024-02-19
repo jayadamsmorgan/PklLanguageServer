@@ -2,8 +2,6 @@ import Foundation
 
 class ASTNode: Hashable {
 
-    var docComment: DocComment?
-
     private let uniqueID = UUID()
     
     func hash(into hasher: inout Hasher) {
@@ -14,4 +12,3 @@ class ASTNode: Hashable {
         return lhs.uniqueID == rhs.uniqueID
     }
 }
-
