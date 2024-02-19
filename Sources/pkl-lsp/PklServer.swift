@@ -22,7 +22,7 @@ public actor PklServer {
     public init(_ dataChannel: DataChannel, logger: Logger) {
         self.logger = logger
         connection = JSONRPCClientConnection(dataChannel)
-        //let requestHandler = PklRequestHandler(connection: connection, logger: logger)
+        let requestHandler = PklRequestHandler(connection: connection, logger: logger)
 
         exitSemaphore = AsyncSemaphore(value: 0)
 

@@ -1,14 +1,14 @@
 import Foundation
 
-class ASTNode: Hashable {
+public class ASTNode: Hashable {
 
     private let uniqueID = UUID()
     
-    func hash(into hasher: inout Hasher) {
+    public func hash(into hasher: inout Hasher) {
         hasher.combine(uniqueID)
     }
     
-    static func == (lhs: ASTNode, rhs: ASTNode) -> Bool {
+    public static func == (lhs: ASTNode, rhs: ASTNode) -> Bool {
         return lhs.uniqueID == rhs.uniqueID
     }
 }
