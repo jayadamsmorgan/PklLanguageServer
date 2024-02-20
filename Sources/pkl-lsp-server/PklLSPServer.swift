@@ -25,8 +25,8 @@ struct PklLSPServer: AsyncParsableCommand {
     @Option(help: "Log file")
     var logFile: String = "pkl-lsp-server.log"
     
-    @Option(help: "Stdio transport")
-    var stdio: Bool = true
+    @Flag(help: "Stdio transport")
+    var stdio: Bool = false
 
     @Option(help: "Named pipe transport")
     var pipe: String?

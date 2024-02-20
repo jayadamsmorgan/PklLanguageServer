@@ -18,7 +18,7 @@ public enum GetDocumentContextError : Error {
 }
 
 public actor DocumentProvider {
-    // private var documents: [DocumentUri:DocumentContext]
+    private var documents: [DocumentUri:Document]
     public let logger: Logger
     let connection: JSONRPCClientConnection
     var rootUri: String?
@@ -26,7 +26,7 @@ public actor DocumentProvider {
 
     public init(connection: JSONRPCClientConnection, logger: Logger) {
         self.logger = logger
-        // documents = [:]
+        documents = [:]
         self.connection = connection
         self.workspaceFolders = []
     }
@@ -34,10 +34,19 @@ public actor DocumentProvider {
 
     private func getServerCapabilities() -> ServerCapabilities {
         var s = ServerCapabilities()
+        let documentSelector = DocumentFilter(pattern: "**/*.pkl")
+        let tokenLegend = SemanticTokensLegend(tokenTypes: TokenType.allCases.map { $0.description }, tokenModifiers: ["private", "public"])
+        s.completionProvider = .init(
+            workDoneProgress: false,
+            triggerCharacters: ["."],
+            allCommitCharacters: [],
+            resolveProvider: false,
+            completionItem: CompletionOptions.CompletionItem(labelDetailsSupport: true))
         s.textDocumentSync = .optionA(TextDocumentSyncOptions(openClose: false, change: TextDocumentSyncKind.full, willSave: false, willSaveWaitUntil: false, save: nil))
         s.textDocumentSync = .optionB(TextDocumentSyncKind.full)
         s.definitionProvider = .optionA(true)
         s.documentSymbolProvider = .optionA(true)
+        s.semanticTokensProvider = .optionB(SemanticTokensRegistrationOptions(documentSelector: [documentSelector], legend: tokenLegend, range: .optionA(false), full: .optionA(true)))
         s.diagnosticProvider = .optionA(DiagnosticOptions(interFileDependencies: false, workspaceDiagnostics: false))
         return s
     }
@@ -58,7 +67,7 @@ public actor DocumentProvider {
 
         logger.info("Initialize in working directory: \(FileManager.default.currentDirectoryPath), with rootUri: \(rootUri ?? "nil"), workspace folders: \(workspaceFolders)")
 
-        let serverInfo = ServerInfo(name: "hylo", version: "0.1.0")
+        let serverInfo = ServerInfo(name: "pkl", version: "0.0.1")
         return .success(InitializationResponse(capabilities: getServerCapabilities(), serverInfo: serverInfo))
     }
 
@@ -140,5 +149,50 @@ public actor DocumentProvider {
 
         return nil
     }
+
+    public func updateDocument(_ params: DidChangeTextDocumentParams) async {
+        let uri = params.textDocument.uri
+        guard let documentUri = DocumentProvider.validateDocumentUri(uri) else {
+            logger.error("Invalid document uri: \(uri)")
+            return
+        }
+
+        guard let document = documents[documentUri] else {
+            logger.error("Document not opened: \(uri)")
+            return
+        }
+
+        let nextVersion = params.textDocument.version
+        let changes = params.contentChanges
+        do {
+            let newDocument = try document.withAppliedChanges(changes, nextVersion: nextVersion)
+            documents[documentUri] = newDocument
+        }
+        catch {
+            logger.error("Error updating document: \(error)")
+        }
+    }
+
+    public func registerDocument(_ params: DidOpenTextDocumentParams) async {
+        let uri = params.textDocument.uri
+        guard let documentUri = DocumentProvider.validateDocumentUri(uri) else {
+            logger.error("Invalid document uri: \(uri)")
+            return
+        }
+
+        let document = Document(textDocument: params.textDocument)
+        documents[documentUri] = document
+    }
+
+    public func unregisterDocument(_ params: DidCloseTextDocumentParams) async {
+        let uri = params.textDocument.uri
+        guard let documentUri = DocumentProvider.validateDocumentUri(uri) else {
+            logger.error("Invalid document uri: \(uri)")
+            return
+        }
+
+        documents[documentUri] = nil
+    }
+
 }
 

@@ -12,15 +12,15 @@ public struct PklNotificationHandler : NotificationHandler {
     var exitSemaphore: AsyncSemaphore
 
     public func internalError(_ error: Error) async {
-        logger.debug("LSP stream error: \(error)")
+        logger.error("LSP stream error: \(error)")
     }
 
     public func handleNotification(_ notification: ClientNotification) async {
         let t0 = Date()
-        logger.debug("Begin handle notification: \(notification.method)")
+        logger.trace("Begin handle notification: \(notification.method)")
         await defaultNotificationDispatch(notification)
         let t = Date().timeIntervalSince(t0)
-        logger.debug("Complete handle notification: \(notification.method), after \(Int(t*1000))ms")
+        logger.trace("Complete handle notification: \(notification.method), after \(Int(t*1000))ms")
     }
 
     private func withErrorLogging(_ fn: () async throws -> Void) async {
@@ -28,7 +28,7 @@ public struct PklNotificationHandler : NotificationHandler {
             try await fn()
         }
         catch {
-            logger.debug("Error: \(error)")
+            logger.error("Error: \(error)")
         }
     }
 
@@ -41,18 +41,18 @@ public struct PklNotificationHandler : NotificationHandler {
         exitSemaphore.signal()
     }
 
-    // public func textDocumentDidOpen(_ params: DidOpenTextDocumentParams) async {
-    //     await documentProvider.registerDocument(params)
-    // }
-    //
-    // public func textDocumentDidChange(_ params: DidChangeTextDocumentParams) async {
-    //     await documentProvider.updateDocument(params)
-    // }
-    //
-    // public func textDocumentDidClose(_ params: DidCloseTextDocumentParams) async {
-    //     await documentProvider.unregisterDocument(params)
-    // }
-    //
+    public func textDocumentDidOpen(_ params: DidOpenTextDocumentParams) async {
+        await documentProvider.registerDocument(params)
+    }
+
+    public func textDocumentDidChange(_ params: DidChangeTextDocumentParams) async {
+        await documentProvider.updateDocument(params)
+    }
+
+    public func textDocumentDidClose(_ params: DidCloseTextDocumentParams) async {
+        await documentProvider.unregisterDocument(params)
+    }
+
     public func textDocumentWillSave(_ params: WillSaveTextDocumentParams) async {
 
     }
@@ -62,7 +62,7 @@ public struct PklNotificationHandler : NotificationHandler {
 
     public func protocolCancelRequest(_ params: CancelParams) async {
         // NOTE: For cancel to work we must pass JSONRPC request ids to handlers
-        logger.debug("Cancel request: \(params.id)")
+        logger.trace("Cancel request: \(params.id)")
     }
 
     public func protocolSetTrace(_ params: SetTraceParams) async {

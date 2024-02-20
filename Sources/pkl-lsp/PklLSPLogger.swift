@@ -1,22 +1,31 @@
 import Logging
+import Foundation
 
 public let loggerLabel: String = "pkl-lsp"
 
 internal extension Logger {
+    func trace(_ message: String) {
+        let date = Date().description
+        trace(Logger.Message(stringLiteral: "[\(date)]: [TRACE] \(message)"))
+    }
     func debug(_ message: String) {
-        debug(Logger.Message(stringLiteral: message))
+        let date = Date().description
+        debug(Logger.Message(stringLiteral: "[\(date)]: [DEBUG] \(message)"))
     }
 
     func info(_ message: String) {
-        info(Logger.Message(stringLiteral: message))
+        let date = Date().description
+        info(Logger.Message(stringLiteral: "[\(date)]: [INFO] \(message)"))
     }
 
     func warning(_ message: String) {
-        warning(Logger.Message(stringLiteral: message))
+        let date = Date().description
+        warning(Logger.Message(stringLiteral: "[\(date)]: [WARNING] \(message)"))
     }
 
     func error(_ message: String) {
-        error(Logger.Message(stringLiteral: message))
+        let date = Date().description
+        error(Logger.Message(stringLiteral: "[\(date)]: [ERROR] \(message)"))
     }
 }
 
