@@ -1,7 +1,7 @@
 import Foundation
 import LanguageServerProtocol
 
-public struct Document {
+public struct Document: Hashable {
     public let uri: DocumentUri
     public let version: Int?
     public let text: String
@@ -45,11 +45,11 @@ extension Document {
         return text.index(it.startIndex, offsetBy: position.character)
     }
 
-    private static func findPosition(_ position: Position, in text: String) -> String.Index? {
+    public static func findPosition(_ position: Position, in text: String) -> String.Index? {
         findPosition(position, in: text, startIndex: text.startIndex, startPos: Position.zero)
     }
 
-    private static func findRange(_ range: LSPRange, in text: String) -> Range<String.Index>? {
+    public static func findRange(_ range: LSPRange, in text: String) -> Range<String.Index>? {
         guard let startIndex = findPosition(range.start, in: text) else {
             return nil
         }
@@ -61,7 +61,7 @@ extension Document {
         return startIndex..<endIndex
     }
 
-    private static func applyChange(_ change: TextDocumentContentChangeEvent, on text: inout String) throws {
+    public static func applyChange(_ change: TextDocumentContentChangeEvent, on text: inout String) throws {
 
         if let range = change.range {
 

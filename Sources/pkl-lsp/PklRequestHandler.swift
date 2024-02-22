@@ -25,9 +25,6 @@ public struct PklRequestHandler : RequestHandler, Sendable {
     public func handleRequest(id: JSONId, request: ClientRequest) async {
         let t0 = Date()
         logger.trace("Begin handle request: \(request)")
-        if request.method == .textDocumentCompletion {
-            logger.debug("Completion request: \(request)")
-        }
         await defaultRequestDispatch(id: id, request: request)
         let t = Date().timeIntervalSince(t0)
         logger.trace("Complete handle request: \(request.method), after \(Int(t*1000))ms")
@@ -42,11 +39,14 @@ public struct PklRequestHandler : RequestHandler, Sendable {
         return .success(params)
     }
 
-    public func completion(id: JSONId, params: CompletionParams) async -> Result<CompletionList, AnyJSONRPCResponseError> {
-        logger.debug("Completion request: \(params)")
-        let completionItem = CompletionItem(label: "Hello, World!")
-        let completionList = CompletionList(isIncomplete: true, items: [completionItem])
-        return .success(completionList)
+    let CompletionJSONRPCError = AnyJSONRPCResponseError(code: 15, message: "Could not complete document.")
+
+    public func completion(id: JSONId, params: CompletionParams) async -> Response<CompletionResponse> {
+        guard let completionList = await documentProvider.complete(completionParams: params) else {
+            return .failure(CompletionJSONRPCError)
+        }
+        return .success(CompletionResponse(.optionB(completionList)))
+    
     }
 
     public func semanticTokensFull(id: JSONId, params: SemanticTokensParams) async -> Response<SemanticTokensResponse> {
@@ -56,16 +56,19 @@ public struct PklRequestHandler : RequestHandler, Sendable {
     public func shutdown(id: JSONId) async {
     }
 
-    // public func definition(id: JSONId, params: TextDocumentPositionParams) async -> Result<DefinitionResponse, AnyJSONRPCResponseError> {
-    // }
+    public func definition(id: JSONId, params: TextDocumentPositionParams) async -> Response<DefinitionResponse> {
+        logger.debug("definition request: \(params)")
+        return .success(.optionA(.init(uri: .init("file:///home/ubuntu/Documents/PklLanguageServer/test.pkl"), range: .init(start: .init((0, 0)), end: .init((0, 0))))))
+    }
 
     public func documentSymbol(id: JSONId, params: DocumentSymbolParams) async -> Result<DocumentSymbolResponse, AnyJSONRPCResponseError> {
         let documentSymbolResponse = DocumentSymbolResponse(.optionA([DocumentSymbol(name: "Hello, World!", kind: .function, range: .init(start: .init(line: 0, character: 0), end: .init(line: 0, character: 0)), selectionRange: .init(start: .init(line: 0, character: 0), end: .init(line: 0, character: 0)), children: nil)]))
         return .success(documentSymbolResponse)
     }
-    //
-    // public func diagnostics(id: JSONId, params: DocumentDiagnosticParams) async -> Result<DocumentDiagnosticReport, AnyJSONRPCResponseError> {
-    // }
 
+    // public func diagnostics(id: JSONId, params: DocumentDiagnosticParams) async -> Response<DocumentDiagnosticReport> {
+    //     logger.debug("Diagnostics triggered: \(params)")
+    //     return .failure(CompletionJSONRPCError)
+    // }
 
 }

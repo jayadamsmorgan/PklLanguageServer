@@ -10,7 +10,7 @@ let package = Package(
     ],
     dependencies: [
         // LSP
-        .package(url: "https://github.com/ChimeHQ/LanguageServer", branch: "main"),
+        .package(url: "https://github.com/ChimeHQ/LanguageServer", revision: "main"),
         // Logging
         .package(url: "https://github.com/apple/swift-log.git", from: "1.5.4"),
         // Arg parsing
@@ -21,6 +21,10 @@ let package = Package(
         .package(url: "https://github.com/koliyo/swift-unisocket", branch: "master"),
         // Concurrency Semaphores
         .package(url: "https://github.com/groue/Semaphore", from: "0.0.8"),
+        // Swift Tree Sitter Library
+        .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter", from: "0.8.0"),
+        // Pkl Tree Sitter
+        .package(url: "https://github.com/jayadamsmorgan/tree-sitter-pkl", revision: "main"),
     ],
 
     targets: [
@@ -33,8 +37,13 @@ let package = Package(
                 .product(name: "Puppy", package: "Puppy"),
                 .product(name: "UniSocket", package: "swift-unisocket"),
                 .product(name: "Semaphore", package: "Semaphore"),
+                .product(name: "SwiftTreeSitterLayer", package: "SwiftTreeSitter"),
+                .product(name: "TreeSitterPkl", package: "tree-sitter-pkl"),
             ],
-            path: "Sources/pkl-lsp"
+            path: "Sources/pkl-lsp",
+            swiftSettings: [
+                .enableExperimentalFeature("SwiftConcurrency")
+            ]
         ),
         .executableTarget(
             name: "pkl-lsp-server",
@@ -46,7 +55,10 @@ let package = Package(
                 .product(name: "Puppy", package: "Puppy"),
                 .product(name: "UniSocket", package: "swift-unisocket"),
             ],
-            path: "Sources/pkl-lsp-server"
+            path: "Sources/pkl-lsp-server",
+                        swiftSettings: [
+                .enableExperimentalFeature("SwiftConcurrency")
+            ]
         ),
     ]
 

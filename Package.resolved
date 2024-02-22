@@ -15,7 +15,7 @@
       "location" : "https://github.com/ChimeHQ/LanguageServer",
       "state" : {
         "branch" : "main",
-        "revision" : "18e707ad53a6b5f1b1eff8f68ef54dc324744008"
+        "revision" : "585b09d9c6f7f81736a023092ee7a5d56cf8ebab"
       }
     },
     {
@@ -70,6 +70,24 @@
       "state" : {
         "branch" : "master",
         "revision" : "d9b683d46811ea8e41eb88b3aacf0c368734e9b5"
+      }
+    },
+    {
+      "identity" : "swifttreesitter",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ChimeHQ/SwiftTreeSitter",
+      "state" : {
+        "revision" : "2599e95310b3159641469d8a21baf2d3d200e61f",
+        "version" : "0.8.0"
+      }
+    },
+    {
+      "identity" : "tree-sitter-pkl",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/jayadamsmorgan/tree-sitter-pkl",
+      "state" : {
+        "branch" : "main",
+        "revision" : "385f759bba9b4ee76a78c456e5aff39be3dc225b"
       }
     }
   ],

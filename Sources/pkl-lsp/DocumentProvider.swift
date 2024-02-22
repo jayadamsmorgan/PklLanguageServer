@@ -24,11 +24,14 @@ public actor DocumentProvider {
     var rootUri: String?
     var workspaceFolders: [WorkspaceFolder]
 
+    private let treeSitterParser: TreeSitterParser
+
     public init(connection: JSONRPCClientConnection, logger: Logger) {
         self.logger = logger
         documents = [:]
         self.connection = connection
         self.workspaceFolders = []
+        self.treeSitterParser = TreeSitterParser(logger: logger)
     }
 
 
@@ -47,7 +50,14 @@ public actor DocumentProvider {
         s.definitionProvider = .optionA(true)
         s.documentSymbolProvider = .optionA(true)
         s.semanticTokensProvider = .optionB(SemanticTokensRegistrationOptions(documentSelector: [documentSelector], legend: tokenLegend, range: .optionA(false), full: .optionA(true)))
-        s.diagnosticProvider = .optionA(DiagnosticOptions(interFileDependencies: false, workspaceDiagnostics: false))
+        s.diagnosticProvider = .optionA(DiagnosticOptions(identifier: "test", interFileDependencies: false, workspaceDiagnostics: true))
+        // s.diagnosticProvider = .optionB(DiagnosticRegistrationOptions.init(
+        //     documentSelector: [documentSelector],
+        //     // identifier: "pkl",
+        //     interFileDependencies: false,
+        //     workspaceDiagnostics: false,
+        //     id: "diagnosticIDTest"
+        // ))
         return s
     }
 
@@ -69,6 +79,30 @@ public actor DocumentProvider {
 
         let serverInfo = ServerInfo(name: "pkl", version: "0.0.1")
         return .success(InitializationResponse(capabilities: getServerCapabilities(), serverInfo: serverInfo))
+    }
+
+    typealias CompletionItems = [CompletionItem]
+
+    private func getDocumentFunctionCompletions(doc: Document) async -> CompletionItems {
+        let completionItems: CompletionItems = []
+        return completionItems
+    }
+
+    private func getDocumentPropertiesCompletions(doc: Document) async -> CompletionItems {
+        let completionItems: CompletionItems = []
+        return completionItems
+    }
+
+    public func complete(completionParams: CompletionParams) async -> CompletionList? {
+        guard let document = documents[completionParams.textDocument.uri] else {
+            logger.error("LSP Completion: Document \(completionParams.textDocument.uri) is not registered.")
+            return nil
+        }
+        var completionItems = PklKeywords.allCases.map { CompletionItem(label: $0.rawValue, kind: .keyword) }
+        completionItems.append(contentsOf: await getDocumentFunctionCompletions(doc: document))
+        completionItems.append(contentsOf: await getDocumentPropertiesCompletions(doc: document))
+        let completionList = CompletionList(isIncomplete: false, items: completionItems)
+        return completionList
     }
 
     public func workspaceDidChangeWorkspaceFolders(_ params: DidChangeWorkspaceFoldersParams) async {
@@ -167,6 +201,8 @@ public actor DocumentProvider {
         do {
             let newDocument = try document.withAppliedChanges(changes, nextVersion: nextVersion)
             documents[documentUri] = newDocument
+            let tree = treeSitterParser.parseDocumentTreeSitter(oldDocument: document, newDocument: newDocument, changes: changes)
+            // TODO: parse tree with ASTs
         }
         catch {
             logger.error("Error updating document: \(error)")
@@ -182,6 +218,8 @@ public actor DocumentProvider {
 
         let document = Document(textDocument: params.textDocument)
         documents[documentUri] = document
+        let tree = treeSitterParser.parseDocumentTreeSitter(newDocument: document)
+        // TODO: parse tree with ASTs
     }
 
     public func unregisterDocument(_ params: DidCloseTextDocumentParams) async {
