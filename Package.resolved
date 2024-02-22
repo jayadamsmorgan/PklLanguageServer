@@ -84,7 +84,7 @@
     {
       "identity" : "tree-sitter-pkl",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/jayadamsmorgan/tree-sitter-pkl",
+      "location" : "https://github.com/apple/tree-sitter-pkl",
       "state" : {
         "branch" : "main",
         "revision" : "385f759bba9b4ee76a78c456e5aff39be3dc225b"

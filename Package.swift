@@ -24,7 +24,7 @@ let package = Package(
         // Swift Tree Sitter Library
         .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter", from: "0.8.0"),
         // Pkl Tree Sitter
-        .package(url: "https://github.com/jayadamsmorgan/tree-sitter-pkl", revision: "main"),
+        .package(url: "https://github.com/apple/tree-sitter-pkl", revision: "main"),
     ],
 
     targets: [
