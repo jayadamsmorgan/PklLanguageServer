@@ -110,8 +110,10 @@ class PklClassFunctionBody: ASTNode {
     var isFunctionKeywordPresent: Bool = false
     var identifier: String?
     var params: PklFunctionParameterList?
+    var typeAnnotation: PklTypeAnnotation?
 
-    init(isFunctionKeywordPresent: Bool = false, identifier: String?, params: PklFunctionParameterList?, positionStart: Position, positionEnd: Position) {
+    init(isFunctionKeywordPresent: Bool = false, identifier: String?, params: PklFunctionParameterList?, typeAnnotation: PklTypeAnnotation? = nil,
+        positionStart: Position, positionEnd: Position) {
         self.isFunctionKeywordPresent = isFunctionKeywordPresent
         self.identifier = identifier
         self.params = params
@@ -120,8 +122,16 @@ class PklClassFunctionBody: ASTNode {
     }
 
     public func error() -> ASTEvaluationError? {
-        if isFunctionKeywordPresent && identifier != nil && params != nil {
-            return params?.error()
+        if isFunctionKeywordPresent && identifier != nil && params != nil && typeAnnotation != nil {
+            if let error = params?.error() {
+                return error
+            }
+            if let error = typeAnnotation?.error() {
+                return error
+            }
+        }
+        if typeAnnotation == nil {
+            return ASTEvaluationError("Provide function type annotation", positionStart, positionEnd)
         }
         if identifier == nil {
             return ASTEvaluationError("Provide function identifier", positionStart, positionEnd)

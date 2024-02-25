@@ -21,10 +21,11 @@ class PklNumberLiteral : ASTNode {
     var positionEnd: Position
 
     var value: String?
-    var type: PklNumberType?
+    var type: PklNumberType
     
-    init(value: String? = nil, positionStart: Position, positionEnd: Position) {
+    init(value: String? = nil, type: PklNumberType, positionStart: Position, positionEnd: Position) {
         self.value = value
+        self.type = type
         self.positionStart = positionStart
         self.positionEnd = positionEnd
     }

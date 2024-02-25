@@ -10,13 +10,15 @@ class PklClassProperty : ASTNode {
 
     var identifier: String?
     var typeAnnotation: PklTypeAnnotation?
-    var value: PklValue?
+    var isEqualsPresent: Bool = false
+    var value: (any ASTNode)?
     var isHidden: Bool
 
-    init(identifier: String? = nil, typeAnnotation: PklTypeAnnotation? = nil, value: PklValue?,
+    init(identifier: String? = nil, typeAnnotation: PklTypeAnnotation? = nil, isEqualsPresent: Bool = false, value: (any ASTNode)?,
         isHidden: Bool = false, positionStart: Position, positionEnd: Position) {
         self.identifier = identifier
         self.typeAnnotation = typeAnnotation
+        self.isEqualsPresent = isEqualsPresent
         self.value = value
         self.isHidden = isHidden
         self.positionStart = positionStart
@@ -24,15 +26,21 @@ class PklClassProperty : ASTNode {
     }
 
     public func error() -> ASTEvaluationError? {
-        if identifier != nil && typeAnnotation != nil && value != nil {
+        if identifier != nil && typeAnnotation != nil && isEqualsPresent && value != nil {
             if let typeError = typeAnnotation?.error() {
                 return typeError
             }
             if let error = value?.error() {
                 return error
             }
-            if value?.type?.identifier != typeAnnotation?.type?.identifier {
-                return ASTEvaluationError("Property value type does not match property type", positionStart, positionEnd)
+            if let value = value as? PklValue {
+                if value.type?.identifier != typeAnnotation?.type?.identifier {
+                    return ASTEvaluationError("Property value type does not match property type", positionStart, positionEnd)
+                }
+            }
+            if let value = value as? PklObjectBody {
+                // TODO: Check if object body type matches property type
+                return ASTEvaluationError("Object body type checking is not implemented yet", positionStart, positionEnd)
             }
             return nil
         }
