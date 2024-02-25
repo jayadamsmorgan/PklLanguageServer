@@ -534,6 +534,25 @@ public class TreeSitterParser {
 
         case .sym_classProperty:
             self.logger.debug("Starting building class property...")
+
+            // Problem here: object amending is not being parsed with tree-sitter so we need to find a way to parse it.
+            // The best solution is of course to make it work upstream in tree-sitter-pkl, but we may need to find a workaround for now.
+            // PklClassProperty should also be able to handle the case where the object is being amended.
+            //
+            // This is essential to provide property and function completions for amended object and other features.
+            //
+            // Example:
+            // ```
+            // class TestObject {
+            //     testProperty: Int = 1
+            // }
+            //
+            // testObject (TestObject) {
+            //     testProperty = 2
+            // }
+            // ```
+            // In the example above `(TestObject)` is the object amending and it's not being parsed
+
             var propertyIdentifier: String?
             var typeAnnotation: PklTypeAnnotation?
             var value: PklValue?
