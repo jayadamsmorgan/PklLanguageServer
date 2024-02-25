@@ -1,5 +1,6 @@
 import Foundation
 import LanguageServerProtocol
+import SwiftTreeSitter
 
 public struct Document: Hashable {
     public let uri: DocumentUri
@@ -43,6 +44,12 @@ extension Document {
             it = it[it.index(after: index)...]
         }
         return text.index(it.startIndex, offsetBy: position.character)
+    }
+
+    public func getTextInByteRange(_ range: Range<UInt32>) -> String {
+        let start = text.index(text.startIndex, offsetBy: Int(range.lowerBound / 2))
+        let end = text.index(text.startIndex, offsetBy: Int(range.upperBound / 2))
+        return String(text[start..<end])
     }
 
     public static func findPosition(_ position: Position, in text: String) -> String.Index? {

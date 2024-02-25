@@ -8,14 +8,12 @@ class PklClassProperty : ASTNode {
     var positionStart: Position
     var positionEnd: Position
 
-    var equalIsPresent: Bool = false
-
     var identifier: String?
     var typeAnnotation: PklTypeAnnotation?
     var value: PklValue?
     var isHidden: Bool
 
-    init(identifier: String? = nil, typeAnnotation: PklTypeAnnotation? = nil, value: PklValue?, equalIsPresent: Bool = false,
+    init(identifier: String? = nil, typeAnnotation: PklTypeAnnotation? = nil, value: PklValue?,
         isHidden: Bool = false, positionStart: Position, positionEnd: Position) {
         self.identifier = identifier
         self.typeAnnotation = typeAnnotation
@@ -103,15 +101,13 @@ class PklClass : ASTNode {
     var positionStart: Position
     var positionEnd: Position
 
-    var identifier: String?
     var properties: [PklClassProperty]?
 
     var leftBraceIsPresent: Bool = false
     var rightBraceIsPresent: Bool = false
 
-    init(identifier: String? = nil, properties: [PklClassProperty]? = nil, leftBraceIsPresent: Bool = false, rightBraceIsPresent: Bool = false,
+    init(properties: [PklClassProperty]? = nil, leftBraceIsPresent: Bool = false, rightBraceIsPresent: Bool = false,
         positionStart: Position, positionEnd: Position) {
-        self.identifier = identifier
         self.properties = properties
         self.leftBraceIsPresent = leftBraceIsPresent
         self.rightBraceIsPresent = rightBraceIsPresent
@@ -120,16 +116,13 @@ class PklClass : ASTNode {
     }
 
     public func error() -> ASTEvaluationError? {
-        if identifier != nil && properties != nil && leftBraceIsPresent && rightBraceIsPresent {
+        if properties != nil && leftBraceIsPresent && rightBraceIsPresent {
             for property in properties! {
                 if let error = property.error() {
                     return error
                 }
             }
             return nil
-        }
-        if identifier == nil {
-            return ASTEvaluationError("Provide class identifier", positionStart, positionEnd)
         }
         if properties == nil {
             return ASTEvaluationError("Provide class body", positionStart, positionEnd)
