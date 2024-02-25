@@ -501,12 +501,19 @@ public class TreeSitterParser {
         case .sym_classBody:
             self.logger.debug("Starting building class body...")
             var properties: [PklClassProperty] = []
+            var functions: [PklFunctionDeclaration] = []
             var leftBraceIsPresent: Bool = false
             var rightBraceIsPresent: Bool = false
             node.enumerateChildren(block: { node in
                 if node.symbol == PklTreeSitterSymbols.sym_classProperty.rawValue {
                     if let property = tsNodeToASTNode(node: node, in: document) as? PklClassProperty {
                         properties.append(property)
+                    }
+                    return
+                }
+                if node.symbol == PklTreeSitterSymbols.sym_classMethod.rawValue {
+                    if let function = tsNodeToASTNode(node: node, in: document) as? PklFunctionDeclaration {
+                        functions.append(function)
                     }
                     return
                 }
@@ -519,7 +526,7 @@ public class TreeSitterParser {
                     return
                 }
             })
-            return PklClass(properties: properties, leftBraceIsPresent: leftBraceIsPresent, rightBraceIsPresent: rightBraceIsPresent,
+            return PklClass(properties: properties, functions: functions, leftBraceIsPresent: leftBraceIsPresent, rightBraceIsPresent: rightBraceIsPresent,
                 positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
 
         case .sym_typeAlias:
@@ -540,16 +547,53 @@ public class TreeSitterParser {
                     typeAnnotation = tsNodeToASTNode(node: node, in: document) as? PklTypeAnnotation
                     return
                 }
-                // TODO: parse value
+                // TODO: parse value && type checking
                 // TODO: parse isHidden
             })
             return PklClassProperty(identifier: propertyIdentifier, typeAnnotation: typeAnnotation, value: value, isHidden: isHidden,
                 positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
 
         case .sym_classMethod:
-            self.logger.debug("Not implemented")
+            self.logger.debug("Starting building class method...")
+            var functionValue: (any ASTNode)?
+            var body: PklClassFunctionBody?
+            node.enumerateChildren(block: { node in
+                if node.symbol == PklTreeSitterSymbols.sym_methodHeader.rawValue {
+                    body = tsNodeToASTNode(node: node, in: document) as? PklClassFunctionBody
+                    return
+                }
+                // TODO: parse function value && type checking
+            })
+            return PklFunctionDeclaration(body: body, functionValue: functionValue,
+                positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
+
         case .sym_methodHeader:
-            self.logger.debug("Not implemented")
+            self.logger.debug("Starting building method header...")
+            var isFunctionKeywordPresent: Bool = false
+            var identifier: String?
+            var typeAnnotation: PklTypeAnnotation?
+            var params: PklFunctionParameterList?
+            node.enumerateChildren(block: { node in
+                if node.symbol == PklTreeSitterSymbols.anon_sym_function.rawValue {
+                    isFunctionKeywordPresent = true
+                    return
+                }
+                if node.symbol == PklTreeSitterSymbols.sym_identifier.rawValue {
+                    identifier = document.getTextInByteRange(node.byteRange)
+                    return
+                }
+                if node.symbol == PklTreeSitterSymbols.sym_typeAnnotation.rawValue {
+                    typeAnnotation = tsNodeToASTNode(node: node, in: document) as? PklTypeAnnotation
+                    return
+                }
+                if node.symbol == PklTreeSitterSymbols.sym_parameterList.rawValue {
+                    params = tsNodeToASTNode(node: node, in: document) as? PklFunctionParameterList
+                    return
+                }
+            })
+            return PklClassFunctionBody(isFunctionKeywordPresent: isFunctionKeywordPresent, identifier: identifier, params: params,
+                positionStart: node.pointRange.upperBound.toPosition(), positionEnd: node.pointRange.lowerBound.toPosition())
+
         case .sym_annotation:
             self.logger.debug("Not implemented")
         case .sym_objectBody:
@@ -582,9 +626,11 @@ public class TreeSitterParser {
             node.enumerateChildren(block: { node in
                 if node.symbol == PklTreeSitterSymbols.anon_sym_COLON.rawValue {
                     colonIsPresent = true
+                    return
                 }
                 if node.symbol == PklTreeSitterSymbols.sym_type.rawValue {
                     type = tsNodeToASTNode(node: node, in: document) as? PklType
+                    return
                 }
             })
             return PklTypeAnnotation(type: type, colonIsPresent: colonIsPresent, positionStart: node.pointRange.lowerBound.toPosition(),
@@ -603,7 +649,33 @@ public class TreeSitterParser {
         case .sym_typeParameter:
             self.logger.debug("Not implemented")
         case .sym_parameterList:
-            self.logger.debug("Not implemented")
+            self.logger.debug("Starting building parameter list...")
+            var parameters: [PklFunctionParameter] = []
+            var leftParenIsPresent: Bool = false
+            var rightParenIsPresent: Bool = false
+            var commasAmount: Int = 0
+            node.enumerateChildren(block: { node in
+                if node.symbol == PklTreeSitterSymbols.anon_sym_LPAREN.rawValue {
+                    leftParenIsPresent = true
+                    return
+                }
+                if node.symbol == PklTreeSitterSymbols.anon_sym_RPAREN.rawValue {
+                    rightParenIsPresent = true
+                    return
+                }
+                if node.symbol == PklTreeSitterSymbols.anon_sym_COMMA.rawValue {
+                    commasAmount += 1
+                    return
+                }
+                if node.symbol == PklTreeSitterSymbols.sym_typedIdentifier.rawValue {
+                    if let parameter = tsNodeToASTNode(node: node, in: document) as? PklFunctionParameter {
+                        parameters.append(parameter)
+                    }
+                    return
+                }
+            })
+            return PklFunctionParameterList(parameters: parameters, positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
+
         case .sym_argumentList:
             self.logger.debug("Not implemented")
         case .sym_modifier:
@@ -682,8 +754,24 @@ public class TreeSitterParser {
             self.logger.debug("Not implemented")
         case .sym_qualifiedIdentifier:
             self.logger.debug("Not implemented")
+
         case .sym_typedIdentifier:
-            self.logger.debug("Not implemented")
+            self.logger.debug("Starting building typed identifier...")
+            var identifier: String?
+            var typeAnnotation: PklTypeAnnotation?
+            node.enumerateChildren(block: { node in
+                if node.symbol == PklTreeSitterSymbols.sym_identifier.rawValue {
+                    identifier = document.getTextInByteRange(node.byteRange)
+                    return
+                }
+                if node.symbol == PklTreeSitterSymbols.sym_typeAnnotation.rawValue {
+                    typeAnnotation = tsNodeToASTNode(node: node, in: document) as? PklTypeAnnotation
+                    return
+                }
+            })
+            return PklFunctionParameter(identifier: identifier, typeAnnotation: typeAnnotation,
+                positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
+
         case .aux_sym_module_repeat1:
             self.logger.debug("Not implemented")
         case .aux_sym_module_repeat2:

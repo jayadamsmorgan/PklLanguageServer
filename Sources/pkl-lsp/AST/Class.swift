@@ -49,51 +49,6 @@ class PklClassProperty : ASTNode {
     }
 }
 
-class PklClassFunction: ASTNode {
-
-    let uniqueID: UUID = UUID()
-
-    var positionStart: Position
-    var positionEnd: Position
-
-    var identifier: String?
-    var returnType: PklType?
-    var arguments: [PklClassProperty]?
-    var body: (any ASTNode)?
-
-    init(identifier: String? = nil, returnType: PklType? = nil, arguments: [PklClassProperty]? = nil,
-        body: (any ASTNode)? = nil, positionStart: Position, positionEnd: Position) {
-        self.identifier = identifier
-        self.returnType = returnType
-        self.arguments = arguments
-        self.body = body
-        self.positionStart = positionStart
-        self.positionEnd = positionEnd
-    }
-
-    public func error() -> ASTEvaluationError? {
-        if identifier != nil && returnType != nil && arguments != nil && body != nil {
-            for argument in arguments! {
-                if let error = argument.error() {
-                    return error
-                }
-            }
-            return body?.error()
-        }
-        if identifier == nil {
-            return ASTEvaluationError("Provide function identifier", positionStart, positionEnd)
-        }
-        if returnType == nil {
-            return ASTEvaluationError("Provide function return type", positionStart, positionEnd)
-        }
-        if arguments == nil {
-            return ASTEvaluationError("Provide function arguments", positionStart, positionEnd)
-        }
-        return ASTEvaluationError("Provide function body", positionStart, positionEnd)
-    }
-
-}
-
 class PklClass : ASTNode {
 
     let uniqueID: UUID = UUID()
@@ -102,11 +57,12 @@ class PklClass : ASTNode {
     var positionEnd: Position
 
     var properties: [PklClassProperty]?
+    var functions: [PklFunctionDeclaration]?
 
     var leftBraceIsPresent: Bool = false
     var rightBraceIsPresent: Bool = false
 
-    init(properties: [PklClassProperty]? = nil, leftBraceIsPresent: Bool = false, rightBraceIsPresent: Bool = false,
+    init(properties: [PklClassProperty]? = nil, functions: [PklFunctionDeclaration]? = nil, leftBraceIsPresent: Bool = false, rightBraceIsPresent: Bool = false,
         positionStart: Position, positionEnd: Position) {
         self.properties = properties
         self.leftBraceIsPresent = leftBraceIsPresent
