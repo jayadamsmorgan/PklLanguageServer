@@ -1,4 +1,5 @@
 import Foundation
+import LanguageServerProtocol
 
 enum PklNumberType {
     case int
@@ -12,26 +13,27 @@ enum PklNumberType {
     case uint32
 }
 
-class PklIntLiteral : PklNumberLiteral {
-    init(value: String? = nil) {
-        super.init(value: value, type: .int)
-    }
-}
-
-class PklFloatLiteral : PklNumberLiteral {
-    init(value: String? = nil) {
-        super.init(value: value, type: .float)
-    }
-}
-
 class PklNumberLiteral : ASTNode {
-    var type: PklNumberType
+
+    let uniqueID: UUID = UUID()
+
+    var positionStart: Position
+    var positionEnd: Position
+
     var value: String?
+    var type: PklNumberType?
     
-    init(value: String? = nil, type: PklNumberType) {
-        self.type = type
+    init(value: String? = nil, positionStart: Position, positionEnd: Position) {
         self.value = value
-        super.init()
+        self.positionStart = positionStart
+        self.positionEnd = positionEnd
+    }
+
+    public func error() -> ASTEvaluationError? {
+        if value != nil {
+            return nil
+        }
+        return ASTEvaluationError("Provide number value", positionStart, positionEnd)
     }
 }
 

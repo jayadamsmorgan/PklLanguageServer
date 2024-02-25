@@ -1,7 +1,7 @@
 import Foundation
 import LanguageServerProtocol
 
-class PklStringLiteral : ASTNode {
+class PklValue : ASTNode {
 
     let uniqueID: UUID = UUID()
 
@@ -10,17 +10,20 @@ class PklStringLiteral : ASTNode {
 
     var value: String?
 
-    init(value: String? = nil, positionStart: Position, positionEnd: Position) {
+    var type: PklType?
+
+    init(value: String? = nil, type: PklType? = nil, positionStart: Position, positionEnd: Position) {
         self.value = value
         self.positionStart = positionStart
         self.positionEnd = positionEnd
+        self.type = type
     }
 
     public func error() -> ASTEvaluationError? {
         if value != nil {
             return nil
         }
-        return ASTEvaluationError("Provide string value", positionStart, positionEnd)
+        return ASTEvaluationError("Provide value", positionStart, positionEnd)
     }
-}
 
+}

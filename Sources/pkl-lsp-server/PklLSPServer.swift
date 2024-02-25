@@ -20,7 +20,7 @@ struct PklLSPServer: AsyncParsableCommand {
     static var configuration = CommandConfiguration(commandName: "pkl-lsp-server")
 
     @Option(help: "Log level")
-    var log: Logger.Level = .info
+    var log: Logger.Level = .debug
 
     @Option(help: "Log file")
     var logFile: String = "pkl-lsp-server.log"
