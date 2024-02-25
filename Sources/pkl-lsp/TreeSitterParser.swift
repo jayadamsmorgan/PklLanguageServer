@@ -265,21 +265,33 @@ public class TreeSitterParser {
             self.logger.debug("Not implemented")
         case .sym_outerExpr:
             self.logger.debug("Not implemented")
-        case .sym_nullLiteral:
-            self.logger.debug("Not implemented")
-        case .sym_trueLiteral:
-            self.logger.debug("Not implemented")
-        case .sym_falseLiteral:
-            self.logger.debug("Not implemented")
 
-        case .sym_intLiteral:
+        case .sym_nullLiteral: // NULL LITERAL
+            self.logger.debug("Null literal built succesfully.")
+            return PklNullLiteral(positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
+
+        case .sym_trueLiteral: // BOOLEAN LITERAL
+            self.logger.debug("Boolean literal built succesfully.")
+            return PklBooleanLiteral(value: true, positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
+
+        case .sym_falseLiteral: // BOOLEAN LITERAL
+            self.logger.debug("Boolean literal built succesfully.")
+            return PklBooleanLiteral(value: false, positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
+
+        case .sym_intLiteral: // INTEGER LITERAL
             self.logger.debug("Starting building integer literal...")
             let value = document.getTextInByteRange(node.byteRange)
             self.logger.debug("Integer literal built succesfully.")
-            return PklNumberLiteral(value: value, type: .int, positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
+            return PklNumberLiteral(value: value, type: .int,
+                positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
 
-        case .sym_floatLiteral:
-            self.logger.debug("Not implemented")
+        case .sym_floatLiteral: // FLOAT LITERAL
+            self.logger.debug("Starting building float literal...")
+            let value = document.getTextInByteRange(node.byteRange)
+            self.logger.debug("Float literal built succesfully.")
+            return PklNumberLiteral(value: value, type: .float,
+                positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
+
         case .anon_sym_DQUOTE:
             self.logger.debug("Not implemented")
         case .aux_sym_stringConstant_token1:
@@ -457,7 +469,7 @@ public class TreeSitterParser {
         case .sym__open_entry_bracket:
             self.logger.debug("Not implemented")
 
-        case .sym_module: // Module
+        case .sym_module: // MODULE (ROOT)
             self.logger.debug("Starting building module...")
             var contents: [any ASTNode] = []
             node.enumerateChildren(block: { node in
@@ -507,7 +519,7 @@ public class TreeSitterParser {
         case .sym_classExtendsClause:
             self.logger.debug("Not implemented")
 
-        case .sym_classBody:
+        case .sym_classBody: // CLASS BODY
             self.logger.debug("Starting building class body...")
             var properties: [PklClassProperty] = []
             var functions: [PklFunctionDeclaration] = []
@@ -542,7 +554,7 @@ public class TreeSitterParser {
         case .sym_typeAlias:
             self.logger.debug("Not implemented")
 
-        case .sym_classProperty:
+        case .sym_classProperty: // CLASS PROPERTY
             self.logger.debug("Starting building class property...")
 
             // Problem here: object amending is not being parsed with tree-sitter so we need to find a way to parse it.
@@ -612,7 +624,7 @@ public class TreeSitterParser {
             return PklFunctionDeclaration(body: body, functionValue: functionValue,
                 positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
 
-        case .sym_methodHeader:
+        case .sym_methodHeader: // METHOD HEADER
             self.logger.debug("Starting building method header...")
             var isFunctionKeywordPresent: Bool = false
             var identifier: String?
@@ -643,7 +655,7 @@ public class TreeSitterParser {
         case .sym_annotation:
             self.logger.debug("Not implemented")
 
-        case .sym_objectBody:
+        case .sym_objectBody: // OBJECT BODY
             self.logger.debug("Starting building object body...")
             var properties: [PklObjectProperty] = []
             var leftBraceIsPresent: Bool = false
@@ -671,7 +683,7 @@ public class TreeSitterParser {
         case .sym__objectMember:
             self.logger.debug("Not implemented")
 
-        case .sym_objectProperty:
+        case .sym_objectProperty: // OBJECT PROPERTY
             self.logger.debug("Starting building object property...")
             var identifier: String?
             var typeAnnotation: PklTypeAnnotation?
@@ -710,7 +722,7 @@ public class TreeSitterParser {
         case .sym_objectBodyParameters:
             self.logger.debug("Not implemented")
 
-        case .sym_typeAnnotation:
+        case .sym_typeAnnotation: // TYPE ANNOTATION
             self.logger.debug("Starting building type annotation...")
             var type: PklType?
             var colonIsPresent: Bool = false
@@ -728,7 +740,7 @@ public class TreeSitterParser {
             return PklTypeAnnotation(type: type, colonIsPresent: colonIsPresent, positionStart: node.pointRange.lowerBound.toPosition(),
                 positionEnd: node.pointRange.upperBound.toPosition())
 
-        case .sym_type:
+        case .sym_type: // TYPE
             self.logger.debug("Starting building type...")
             let typeIdentifier = document.getTextInByteRange(node.byteRange)
             self.logger.debug("Type built succesfully.")
@@ -741,7 +753,7 @@ public class TreeSitterParser {
             self.logger.debug("Not implemented")
         case .sym_typeParameter:
             self.logger.debug("Not implemented")
-        case .sym_parameterList:
+        case .sym_parameterList: // PARAMETER LIST
             self.logger.debug("Starting building parameter list...")
             var parameters: [PklFunctionParameter] = []
             var leftParenIsPresent: Bool = false
@@ -789,13 +801,13 @@ public class TreeSitterParser {
         case .sym_stringConstant:
             self.logger.debug("Not implemented")
 
-        case .sym_slStringLiteral:
+        case .sym_slStringLiteral: // SINGLE-LINE STRING LITERAL
             self.logger.debug("Starting building single-line string literal...")
             let value: String? = document.getTextInByteRange(node.byteRange)
             self.logger.debug("Single-line string literal built succesfully.")
             return PklStringLiteral(value: value, positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
 
-        case .sym_mlStringLiteral:
+        case .sym_mlStringLiteral: // MULTI-LINE STRING LITERAL
             self.logger.debug("Starting building multi-line string literal...")
             let value: String? = document.getTextInByteRange(node.byteRange)
             self.logger.debug("Multi-line string literal built succesfully.")
@@ -858,7 +870,7 @@ public class TreeSitterParser {
         case .sym_qualifiedIdentifier:
             self.logger.debug("Not implemented")
 
-        case .sym_typedIdentifier:
+        case .sym_typedIdentifier: // TYPED IDENTIFIER
             self.logger.debug("Starting building typed identifier...")
             var identifier: String?
             var typeAnnotation: PklTypeAnnotation?
