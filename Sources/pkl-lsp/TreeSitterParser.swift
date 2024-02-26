@@ -4,13 +4,6 @@ import LanguageServerProtocol
 import SwiftTreeSitter
 import TreeSitterPkl
 
-public struct Change {
-    let positionStart: Position
-    let positionEnd: Position
-    let oldText: String
-    let newText: String
-}
-
 public class TreeSitterParser {
 
     let logger: Logger
@@ -61,7 +54,6 @@ public class TreeSitterParser {
         logger.debug("RootNode: \(PklTreeSitterSymbols(rootNode.symbol)!), range: \(rootNode.pointRange), text: \(newDocument.getTextInByteRange(rootNode.byteRange))")
         parseNodes(rootNode: rootNode, document: newDocument)
         let rootASTNode = tsNodeToASTNode(node: rootNode, in: newDocument)
-        logger.debug("Root AST Node: \(rootASTNode), error: \(rootASTNode?.error())")
         return tree
     }
 
@@ -81,7 +73,6 @@ public class TreeSitterParser {
                 parsedTrees[newDocument] = tree
                 parseNodes(rootNode: rootNode, document: newDocument)
                 let rootASTNode = tsNodeToASTNode(node: rootNode, in: newDocument)
-                logger.debug("Root AST Node: \(rootASTNode), error: \(rootASTNode?.error())")
                 return tree
             }
             logger.debug("Failed to tree-sitter parse source with changes, trying to parse whole document...")
