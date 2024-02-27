@@ -23,11 +23,11 @@ class PklType : ASTNode {
         self.positionEnd = positionEnd
     }
 
-    public func error() -> ASTEvaluationError? {
+    public func diagnosticErrors() -> [ASTDiagnosticError]? {
         if identifier != nil {
             return nil
         }
-        return ASTEvaluationError("Provide type identifier", positionStart, positionEnd)
+        return [ASTDiagnosticError("Provide type identifier", .error, positionStart, positionEnd)]
     }
 }
 
@@ -48,14 +48,22 @@ class PklTypeAnnotation : ASTNode {
         self.positionEnd = positionEnd
     }
 
-    public func error() -> ASTEvaluationError? {
-        if (type != nil && colonIsPresent) {
-            return type?.error()
+    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+        var errors: [ASTDiagnosticError] = []
+        if !colonIsPresent {
+            let error = ASTDiagnosticError("Missing colon before type identifier", .error, positionStart, positionEnd)
+            errors.append(error)
+        }
+        if type != nil {
+            if let typeErrors = type?.diagnosticErrors() {
+                errors.append(contentsOf: typeErrors)
+            }
         }
         if type == nil {
-            return ASTEvaluationError("Provide type identifier", positionStart, positionEnd)
+            let error = ASTDiagnosticError("Provide type identifier", .error, positionStart, positionEnd)
+            errors.append(error)
         }
-        return ASTEvaluationError("Missing colon symbol before type identifier", positionStart, positionEnd)
+        return errors.count > 0 ? errors : nil
     }
 
 }

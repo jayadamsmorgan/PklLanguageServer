@@ -18,14 +18,22 @@ class PklFunctionParameter : ASTNode {
         self.positionEnd = positionEnd
     }
 
-    public func error() -> ASTEvaluationError? {
+    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+        var errors: [ASTDiagnosticError] = []
         if typeAnnotation != nil {
-            return typeAnnotation!.error()
+            if let typeErrors = typeAnnotation!.diagnosticErrors() {
+                errors.append(contentsOf: typeErrors)
+            }
+        }
+        if typeAnnotation == nil {
+            let error = ASTDiagnosticError("Missing type annotation", .error, positionStart, positionEnd)
+            errors.append(error)
         }
         if identifier == nil {
-            return ASTEvaluationError("Missing identifier", positionStart, positionEnd)
+            let error = ASTDiagnosticError("Missing identifier", .error, positionStart, positionEnd)
+            errors.append(error)
         }
-        return nil
+        return errors.count > 0 ? errors : nil 
     }
 }
 
@@ -50,25 +58,30 @@ class PklFunctionParameterList : ASTNode {
         self.positionEnd = positionEnd
     }
 
-    public func error() -> ASTEvaluationError? {
-        if isLeftParenPresent && isRightParenPresent && parameters != nil && commasAmount == parameters!.count - 1 {
+    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+        var errors: [ASTDiagnosticError] = []
+        if parameters != nil {
             if parameters != nil {
                 for param in parameters! {
-                    if let error = param.error() {
-                        return error
+                    if let error = param.diagnosticErrors() {
+                        errors.append(contentsOf: error)
                     }
                 }
-                return nil
             }
-            return ASTEvaluationError("Provide function parameters", positionStart, positionEnd)
         }
-        if isLeftParenPresent && isRightParenPresent && parameters != nil && commasAmount != parameters!.count - 1 {
-            return ASTEvaluationError("Provide commas between parameters", positionStart, positionEnd)
+        if parameters != nil && commasAmount != parameters!.count - 1 {
+            let error = ASTDiagnosticError("Provide comma(s) between parameters", .error, positionStart, positionEnd)
+            errors.append(error)
         }
         if !isLeftParenPresent {
-            return ASTEvaluationError("Provide left parenthesis", positionStart, positionEnd)
+            let error = ASTDiagnosticError("Provide left parenthesis", .error, positionStart, positionEnd)
+            errors.append(error)
         }
-        return ASTEvaluationError("Provide right parenthesis", positionStart, positionEnd)
+        if !isRightParenPresent {
+            let error = ASTDiagnosticError("Provide right parenthesis", .error, positionStart, positionEnd)
+            errors.append(error)
+        }
+        return errors.count > 0 ? errors : nil
     }
 }
 
@@ -89,14 +102,27 @@ class PklFunctionDeclaration: ASTNode {
         self.positionEnd = positionEnd
     }
 
-    public func error() -> ASTEvaluationError? {
-        if body != nil && functionValue != nil {
-            return body?.error()
+    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+        var errors: [ASTDiagnosticError] = []
+        if body != nil {
+            if let bodyErrors = body?.diagnosticErrors() {
+                errors.append(contentsOf: bodyErrors)
+            }
         }
         if body == nil {
-            return ASTEvaluationError("Provide function body", positionStart, positionEnd)
+            let error = ASTDiagnosticError("Provide function body", .error, positionStart, positionEnd)
+            errors.append(error)
         }
-        return ASTEvaluationError("Provide function value", positionStart, positionEnd)
+        if functionValue != nil {
+            if let valueErrors = functionValue?.diagnosticErrors() {
+                errors.append(contentsOf: valueErrors)
+            }
+        }
+        if functionValue == nil {
+            let error = ASTDiagnosticError("Provide function value", .error, positionStart, positionEnd)
+            errors.append(error)
+        }
+        return errors.count > 0 ? errors : nil
     }
 }
 
@@ -121,25 +147,26 @@ class PklClassFunctionBody: ASTNode {
         self.positionEnd = positionEnd
     }
 
-    public func error() -> ASTEvaluationError? {
-        if isFunctionKeywordPresent && identifier != nil && params != nil && typeAnnotation != nil {
-            if let error = params?.error() {
-                return error
-            }
-            if let error = typeAnnotation?.error() {
-                return error
+    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+        var errors: [ASTDiagnosticError] = []
+        if !isFunctionKeywordPresent {
+            let error = ASTDiagnosticError("Provide function keyword", .error, positionStart, positionEnd)
+            errors.append(error)
+        }
+        if typeAnnotation != nil {
+            if let typeErrors = typeAnnotation?.diagnosticErrors() {
+                errors.append(contentsOf: typeErrors)
             }
         }
         if typeAnnotation == nil {
-            return ASTEvaluationError("Provide function type annotation", positionStart, positionEnd)
+            let error = ASTDiagnosticError("Provide function type annotation", .error, positionStart, positionEnd)
+            errors.append(error)
         }
         if identifier == nil {
-            return ASTEvaluationError("Provide function identifier", positionStart, positionEnd)
+            let error = ASTDiagnosticError("Provide function identifier", .error, positionStart, positionEnd)
+            errors.append(error)
         }
-        if !isFunctionKeywordPresent {
-            return ASTEvaluationError("Provide function keyword", positionStart, positionEnd)
-        }
-        return nil
+        return errors.count > 0 ? errors : nil
     }
 
 }

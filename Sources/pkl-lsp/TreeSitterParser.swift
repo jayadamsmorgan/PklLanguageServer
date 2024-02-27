@@ -4,17 +4,27 @@ import LanguageServerProtocol
 import SwiftTreeSitter
 import TreeSitterPkl
 
+public typealias ASTParsingResult = Result<any ASTNode, ASTParsingError>
+
+public enum ASTParsingError: Error {
+    case parseError
+    case tsTreeRootNodeIsNil
+    case astTreeRootNodeIsNil
+}
+
 public class TreeSitterParser {
 
     let logger: Logger
 
     let parser = Parser()
     var parsedTrees: [Document : MutableTree]
+    var astParsedTrees: [Document : any ASTNode]
 
     public init(logger: Logger) {
         self.logger = logger
         let language = Language(language: tree_sitter_pkl())
         parsedTrees = [:]
+        astParsedTrees = [:]
         do {
             try parser.setLanguage(language)
         } catch {
@@ -23,7 +33,7 @@ public class TreeSitterParser {
         }
     }
 
-    public func parseDocumentTreeSitterWithChanges(
+    private func parseDocumentTreeSitterWithChanges(
         oldDocument: Document,
         newDocument: Document,
         previousParsingTree: MutableTree,
@@ -40,24 +50,30 @@ public class TreeSitterParser {
         return nil
     }
 
-    public func parseDocumentTreeSitter(newDocument: Document) -> MutableTree? {
+    public func parseDocumentTreeSitter(newDocument: Document) -> ASTParsingResult {
         guard let tree = parser.parse(newDocument.text) else {
-            logger.debug("Failed to tree-sitter parse complete source.")
-            return nil
+            logger.error("Failed to tree-sitter parse complete source.")
+            return .failure(.parseError)
         }
         guard let rootNode = tree.rootNode else {
-            logger.debug("Failed to tree-sitter parse complete source. Root node is nil.")
-            return nil
+            logger.error("Failed to tree-sitter parse complete source. Root node is nil.")
+            return .failure(.tsTreeRootNodeIsNil)
         }
         logger.debug("Document \(newDocument) parsed succesfully. Tree: \(tree)")
         parsedTrees[newDocument] = tree
         logger.debug("RootNode: \(PklTreeSitterSymbols(rootNode.symbol)!), range: \(rootNode.pointRange), text: \(newDocument.getTextInByteRange(rootNode.byteRange))")
-        parseNodes(rootNode: rootNode, document: newDocument)
-        let rootASTNode = tsNodeToASTNode(node: rootNode, in: newDocument)
-        return tree
+        if logger.logLevel == .debug || logger.logLevel == .trace {
+            listTreeSitterNodes(rootNode: rootNode, document: newDocument)
+        }
+        guard let astParsing = tsNodeToASTNode(node: rootNode, in: newDocument) else {
+            logger.error("Failed to parse tree-sitter tree to AST tree.")
+            return .failure(.astTreeRootNodeIsNil)
+        }
+        astParsedTrees[newDocument] = astParsing
+        return .success(astParsing)
     }
 
-    public func parseDocumentTreeSitter(oldDocument: Document, newDocument: Document, changes: [TextDocumentContentChangeEvent]) -> MutableTree? {
+    public func parseDocumentTreeSitter(oldDocument: Document, newDocument: Document, changes: [TextDocumentContentChangeEvent]) -> ASTParsingResult {
         if let previousParsingTree = parsedTrees[oldDocument] {
             if let tree = parseDocumentTreeSitterWithChanges(
                 oldDocument: oldDocument,
@@ -66,14 +82,20 @@ public class TreeSitterParser {
                 changes: changes
             ) {
                 guard let rootNode = tree.rootNode else {
-                    logger.debug("Failed to tree-sitter parse source with changes. Root node is nil.")
-                    return nil
+                    logger.error("Failed to tree-sitter parse source with changes. Root node is nil.")
+                    return .failure(.tsTreeRootNodeIsNil)
                 }
                 parsedTrees[oldDocument] = nil
                 parsedTrees[newDocument] = tree
-                parseNodes(rootNode: rootNode, document: newDocument)
-                let rootASTNode = tsNodeToASTNode(node: rootNode, in: newDocument)
-                return tree
+                if logger.logLevel == .debug || logger.logLevel == .trace {
+                    listTreeSitterNodes(rootNode: rootNode, document: newDocument)
+                }
+                guard let astParsing = tsNodeToASTNode(node: rootNode, in: newDocument) else {
+                    logger.error("Failed to parse tree-sitter tree to AST tree.")
+                    return .failure(.astTreeRootNodeIsNil)
+                }
+                astParsedTrees[newDocument] = astParsing
+                return .success(astParsing)
             }
             logger.debug("Failed to tree-sitter parse source with changes, trying to parse whole document...")
         }
@@ -83,13 +105,14 @@ public class TreeSitterParser {
         return parseDocumentTreeSitter(newDocument: newDocument)
     }
 
-    private func parseNodes(rootNode: Node, depth: Int = 0, document: Document) {
+    // List tree sitter nodes used for debugging
+    private func listTreeSitterNodes(rootNode: Node, depth: Int = 0, document: Document) {
         rootNode.enumerateChildren(block: { node in
             guard let treeSitterSymbol = PklTreeSitterSymbols(node.symbol) else {
                 return
             }
             logger.debug("Node: \(treeSitterSymbol), depth: \(depth), range: \(node.pointRange), text: \(document.getTextInByteRange(node.byteRange))")
-            parseNodes(rootNode: node, depth: depth + 1, document: document)
+            listTreeSitterNodes(rootNode: node, depth: depth + 1, document: document)
         })
     }
 
@@ -394,13 +417,18 @@ public class TreeSitterParser {
         case .sym_module: // MODULE (ROOT)
             self.logger.debug("Starting building module...")
             var contents: [any ASTNode] = []
-            node.enumerateChildren(block: { node in
-                if let content = tsNodeToASTNode(node: node, in: document) {
-                    contents.append(content)
+            node.enumerateChildren(block: { childNode in
+                if let astNode = tsNodeToASTNode(node: childNode, in: document) {
+                    contents.append(astNode)
                 }
             })
+            let module = PklModule(contents: contents,
+                positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
+            if let errors = module.diagnosticErrors() {
+                logger.debug("AST Diagnostic errors: \(errors)")
+            }
             self.logger.debug("Module built succesfully.")
-            return PklModule(contents: contents, positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
+            return module
 
         case .sym_moduleHeader:
             self.logger.debug("Not implemented")
@@ -420,17 +448,17 @@ public class TreeSitterParser {
             var classNode: PklClass?
             var classKeyword: String?
             var classIdentifier: String?
-            node.enumerateChildren(block: { node in
-                if node.symbol == PklTreeSitterSymbols.sym_classBody.rawValue {
-                    classNode = tsNodeToASTNode(node: node, in: document) as? PklClass
+            node.enumerateChildren(block: { childNode in
+                if childNode.symbol == PklTreeSitterSymbols.sym_classBody.rawValue {
+                    classNode = tsNodeToASTNode(node: childNode, in: document) as? PklClass
                     return
                 }
-                if node.symbol == PklTreeSitterSymbols.sym_identifier.rawValue {
-                    classIdentifier = document.getTextInByteRange(node.byteRange)
+                if childNode.symbol == PklTreeSitterSymbols.sym_identifier.rawValue {
+                    classIdentifier = document.getTextInByteRange(childNode.byteRange)
                     return
                 }
-                if node.symbol == PklTreeSitterSymbols.anon_sym_class.rawValue {
-                    classKeyword = document.getTextInByteRange(node.byteRange)
+                if childNode.symbol == PklTreeSitterSymbols.anon_sym_class.rawValue {
+                    classKeyword = document.getTextInByteRange(childNode.byteRange)
                     return
                 }
             })
@@ -447,25 +475,31 @@ public class TreeSitterParser {
             var functions: [PklFunctionDeclaration] = []
             var leftBraceIsPresent: Bool = false
             var rightBraceIsPresent: Bool = false
-            node.enumerateChildren(block: { node in
-                if node.symbol == PklTreeSitterSymbols.sym_classProperty.rawValue {
-                    if let property = tsNodeToASTNode(node: node, in: document) as? PklClassProperty {
+            node.enumerateChildren(block: { childNode in
+                if childNode.symbol == PklTreeSitterSymbols.sym_classProperty.rawValue {
+                    if let property = tsNodeToASTNode(node: childNode, in: document) as? PklClassProperty {
                         properties.append(property)
                     }
                     return
                 }
-                if node.symbol == PklTreeSitterSymbols.sym_classMethod.rawValue {
-                    if let function = tsNodeToASTNode(node: node, in: document) as? PklFunctionDeclaration {
+                if childNode.symbol == PklTreeSitterSymbols.sym_classMethod.rawValue {
+                    if let function = tsNodeToASTNode(node: childNode, in: document) as? PklFunctionDeclaration {
                         functions.append(function)
                     }
                     return
                 }
-                if node.symbol == PklTreeSitterSymbols.anon_sym_LBRACE.rawValue {
-                    leftBraceIsPresent = true
+                if childNode.symbol == PklTreeSitterSymbols.anon_sym_LBRACE.rawValue {
+                    let brace = document.getTextInByteRange(childNode.byteRange)
+                    if brace == "{" {
+                        leftBraceIsPresent = true
+                    }
                     return
                 }
-                if node.symbol == PklTreeSitterSymbols.anon_sym_RBRACE.rawValue {
-                    rightBraceIsPresent = true
+                if childNode.symbol == PklTreeSitterSymbols.anon_sym_RBRACE.rawValue {
+                    let brace = document.getTextInByteRange(childNode.byteRange)
+                    if brace == "}" {
+                        rightBraceIsPresent = true
+                    }
                     return
                 }
             })
@@ -502,27 +536,27 @@ public class TreeSitterParser {
             var value: (any ASTNode)? // Can be either a PklObjectBody or a PklValue
             var isHidden: Bool = false
             var isEqualsPresent: Bool = false
-            node.enumerateChildren(block: { node in
-                if node.symbol == PklTreeSitterSymbols.sym_identifier.rawValue {
-                    propertyIdentifier = document.getTextInByteRange(node.byteRange)
+            node.enumerateChildren(block: { childNode in
+                if childNode.symbol == PklTreeSitterSymbols.sym_identifier.rawValue {
+                    propertyIdentifier = document.getTextInByteRange(childNode.byteRange)
                     return
                 }
-                if node.symbol == PklTreeSitterSymbols.sym_typeAnnotation.rawValue {
-                    typeAnnotation = tsNodeToASTNode(node: node, in: document) as? PklTypeAnnotation
+                if childNode.symbol == PklTreeSitterSymbols.sym_typeAnnotation.rawValue {
+                    typeAnnotation = tsNodeToASTNode(node: childNode, in: document) as? PklTypeAnnotation
                     return
                 }
-                if node.symbol == PklTreeSitterSymbols.sym_objectBody.rawValue {
-                    value = tsNodeToASTNode(node: node, in: document)
+                if childNode.symbol == PklTreeSitterSymbols.sym_objectBody.rawValue {
+                    value = tsNodeToASTNode(node: childNode, in: document)
                     return
                 }
-                if node.symbol == PklTreeSitterSymbols.anon_sym_EQ.rawValue {
+                if childNode.symbol == PklTreeSitterSymbols.anon_sym_EQ.rawValue {
                     isEqualsPresent = true
-                    if let nextSibling = node.nextSibling {
+                    if let nextSibling = childNode.nextSibling {
                         value = tsNodeToASTNode(node: nextSibling, in: document)
                     }
                     return
                 }
-                if node.symbol == PklTreeSitterSymbols.anon_sym_hidden.rawValue {
+                if childNode.symbol == PklTreeSitterSymbols.anon_sym_hidden.rawValue {
                     isHidden = true
                     return
                 }
@@ -535,9 +569,9 @@ public class TreeSitterParser {
             self.logger.debug("Starting building class method...")
             var functionValue: (any ASTNode)?
             var body: PklClassFunctionBody?
-            node.enumerateChildren(block: { node in
-                if node.symbol == PklTreeSitterSymbols.sym_methodHeader.rawValue {
-                    body = tsNodeToASTNode(node: node, in: document) as? PklClassFunctionBody
+            node.enumerateChildren(block: { childNode in
+                if childNode.symbol == PklTreeSitterSymbols.sym_methodHeader.rawValue {
+                    body = tsNodeToASTNode(node: childNode, in: document) as? PklClassFunctionBody
                     return
                 }
                 // TODO: parse function value && type checking
@@ -552,21 +586,21 @@ public class TreeSitterParser {
             var identifier: String?
             var typeAnnotation: PklTypeAnnotation?
             var params: PklFunctionParameterList?
-            node.enumerateChildren(block: { node in
-                if node.symbol == PklTreeSitterSymbols.anon_sym_function.rawValue {
+            node.enumerateChildren(block: { childNode in
+                if childNode.symbol == PklTreeSitterSymbols.anon_sym_function.rawValue {
                     isFunctionKeywordPresent = true
                     return
                 }
-                if node.symbol == PklTreeSitterSymbols.sym_identifier.rawValue {
-                    identifier = document.getTextInByteRange(node.byteRange)
+                if childNode.symbol == PklTreeSitterSymbols.sym_identifier.rawValue {
+                    identifier = document.getTextInByteRange(childNode.byteRange)
                     return
                 }
-                if node.symbol == PklTreeSitterSymbols.sym_typeAnnotation.rawValue {
-                    typeAnnotation = tsNodeToASTNode(node: node, in: document) as? PklTypeAnnotation
+                if childNode.symbol == PklTreeSitterSymbols.sym_typeAnnotation.rawValue {
+                    typeAnnotation = tsNodeToASTNode(node: childNode, in: document) as? PklTypeAnnotation
                     return
                 }
-                if node.symbol == PklTreeSitterSymbols.sym_parameterList.rawValue {
-                    params = tsNodeToASTNode(node: node, in: document) as? PklFunctionParameterList
+                if childNode.symbol == PklTreeSitterSymbols.sym_parameterList.rawValue {
+                    params = tsNodeToASTNode(node: childNode, in: document) as? PklFunctionParameterList
                     return
                 }
             })
@@ -582,19 +616,25 @@ public class TreeSitterParser {
             var properties: [PklObjectProperty] = []
             var leftBraceIsPresent: Bool = false
             var rightBraceIsPresent: Bool = false
-            node.enumerateChildren(block: { node in
-                if node.symbol == PklTreeSitterSymbols.sym_objectProperty.rawValue {
-                    if let property = tsNodeToASTNode(node: node, in: document) as? PklObjectProperty {
+            node.enumerateChildren(block: { childNode in
+                if childNode.symbol == PklTreeSitterSymbols.sym_objectProperty.rawValue {
+                    if let property = tsNodeToASTNode(node: childNode, in: document) as? PklObjectProperty {
                         properties.append(property)
                     }
                     return
                 }
-                if node.symbol == PklTreeSitterSymbols.anon_sym_LBRACE.rawValue {
-                    leftBraceIsPresent = true
+                if childNode.symbol == PklTreeSitterSymbols.anon_sym_LBRACE.rawValue {
+                    let brace = document.getTextInByteRange(childNode.byteRange)
+                    if brace == "{" {
+                        leftBraceIsPresent = true
+                    }
                     return
                 }
-                if node.symbol == PklTreeSitterSymbols.anon_sym_RBRACE.rawValue {
-                    rightBraceIsPresent = true
+                if childNode.symbol == PklTreeSitterSymbols.anon_sym_RBRACE.rawValue {
+                    let brace = document.getTextInByteRange(childNode.byteRange)
+                    if brace == "}" {
+                        rightBraceIsPresent = true
+                    }
                     return
                 }
             })
@@ -610,17 +650,17 @@ public class TreeSitterParser {
             var identifier: String?
             var typeAnnotation: PklTypeAnnotation?
             var value: (any ASTNode)?
-            node.enumerateChildren(block: { node in
-                if node.symbol == PklTreeSitterSymbols.sym_identifier.rawValue {
-                    identifier = document.getTextInByteRange(node.byteRange)
+            node.enumerateChildren(block: { childNode in
+                if childNode.symbol == PklTreeSitterSymbols.sym_identifier.rawValue {
+                    identifier = document.getTextInByteRange(childNode.byteRange)
                     return
                 }
-                if node.symbol == PklTreeSitterSymbols.sym_typeAnnotation.rawValue {
-                    typeAnnotation = tsNodeToASTNode(node: node, in: document) as? PklTypeAnnotation
+                if childNode.symbol == PklTreeSitterSymbols.sym_typeAnnotation.rawValue {
+                    typeAnnotation = tsNodeToASTNode(node: childNode, in: document) as? PklTypeAnnotation
                     return
                 }
-                if node.symbol == PklTreeSitterSymbols.sym_objectBody.rawValue {
-                    value = tsNodeToASTNode(node: node, in: document)
+                if childNode.symbol == PklTreeSitterSymbols.sym_objectBody.rawValue {
+                    value = tsNodeToASTNode(node: childNode, in: document)
                     return
                 }
             })
@@ -648,13 +688,13 @@ public class TreeSitterParser {
             self.logger.debug("Starting building type annotation...")
             var type: PklType?
             var colonIsPresent: Bool = false
-            node.enumerateChildren(block: { node in
-                if node.symbol == PklTreeSitterSymbols.anon_sym_COLON.rawValue {
+            node.enumerateChildren(block: { childNode in
+                if childNode.symbol == PklTreeSitterSymbols.anon_sym_COLON.rawValue {
                     colonIsPresent = true
                     return
                 }
-                if node.symbol == PklTreeSitterSymbols.sym_type.rawValue {
-                    type = tsNodeToASTNode(node: node, in: document) as? PklType
+                if childNode.symbol == PklTreeSitterSymbols.sym_type.rawValue {
+                    type = tsNodeToASTNode(node: childNode, in: document) as? PklType
                     return
                 }
             })
@@ -681,28 +721,35 @@ public class TreeSitterParser {
             var leftParenIsPresent: Bool = false
             var rightParenIsPresent: Bool = false
             var commasAmount: Int = 0
-            node.enumerateChildren(block: { node in
-                if node.symbol == PklTreeSitterSymbols.anon_sym_LPAREN.rawValue {
-                    leftParenIsPresent = true
+            node.enumerateChildren(block: { childNode in
+                if childNode.symbol == PklTreeSitterSymbols.anon_sym_LPAREN.rawValue {
+                    let leftParen = document.getTextInByteRange(childNode.byteRange)
+                    if leftParen == "(" {
+                        leftParenIsPresent = true
+                    }
                     return
                 }
-                if node.symbol == PklTreeSitterSymbols.anon_sym_RPAREN.rawValue {
-                    rightParenIsPresent = true
+                if childNode.symbol == PklTreeSitterSymbols.anon_sym_RPAREN.rawValue {
+                    let rightParen = document.getTextInByteRange(childNode.byteRange)
+                    if rightParen == ")" {
+                        rightParenIsPresent = true
+                    }
                     return
                 }
-                if node.symbol == PklTreeSitterSymbols.anon_sym_COMMA.rawValue {
+                if childNode.symbol == PklTreeSitterSymbols.anon_sym_COMMA.rawValue {
                     commasAmount += 1
                     return
                 }
-                if node.symbol == PklTreeSitterSymbols.sym_typedIdentifier.rawValue {
-                    if let parameter = tsNodeToASTNode(node: node, in: document) as? PklFunctionParameter {
+                if childNode.symbol == PklTreeSitterSymbols.sym_typedIdentifier.rawValue {
+                    if let parameter = tsNodeToASTNode(node: childNode, in: document) as? PklFunctionParameter {
                         parameters.append(parameter)
                     }
                     return
                 }
             })
             self.logger.debug("Parameter list built succesfully.")
-            return PklFunctionParameterList(parameters: parameters, positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
+            return PklFunctionParameterList(parameters: parameters, isLeftParenPresent: leftParenIsPresent, isRightParenPresent: rightParenIsPresent,
+                positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
 
         case .sym_argumentList:
             self.logger.debug("Not implemented")
@@ -796,13 +843,13 @@ public class TreeSitterParser {
             self.logger.debug("Starting building typed identifier...")
             var identifier: String?
             var typeAnnotation: PklTypeAnnotation?
-            node.enumerateChildren(block: { node in
-                if node.symbol == PklTreeSitterSymbols.sym_identifier.rawValue {
-                    identifier = document.getTextInByteRange(node.byteRange)
+            node.enumerateChildren(block: { childNode in
+                if childNode.symbol == PklTreeSitterSymbols.sym_identifier.rawValue {
+                    identifier = document.getTextInByteRange(childNode.byteRange)
                     return
                 }
-                if node.symbol == PklTreeSitterSymbols.sym_typeAnnotation.rawValue {
-                    typeAnnotation = tsNodeToASTNode(node: node, in: document) as? PklTypeAnnotation
+                if childNode.symbol == PklTreeSitterSymbols.sym_typeAnnotation.rawValue {
+                    typeAnnotation = tsNodeToASTNode(node: childNode, in: document) as? PklTypeAnnotation
                     return
                 }
             })

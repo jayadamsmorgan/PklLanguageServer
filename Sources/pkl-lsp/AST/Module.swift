@@ -16,10 +16,10 @@ class PklModule : ASTNode {
         self.positionEnd = positionEnd
     }
 
-    func error() -> ASTEvaluationError? {
+    public func diagnosticErrors() -> [ASTDiagnosticError]? {
         for content in contents {
-            if let error = content.error() {
-                return error
+            if let errors = content.diagnosticErrors() {
+                return errors
             }
         }
         return nil

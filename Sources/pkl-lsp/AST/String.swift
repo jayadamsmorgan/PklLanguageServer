@@ -16,11 +16,11 @@ class PklStringLiteral : ASTNode {
         self.positionEnd = positionEnd
     }
 
-    public func error() -> ASTEvaluationError? {
+    public func diagnosticErrors() -> [ASTDiagnosticError]? {
         if value != nil {
             return nil
         }
-        return ASTEvaluationError("Provide string value", positionStart, positionEnd)
+        return [ASTDiagnosticError("Provide string value", .error, positionStart, positionEnd)]
     }
 }
 

@@ -16,7 +16,7 @@ class PklBooleanLiteral: ASTNode {
         self.positionEnd = positionEnd
     }
 
-    func error() -> ASTEvaluationError? {
+    public func diagnosticErrors() -> [ASTDiagnosticError]? {
         return nil
     }
 }

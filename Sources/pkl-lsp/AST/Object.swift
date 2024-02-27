@@ -14,23 +14,31 @@ class PklObjectBody: ASTNode {
     var properties: [PklObjectProperty]?
 
     init(properties: [PklObjectProperty]?, isLeftBracePresent: Bool = false, isRightBracePresent: Bool = false, positionStart: Position, positionEnd: Position) {
+        self.isLeftBracePresent = isLeftBracePresent
+        self.isRightBracePresent = isRightBracePresent
         self.properties = properties
         self.positionStart = positionStart
         self.positionEnd = positionEnd
     }
 
-    public func error() -> ASTEvaluationError? {
-        if isLeftBracePresent && isRightBracePresent {
-            if let properties = properties {
-                for property in properties {
-                    if let error = property.error() {
-                        return error
-                    }
+    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+        var errors: [ASTDiagnosticError] = []
+        if !isLeftBracePresent {
+            let error = ASTDiagnosticError("Provide left brace", .error, positionStart, positionEnd)
+            errors.append(error)
+        }
+        if !isRightBracePresent {
+            let error = ASTDiagnosticError("Provide right brace", .error, positionStart, positionEnd)
+            errors.append(error)
+        }
+        if let properties = properties {
+            for property in properties {
+                if let propertyErrors = property.diagnosticErrors() {
+                    errors.append(contentsOf: propertyErrors)
                 }
             }
-            return nil
         }
-        return nil
+        return errors.count > 0 ? errors : nil
     }
 
 }
@@ -54,25 +62,24 @@ class PklObjectProperty: ASTNode {
         self.positionEnd = positionEnd
     }
 
-    public func error() -> ASTEvaluationError? {
-        if identifier != nil && typeAnnotation != nil && value != nil {
-            if let error = typeAnnotation?.error() {
-                return error
-            }
-            if let error = value?.error() {
-                return error
-            }
-            return nil
+    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+        var errors: [ASTDiagnosticError] = []
+        if identifier == nil {
+            let error = ASTDiagnosticError("Provide property identifier", .error, positionStart, positionEnd)
+            errors.append(error)
         }
-        if identifier != nil && typeAnnotation != nil {
-            if let error = typeAnnotation?.error() {
-                return error
-            }
-            return ASTEvaluationError("Provide property value", positionStart, positionEnd)
+        if typeAnnotation == nil && value == nil {
+            let error = ASTDiagnosticError("Provide property type or value", .error, positionStart, positionEnd)
+            errors.append(error)
         }
-        if identifier != nil && value != nil {
-            if let error = value?.error() {
-                return error
+        if typeAnnotation != nil {
+            if let typeErrors = typeAnnotation?.diagnosticErrors() {
+                errors.append(contentsOf: typeErrors)
+            }
+        }
+        if value != nil {
+            if let valueErrors = value?.diagnosticErrors() {
+                errors.append(contentsOf: valueErrors)
             }
         }
         return nil

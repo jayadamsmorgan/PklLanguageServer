@@ -19,11 +19,11 @@ class PklValue : ASTNode {
         self.type = type
     }
 
-    public func error() -> ASTEvaluationError? {
+    public func diagnosticErrors() -> [ASTDiagnosticError]? {
         if value != nil {
             return nil
         }
-        return ASTEvaluationError("Provide value", positionStart, positionEnd)
+        return [ASTDiagnosticError("Provide value", .error, positionStart, positionEnd)]
     }
 
 }

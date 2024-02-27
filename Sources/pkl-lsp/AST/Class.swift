@@ -25,35 +25,39 @@ class PklClassProperty : ASTNode {
         self.positionEnd = positionEnd
     }
 
-    public func error() -> ASTEvaluationError? {
-        if identifier != nil && typeAnnotation != nil && isEqualsPresent && value != nil {
-            if let typeError = typeAnnotation?.error() {
-                return typeError
+    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+        var errors: [ASTDiagnosticError] = []
+        if typeAnnotation != nil {
+            if let typeErrors = typeAnnotation?.diagnosticErrors() {
+                errors.append(contentsOf: typeErrors)
             }
-            if let error = value?.error() {
-                return error
+        }
+        if !isEqualsPresent && value != nil && !(value is PklObjectBody) {
+            let error = ASTDiagnosticError("Provide an equals sign", .error, positionStart, positionEnd)
+            errors.append(error)
+        }
+        if value is PklObjectBody && isEqualsPresent {
+            let error = ASTDiagnosticError("Extra equals sign", .error, positionStart, positionEnd)
+            errors.append(error)
+        }
+        if isEqualsPresent && value == nil {
+            let error = ASTDiagnosticError("Provide a value", .error, positionStart, positionEnd)
+            errors.append(error)
+        }
+        if value != nil {
+            if let valueErrors = value?.diagnosticErrors() {
+                errors.append(contentsOf: valueErrors)
             }
-            if let value = value as? PklValue {
-                if value.type?.identifier != typeAnnotation?.type?.identifier {
-                    return ASTEvaluationError("Property value type does not match property type", positionStart, positionEnd)
-                }
-            }
-            if let value = value as? PklObjectBody {
-                // TODO: Check if object body type matches property type
-                return ASTEvaluationError("Object body type checking is not implemented yet", positionStart, positionEnd)
-            }
-            return nil
         }
-        if identifier != nil && typeAnnotation != nil {
-            return typeAnnotation?.error()
+        if typeAnnotation == nil && value == nil {
+            let error = ASTDiagnosticError("Provide property type or value", .error, positionStart, positionEnd)
+            errors.append(error)
         }
-        if identifier != nil && value != nil {
-            return value?.error()
+        if identifier == nil {
+            let error = ASTDiagnosticError("Provide property identifier", .error, positionStart, positionEnd)
+            errors.append(error)
         }
-        if identifier != nil {
-            return ASTEvaluationError("Provide property type or value", positionStart, positionEnd)
-        }
-        return ASTEvaluationError("Provide property identifier", positionStart, positionEnd)
+        return errors.count > 0 ? errors : nil
     }
 }
 
@@ -79,22 +83,31 @@ class PklClass : ASTNode {
         self.positionEnd = positionEnd
     }
 
-    public func error() -> ASTEvaluationError? {
-        if properties != nil && leftBraceIsPresent && rightBraceIsPresent {
-            for property in properties! {
-                if let error = property.error() {
-                    return error
-                }
-            }
-            return nil
-        }
-        if properties == nil {
-            return ASTEvaluationError("Provide class body", positionStart, positionEnd)
+    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+        var errors: [ASTDiagnosticError] = []
+        if !rightBraceIsPresent {
+            let error = ASTDiagnosticError("Missing right brace symbol", .error, positionStart, positionEnd)
+            errors.append(error)
         }
         if !leftBraceIsPresent {
-            return ASTEvaluationError("Missing left brace symbol", positionStart, positionEnd)
+            let error = ASTDiagnosticError("Missing left brace symbol", .error, positionStart, positionEnd)
+            errors.append(error)
         }
-        return ASTEvaluationError("Missing right brace symbol", positionStart, positionEnd)
+        if properties != nil {
+            for property in properties! {
+                if let error = property.diagnosticErrors() {
+                    errors.append(contentsOf: error)
+                }
+            }
+        }
+        if functions != nil {
+            for function in functions! {
+                if let error = function.diagnosticErrors() {
+                    errors.append(contentsOf: error)
+                }
+            }
+        }
+        return errors.count > 0 ? errors : nil
     }
 }
 
@@ -117,17 +130,22 @@ class PklClassDeclaration : ASTNode {
         self.positionEnd = positionEnd
     }
 
-    public func error() -> ASTEvaluationError? {
-        if classNode != nil && classKeyword == "class" && classIdentifier != nil {
-            return classNode?.error()
+    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+        var errors: [ASTDiagnosticError] = []
+        if classNode != nil {
+            if let classErrors = classNode?.diagnosticErrors() {
+                errors.append(contentsOf: classErrors)
+            }
         }
         if classKeyword != "class" {
-            return ASTEvaluationError("Missing class keyword", positionStart, positionEnd)
+            let error = ASTDiagnosticError("Missing class keyword", .error, positionStart, positionEnd)
+            errors.append(error)
         }
         if classIdentifier == nil {
-            return ASTEvaluationError("Provide class identifier", positionStart, positionEnd)
+            let error = ASTDiagnosticError("Provide class identifier", .error, positionStart, positionEnd)
+            errors.append(error)
         }
-        return ASTEvaluationError("Provide class body", positionStart, positionEnd)
+        return errors.count > 0 ? errors : nil
     }
-
 }
+

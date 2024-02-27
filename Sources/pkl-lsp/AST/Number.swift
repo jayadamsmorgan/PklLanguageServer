@@ -30,11 +30,11 @@ class PklNumberLiteral : ASTNode {
         self.positionEnd = positionEnd
     }
 
-    public func error() -> ASTEvaluationError? {
+    public func diagnosticErrors() -> [ASTDiagnosticError]? {
         if value != nil {
             return nil
         }
-        return ASTEvaluationError("Provide number value", positionStart, positionEnd)
+        return [ASTDiagnosticError("Provide number value", .error, positionStart, positionEnd)]
     }
 }
 
