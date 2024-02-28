@@ -8,7 +8,7 @@ public enum PklStandardTypesIdentifiers : String, CaseIterable {
     case String
 }
 
-class PklType : ASTNode {
+struct PklType : ASTNode {
 
     let uniqueID: UUID = UUID()
 
@@ -31,7 +31,7 @@ class PklType : ASTNode {
     }
 }
 
-class PklTypeAnnotation : ASTNode {
+struct PklTypeAnnotation : ASTNode {
 
     let uniqueID: UUID = UUID()
 

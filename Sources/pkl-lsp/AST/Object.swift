@@ -1,7 +1,7 @@
 import Foundation
 import LanguageServerProtocol
 
-class PklObjectBody: ASTNode {
+struct PklObjectBody: ASTNode {
 
     let uniqueID: UUID = UUID()
 
@@ -43,18 +43,18 @@ class PklObjectBody: ASTNode {
 
 }
 
-class PklObjectProperty: ASTNode {
+struct PklObjectProperty: ASTNode {
 
     let uniqueID: UUID = UUID()
 
     var positionStart: Position
     var positionEnd: Position
 
-    var identifier: String?
+    var identifier: PklIdentifier?
     var typeAnnotation: PklTypeAnnotation?
     var value: (any ASTNode)?
 
-    init(identifier: String? = nil, typeAnnotation: PklTypeAnnotation? = nil, value: (any ASTNode)?, positionStart: Position, positionEnd: Position) {
+    init(identifier: PklIdentifier? = nil, typeAnnotation: PklTypeAnnotation? = nil, value: (any ASTNode)?, positionStart: Position, positionEnd: Position) {
         self.identifier = identifier
         self.typeAnnotation = typeAnnotation
         self.value = value

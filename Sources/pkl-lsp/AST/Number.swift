@@ -13,7 +13,7 @@ enum PklNumberType {
     case uint32
 }
 
-class PklNumberLiteral : ASTNode {
+struct PklNumberLiteral : ASTNode {
 
     let uniqueID: UUID = UUID()
 

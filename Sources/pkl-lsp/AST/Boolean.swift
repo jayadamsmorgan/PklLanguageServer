@@ -1,7 +1,7 @@
 import Foundation
 import LanguageServerProtocol
 
-class PklBooleanLiteral: ASTNode {
+struct PklBooleanLiteral: ASTNode {
 
     let uniqueID: UUID = UUID()
 

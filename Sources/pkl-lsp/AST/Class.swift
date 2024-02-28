@@ -1,20 +1,20 @@
 import Foundation
 import LanguageServerProtocol
 
-class PklClassProperty : ASTNode {
+struct PklClassProperty : ASTNode {
 
     let uniqueID: UUID = UUID()
 
     var positionStart: Position
     var positionEnd: Position
 
-    var identifier: String?
+    var identifier: PklIdentifier?
     var typeAnnotation: PklTypeAnnotation?
     var isEqualsPresent: Bool = false
     var value: (any ASTNode)?
     var isHidden: Bool
 
-    init(identifier: String? = nil, typeAnnotation: PklTypeAnnotation? = nil, isEqualsPresent: Bool = false, value: (any ASTNode)?,
+    init(identifier: PklIdentifier? = nil, typeAnnotation: PklTypeAnnotation? = nil, isEqualsPresent: Bool = false, value: (any ASTNode)?,
         isHidden: Bool = false, positionStart: Position, positionEnd: Position) {
         self.identifier = identifier
         self.typeAnnotation = typeAnnotation
@@ -61,7 +61,7 @@ class PklClassProperty : ASTNode {
     }
 }
 
-class PklClass : ASTNode {
+struct PklClass : ASTNode {
 
     let uniqueID: UUID = UUID()
 
@@ -111,7 +111,7 @@ class PklClass : ASTNode {
     }
 }
 
-class PklClassDeclaration : ASTNode {
+struct PklClassDeclaration : ASTNode {
 
     let uniqueID: UUID = UUID()
 
@@ -120,9 +120,9 @@ class PklClassDeclaration : ASTNode {
 
     var classNode: PklClass?
     var classKeyword: String?
-    var classIdentifier: String?
+    var classIdentifier: PklIdentifier?
 
-    init(classNode: PklClass? = nil, classKeyword: String? = nil, classIdentifier: String? = nil, positionStart: Position, positionEnd: Position) {
+    init(classNode: PklClass? = nil, classKeyword: String? = nil, classIdentifier: PklIdentifier? = nil, positionStart: Position, positionEnd: Position) {
         self.classNode = classNode
         self.classKeyword = classKeyword
         self.classIdentifier = classIdentifier

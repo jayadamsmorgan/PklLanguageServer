@@ -2,16 +2,16 @@ import Foundation
 import LanguageServerProtocol
 
 
-class PklFunctionParameter : ASTNode {
+struct PklFunctionParameter : ASTNode {
     var uniqueID: UUID = UUID()
 
     var positionStart: Position
     var positionEnd: Position
 
-    var identifier: String?
+    var identifier: PklIdentifier?
     var typeAnnotation: PklTypeAnnotation?
 
-    init(identifier: String?, typeAnnotation: PklTypeAnnotation?, positionStart: Position, positionEnd: Position) {
+    init(identifier: PklIdentifier?, typeAnnotation: PklTypeAnnotation?, positionStart: Position, positionEnd: Position) {
         self.identifier = identifier
         self.typeAnnotation = typeAnnotation
         self.positionStart = positionStart
@@ -37,7 +37,7 @@ class PklFunctionParameter : ASTNode {
     }
 }
 
-class PklFunctionParameterList : ASTNode {
+struct PklFunctionParameterList : ASTNode {
 
     var uniqueID: UUID = UUID()
 
@@ -85,7 +85,7 @@ class PklFunctionParameterList : ASTNode {
     }
 }
 
-class PklFunctionDeclaration: ASTNode {
+struct PklFunctionDeclaration: ASTNode {
 
     let uniqueID: UUID = UUID()
 
@@ -126,7 +126,7 @@ class PklFunctionDeclaration: ASTNode {
     }
 }
 
-class PklClassFunctionBody: ASTNode {
+struct PklClassFunctionBody: ASTNode {
 
     let uniqueID: UUID = UUID()
 
@@ -134,11 +134,11 @@ class PklClassFunctionBody: ASTNode {
     var positionEnd: Position
 
     var isFunctionKeywordPresent: Bool = false
-    var identifier: String?
+    var identifier: PklIdentifier?
     var params: PklFunctionParameterList?
     var typeAnnotation: PklTypeAnnotation?
 
-    init(isFunctionKeywordPresent: Bool = false, identifier: String?, params: PklFunctionParameterList?, typeAnnotation: PklTypeAnnotation? = nil,
+    init(isFunctionKeywordPresent: Bool = false, identifier: PklIdentifier?, params: PklFunctionParameterList?, typeAnnotation: PklTypeAnnotation? = nil,
         positionStart: Position, positionEnd: Position) {
         self.isFunctionKeywordPresent = isFunctionKeywordPresent
         self.identifier = identifier

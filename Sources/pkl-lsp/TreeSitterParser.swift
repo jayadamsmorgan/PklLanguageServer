@@ -121,9 +121,15 @@ public class TreeSitterParser {
             logger.debug("Unable to parse node with symbol \(node.symbol)")
             return nil
         }
+
         switch tsSymbol {
+
         case .sym_identifier:
-            self.logger.debug("Not implemented")
+            self.logger.debug("Starting building identifier...")
+            let identifier = document.getTextInByteRange(node.byteRange)
+            self.logger.debug("Identifier built succesfully.")
+            return PklIdentifier(value: identifier, positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
+
         case .anon_sym_module:
             self.logger.debug("Not implemented")
         case .anon_sym_extends:
@@ -447,14 +453,14 @@ public class TreeSitterParser {
             self.logger.debug("Starting building class...")
             var classNode: PklClass?
             var classKeyword: String?
-            var classIdentifier: String?
+            var classIdentifier: PklIdentifier?
             node.enumerateChildren(block: { childNode in
                 if childNode.symbol == PklTreeSitterSymbols.sym_classBody.rawValue {
                     classNode = tsNodeToASTNode(node: childNode, in: document) as? PklClass
                     return
                 }
                 if childNode.symbol == PklTreeSitterSymbols.sym_identifier.rawValue {
-                    classIdentifier = document.getTextInByteRange(childNode.byteRange)
+                    classIdentifier = tsNodeToASTNode(node: childNode, in: document) as? PklIdentifier
                     return
                 }
                 if childNode.symbol == PklTreeSitterSymbols.anon_sym_class.rawValue {
@@ -531,14 +537,14 @@ public class TreeSitterParser {
             // ```
             // In the example above `(TestObject)` is the object amending and it's not being parsed
 
-            var propertyIdentifier: String?
+            var propertyIdentifier: PklIdentifier?
             var typeAnnotation: PklTypeAnnotation?
             var value: (any ASTNode)? // Can be either a PklObjectBody or a PklValue
             var isHidden: Bool = false
             var isEqualsPresent: Bool = false
             node.enumerateChildren(block: { childNode in
                 if childNode.symbol == PklTreeSitterSymbols.sym_identifier.rawValue {
-                    propertyIdentifier = document.getTextInByteRange(childNode.byteRange)
+                    propertyIdentifier = tsNodeToASTNode(node: childNode, in: document) as? PklIdentifier
                     return
                 }
                 if childNode.symbol == PklTreeSitterSymbols.sym_typeAnnotation.rawValue {
@@ -583,7 +589,7 @@ public class TreeSitterParser {
         case .sym_methodHeader: // METHOD HEADER
             self.logger.debug("Starting building method header...")
             var isFunctionKeywordPresent: Bool = false
-            var identifier: String?
+            var identifier: PklIdentifier?
             var typeAnnotation: PklTypeAnnotation?
             var params: PklFunctionParameterList?
             node.enumerateChildren(block: { childNode in
@@ -592,7 +598,7 @@ public class TreeSitterParser {
                     return
                 }
                 if childNode.symbol == PklTreeSitterSymbols.sym_identifier.rawValue {
-                    identifier = document.getTextInByteRange(childNode.byteRange)
+                    identifier = tsNodeToASTNode(node: childNode, in: document) as? PklIdentifier
                     return
                 }
                 if childNode.symbol == PklTreeSitterSymbols.sym_typeAnnotation.rawValue {
@@ -647,12 +653,12 @@ public class TreeSitterParser {
 
         case .sym_objectProperty: // OBJECT PROPERTY
             self.logger.debug("Starting building object property...")
-            var identifier: String?
+            var identifier: PklIdentifier?
             var typeAnnotation: PklTypeAnnotation?
             var value: (any ASTNode)?
             node.enumerateChildren(block: { childNode in
                 if childNode.symbol == PklTreeSitterSymbols.sym_identifier.rawValue {
-                    identifier = document.getTextInByteRange(childNode.byteRange)
+                    identifier = tsNodeToASTNode(node: childNode, in: document) as? PklIdentifier
                     return
                 }
                 if childNode.symbol == PklTreeSitterSymbols.sym_typeAnnotation.rawValue {
@@ -841,11 +847,11 @@ public class TreeSitterParser {
 
         case .sym_typedIdentifier: // TYPED IDENTIFIER
             self.logger.debug("Starting building typed identifier...")
-            var identifier: String?
+            var identifier: PklIdentifier?
             var typeAnnotation: PklTypeAnnotation?
             node.enumerateChildren(block: { childNode in
                 if childNode.symbol == PklTreeSitterSymbols.sym_identifier.rawValue {
-                    identifier = document.getTextInByteRange(childNode.byteRange)
+                    identifier = tsNodeToASTNode(node: childNode, in: document) as? PklIdentifier
                     return
                 }
                 if childNode.symbol == PklTreeSitterSymbols.sym_typeAnnotation.rawValue {

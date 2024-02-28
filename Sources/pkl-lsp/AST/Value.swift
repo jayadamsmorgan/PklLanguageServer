@@ -1,7 +1,7 @@
 import Foundation
 import LanguageServerProtocol
 
-class PklValue : ASTNode {
+struct PklValue : ASTNode {
 
     let uniqueID: UUID = UUID()
 
