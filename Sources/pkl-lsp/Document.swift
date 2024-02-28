@@ -2,7 +2,8 @@ import Foundation
 import LanguageServerProtocol
 import SwiftTreeSitter
 
-public struct Document: Hashable {
+
+public struct Document : Hashable {
     public let uri: DocumentUri
     public let version: Int?
     public let text: String
@@ -20,7 +21,7 @@ public struct Document: Hashable {
     }
 }
 
-struct InvalidDocumentChangeRange: Error {
+struct InvalidDocumentChangeRange : Error {
     public let range: LSPRange
 }
 
@@ -83,5 +84,4 @@ extension Document {
         }
     }
 }
-
 

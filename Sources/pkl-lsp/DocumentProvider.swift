@@ -4,6 +4,8 @@ import LanguageServerProtocol
 import LanguageServer
 import Logging
 
+
+
 public protocol TextDocumentProtocol {
     var uri: DocumentUri { get }
 }

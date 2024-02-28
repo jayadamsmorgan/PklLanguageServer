@@ -1,5 +1,6 @@
 import Foundation
 
+
 public enum TokenType : UInt32, CaseIterable {
     case `class`
     case object
@@ -15,3 +16,4 @@ public enum TokenType : UInt32, CaseIterable {
         return String(describing: self)
     }
 }
+

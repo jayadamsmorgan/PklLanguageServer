@@ -66,9 +66,5 @@ public struct PklRequestHandler : RequestHandler, Sendable {
         return .success(documentSymbolResponse)
     }
 
-    // public func diagnostics(id: JSONId, params: DocumentDiagnosticParams) async -> Response<DocumentDiagnosticReport> {
-    //     logger.debug("Diagnostics triggered: \(params)")
-    //     return .failure(CompletionJSONRPCError)
-    // }
-
 }
+

@@ -1,6 +1,7 @@
 import Foundation
 import SwiftTreeSitter
 
+
 extension InputEdit {
 
     // Helper function to find byte offsets for changes in the document
@@ -102,3 +103,4 @@ extension InputEdit {
             startPoint: startPoint, oldEndPoint: oldEndPoint, newEndPoint: newEndPoint)
     }
 }
+

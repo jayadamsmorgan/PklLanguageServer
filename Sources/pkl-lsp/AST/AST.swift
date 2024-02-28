@@ -1,11 +1,12 @@
 import Foundation
 import LanguageServerProtocol
 
+
 public protocol IdentifiableNode {
     var uniqueID: UUID { get }
 }
 
-extension IdentifiableNode where Self: Hashable {
+extension IdentifiableNode where Self : Hashable {
 
     public func hash(into hasher: inout Hasher) {
         hasher.combine(uniqueID)
@@ -16,7 +17,7 @@ extension IdentifiableNode where Self: Hashable {
     }
 }
 
-public protocol ASTNode: IdentifiableNode, Hashable, ASTEvaluation {
+public protocol ASTNode : IdentifiableNode, Hashable, ASTEvaluation {
     var positionStart: Position { get set }
     var positionEnd: Position { get set }
 }
@@ -30,7 +31,7 @@ public enum ASTDiagnosticErrorSeverity {
     case error
 }
 
-public struct ASTDiagnosticError: Hashable {
+public struct ASTDiagnosticError : Hashable {
 
     let error: String
     let severity: ASTDiagnosticErrorSeverity
@@ -44,5 +45,4 @@ public struct ASTDiagnosticError: Hashable {
         self.severity = severity
     }
 }
-
 

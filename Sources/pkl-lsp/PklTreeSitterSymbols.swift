@@ -1,5 +1,6 @@
 import Foundation
 
+
 public enum PklTreeSitterSymbols: UInt32 {
 
     public init?(_ rawValue: Int) {
@@ -248,3 +249,4 @@ public enum PklTreeSitterSymbols: UInt32 {
     case aux_sym_qualifiedIdentifier_repeat1 = 237
 
 }
+

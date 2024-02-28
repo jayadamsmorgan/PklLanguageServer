@@ -85,7 +85,7 @@ struct PklFunctionParameterList : ASTNode {
     }
 }
 
-struct PklFunctionDeclaration: ASTNode {
+struct PklFunctionDeclaration : ASTNode {
 
     let uniqueID: UUID = UUID()
 
@@ -126,7 +126,7 @@ struct PklFunctionDeclaration: ASTNode {
     }
 }
 
-struct PklClassFunctionBody: ASTNode {
+struct PklClassFunctionBody : ASTNode {
 
     let uniqueID: UUID = UUID()
 
@@ -170,3 +170,4 @@ struct PklClassFunctionBody: ASTNode {
     }
 
 }
+

@@ -1,6 +1,7 @@
 import Logging
 import Foundation
 
+
 public let loggerLabel: String = "pkl-lsp"
 
 internal extension Logger {
@@ -59,3 +60,4 @@ public struct NullLogHandler: LogHandler, Sendable {
         line: UInt) {}
 
 }
+

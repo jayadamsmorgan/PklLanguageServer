@@ -1,5 +1,6 @@
 import Foundation
 
+
 enum PklKeywords : String, CaseIterable {
     case abstract
     case amends
@@ -34,3 +35,4 @@ enum PklKeywords : String, CaseIterable {
     case `typealias`
     case when
 }
+

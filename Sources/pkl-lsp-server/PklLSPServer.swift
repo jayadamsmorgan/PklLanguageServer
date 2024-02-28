@@ -5,6 +5,7 @@ import Puppy
 import UniSocket
 import pkl_lsp
 
+
 // Allow loglevel as `ArgumentParser.Option`
 extension Logger.Level : ExpressibleByArgument { }
 
@@ -15,7 +16,7 @@ extension Bool {
 }
 
 @main
-struct PklLSPServer: AsyncParsableCommand {
+struct PklLSPServer : AsyncParsableCommand {
 
     static var configuration = CommandConfiguration(commandName: "pkl-lsp-server")
 
@@ -100,3 +101,4 @@ struct PklLSPServer: AsyncParsableCommand {
         }
     }
 }
+

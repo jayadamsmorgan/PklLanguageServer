@@ -5,6 +5,7 @@ import Foundation
 import Semaphore
 import Logging
 
+
 public struct PklNotificationHandler : NotificationHandler {
     public let connection: JSONRPCClientConnection
     public let logger: Logger
@@ -98,3 +99,4 @@ public struct PklNotificationHandler : NotificationHandler {
     }
 
 }
+

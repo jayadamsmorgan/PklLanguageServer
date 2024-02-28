@@ -1,7 +1,8 @@
 import Foundation
 import LanguageServerProtocol
 
-struct PklObjectBody: ASTNode {
+
+struct PklObjectBody : ASTNode {
 
     let uniqueID: UUID = UUID()
 
@@ -43,7 +44,7 @@ struct PklObjectBody: ASTNode {
 
 }
 
-struct PklObjectProperty: ASTNode {
+struct PklObjectProperty : ASTNode {
 
     let uniqueID: UUID = UUID()
 
@@ -86,3 +87,4 @@ struct PklObjectProperty: ASTNode {
     }
 
 }
+
