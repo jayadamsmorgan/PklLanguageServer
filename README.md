@@ -18,7 +18,9 @@ I would really love to make it a community driven project, so don't hesitate to 
 
 The [Discord Server][discord] is there for any question, help, advice or just casual chatting.
 
-Also don't forget to check [Code of Conduct](CODE_OF_CONDUCT.md).
+Also check out [Unofficial Pkl Community Discord Server](https://discord.gg/3PufS9Jn), lots of great people there discussing Pkl. They also have a channel about LSPs!
+
+And don't forget to check [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Installing and running from source:
 
@@ -27,6 +29,10 @@ Clone repository and build the project:
 git clone https://github.com/jayadamsmorgan/PklLanguageServer
 cd PklLanguageServer
 swift build -c release
+```
+
+Install (optional):
+```
 sudo cp .build/release/pkl-lsp-server /usr/bin/.
 ```
 
