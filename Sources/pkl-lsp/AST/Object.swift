@@ -14,6 +14,10 @@ struct PklObjectBody : ASTNode {
 
     var properties: [PklObjectProperty]?
 
+    var children: [any ASTNode]? {
+        return properties
+    }
+
     init(properties: [PklObjectProperty]?, isLeftBracePresent: Bool = false, isRightBracePresent: Bool = false, positionStart: Position, positionEnd: Position) {
         self.isLeftBracePresent = isLeftBracePresent
         self.isRightBracePresent = isRightBracePresent
@@ -54,6 +58,20 @@ struct PklObjectProperty : ASTNode {
     var identifier: PklIdentifier?
     var typeAnnotation: PklTypeAnnotation?
     var value: (any ASTNode)?
+
+    var children: [any ASTNode]? {
+        var children: [any ASTNode] = []
+        if identifier != nil {
+            children.append(identifier!)
+        }
+        if typeAnnotation != nil {
+            children.append(typeAnnotation!)
+        }
+        if value != nil {
+            children.append(value!)
+        }
+        return children
+    }
 
     init(identifier: PklIdentifier? = nil, typeAnnotation: PklTypeAnnotation? = nil, value: (any ASTNode)?, positionStart: Position, positionEnd: Position) {
         self.identifier = identifier

@@ -11,6 +11,8 @@ struct PklIdentifier : ASTNode {
 
     var value: String
 
+    var children: [any ASTNode]? = nil
+
     init(value: String, positionStart: Position, positionEnd: Position) {
         self.value = value
         self.positionStart = positionStart

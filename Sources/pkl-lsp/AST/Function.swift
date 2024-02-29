@@ -11,6 +11,17 @@ struct PklFunctionParameter : ASTNode {
     var identifier: PklIdentifier?
     var typeAnnotation: PklTypeAnnotation?
 
+    var children: [any ASTNode]? {
+        var children: [any ASTNode] = []
+        if identifier != nil {
+            children.append(identifier!)
+        }
+        if typeAnnotation != nil {
+            children.append(typeAnnotation!)
+        }
+        return children
+    }
+
     init(identifier: PklIdentifier?, typeAnnotation: PklTypeAnnotation?, positionStart: Position, positionEnd: Position) {
         self.identifier = identifier
         self.typeAnnotation = typeAnnotation
@@ -48,6 +59,14 @@ struct PklFunctionParameterList : ASTNode {
     var isLeftParenPresent: Bool = false
     var isRightParenPresent: Bool = false
     var commasAmount: Int = 0
+
+    var children: [any ASTNode]? {
+        var children: [any ASTNode] = []
+        if parameters != nil {
+            children.append(contentsOf: parameters!)
+        }
+        return children
+    }
 
     init(parameters: [PklFunctionParameter]?, isLeftParenPresent: Bool = false, isRightParenPresent: Bool = false, commasAmount: Int = 0, positionStart: Position, positionEnd: Position) {
         self.parameters = parameters
@@ -95,6 +114,17 @@ struct PklFunctionDeclaration : ASTNode {
     var body: PklClassFunctionBody?
     var functionValue: (any ASTNode)?
 
+    var children: [any ASTNode]? {
+        var children: [any ASTNode] = []
+        if body != nil {
+            children.append(body!)
+        }
+        if functionValue != nil {
+            children.append(functionValue!)
+        }
+        return children
+    }
+
     init(body: PklClassFunctionBody?, functionValue: (any ASTNode)?, positionStart: Position, positionEnd: Position) {
         self.body = body
         self.functionValue = functionValue
@@ -137,6 +167,20 @@ struct PklClassFunctionBody : ASTNode {
     var identifier: PklIdentifier?
     var params: PklFunctionParameterList?
     var typeAnnotation: PklTypeAnnotation?
+
+    var children: [any ASTNode]? {
+        var children: [any ASTNode] = []
+        if identifier != nil {
+            children.append(identifier!)
+        }
+        if params != nil {
+            children.append(params!)
+        }
+        if typeAnnotation != nil {
+            children.append(typeAnnotation!)
+        }
+        return children
+    }
 
     init(isFunctionKeywordPresent: Bool = false, identifier: PklIdentifier?, params: PklFunctionParameterList?, typeAnnotation: PklTypeAnnotation? = nil,
         positionStart: Position, positionEnd: Position) {

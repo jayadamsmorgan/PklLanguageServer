@@ -9,6 +9,8 @@ struct PklNullLiteral : ASTNode {
     var positionStart: Position
     var positionEnd: Position
 
+    var children: [any ASTNode]? = nil
+
     init(positionStart: Position, positionEnd: Position) {
         self.positionStart = positionStart
         self.positionEnd = positionEnd

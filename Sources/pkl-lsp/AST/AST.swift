@@ -20,6 +20,8 @@ extension IdentifiableNode where Self : Hashable {
 public protocol ASTNode : IdentifiableNode, Hashable, ASTEvaluation {
     var positionStart: Position { get set }
     var positionEnd: Position { get set }
+
+    var children: [any ASTNode]? { get }
 }
 
 public protocol ASTEvaluation {

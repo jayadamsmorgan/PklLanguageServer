@@ -5,14 +5,6 @@ import SwiftTreeSitter
 import TreeSitterPkl
 
 
-public typealias ASTParsingResult = Result<any ASTNode, ASTParsingError>
-
-public enum ASTParsingError: Error {
-    case parseError
-    case tsTreeRootNodeIsNil
-    case astTreeRootNodeIsNil
-}
-
 public class TreeSitterParser {
 
     let logger: Logger
@@ -51,14 +43,14 @@ public class TreeSitterParser {
         return nil
     }
 
-    public func parseDocumentTreeSitter(newDocument: Document) -> ASTParsingResult {
+    public func parseDocumentTreeSitter(newDocument: Document) {
         guard let tree = parser.parse(newDocument.text) else {
             logger.error("Failed to tree-sitter parse complete source.")
-            return .failure(.parseError)
+            return
         }
         guard let rootNode = tree.rootNode else {
             logger.error("Failed to tree-sitter parse complete source. Root node is nil.")
-            return .failure(.tsTreeRootNodeIsNil)
+            return
         }
         logger.debug("Document \(newDocument) parsed succesfully. Tree: \(tree)")
         parsedTrees[newDocument] = tree
@@ -68,13 +60,13 @@ public class TreeSitterParser {
         }
         guard let astParsing = tsNodeToASTNode(node: rootNode, in: newDocument) else {
             logger.error("Failed to parse tree-sitter tree to AST tree.")
-            return .failure(.astTreeRootNodeIsNil)
+            return
         }
         astParsedTrees[newDocument] = astParsing
-        return .success(astParsing)
+        return
     }
 
-    public func parseDocumentTreeSitter(oldDocument: Document, newDocument: Document, changes: [TextDocumentContentChangeEvent]) -> ASTParsingResult {
+    public func parseDocumentTreeSitter(oldDocument: Document, newDocument: Document, changes: [TextDocumentContentChangeEvent]) {
         if let previousParsingTree = parsedTrees[oldDocument] {
             if let tree = parseDocumentTreeSitterWithChanges(
                 oldDocument: oldDocument,
@@ -84,7 +76,7 @@ public class TreeSitterParser {
             ) {
                 guard let rootNode = tree.rootNode else {
                     logger.error("Failed to tree-sitter parse source with changes. Root node is nil.")
-                    return .failure(.tsTreeRootNodeIsNil)
+                    return
                 }
                 parsedTrees[oldDocument] = nil
                 parsedTrees[newDocument] = tree
@@ -93,17 +85,15 @@ public class TreeSitterParser {
                 }
                 guard let astParsing = tsNodeToASTNode(node: rootNode, in: newDocument) else {
                     logger.error("Failed to parse tree-sitter tree to AST tree.")
-                    return .failure(.astTreeRootNodeIsNil)
+                    return
                 }
                 astParsedTrees[newDocument] = astParsing
-                return .success(astParsing)
+                return
             }
             logger.debug("Failed to tree-sitter parse source with changes, trying to parse whole document...")
         }
-
         parsedTrees[oldDocument] = nil
-
-        return parseDocumentTreeSitter(newDocument: newDocument)
+        parseDocumentTreeSitter(newDocument: newDocument)
     }
 
     // List tree sitter nodes used for debugging

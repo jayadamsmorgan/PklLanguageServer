@@ -11,6 +11,8 @@ struct PklBooleanLiteral : ASTNode {
 
     var value: Bool
 
+    var children: [any ASTNode]? = nil
+
     init(value: Bool, positionStart: Position, positionEnd: Position) {
         self.value = value
         self.positionStart = positionStart

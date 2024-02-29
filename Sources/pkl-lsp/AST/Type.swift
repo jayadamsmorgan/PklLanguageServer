@@ -18,6 +18,8 @@ struct PklType : ASTNode {
 
     var identifier: String?
 
+    var children: [any ASTNode]? = nil
+
     init(identifier: String? = nil, positionStart: Position, positionEnd: Position) {
         self.identifier = identifier
         self.positionStart = positionStart
@@ -41,6 +43,8 @@ struct PklTypeAnnotation : ASTNode {
     
     var type: PklType?
     var colonIsPresent: Bool = false
+
+    var children: [any ASTNode]? = nil
 
     init(type: PklType? = nil, colonIsPresent: Bool = false, positionStart: Position, positionEnd: Position) {
         self.type = type

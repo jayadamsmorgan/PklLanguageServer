@@ -13,6 +13,8 @@ struct PklValue : ASTNode {
 
     var type: PklType?
 
+    var children: [any ASTNode]? = nil
+
     init(value: String? = nil, type: PklType? = nil, positionStart: Position, positionEnd: Position) {
         self.value = value
         self.positionStart = positionStart

@@ -66,5 +66,8 @@ public struct PklRequestHandler : RequestHandler, Sendable {
         return .success(documentSymbolResponse)
     }
 
+    public func rename(id: JSONId, params: RenameParams) async -> Response<RenameResponse> {
+        return .success(await documentProvider.handleRenaming(params: params))
+    }
 }
 

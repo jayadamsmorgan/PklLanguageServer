@@ -15,6 +15,20 @@ struct PklClassProperty : ASTNode {
     var value: (any ASTNode)?
     var isHidden: Bool
 
+    var children: [any ASTNode]? {
+        var children: [any ASTNode] = []
+        if identifier != nil {
+            children.append(identifier!)
+        }
+        if typeAnnotation != nil {
+            children.append(typeAnnotation!)
+        }
+        if value != nil {
+            children.append(value!)
+        }
+        return children
+    }
+
     init(identifier: PklIdentifier? = nil, typeAnnotation: PklTypeAnnotation? = nil, isEqualsPresent: Bool = false, value: (any ASTNode)?,
         isHidden: Bool = false, positionStart: Position, positionEnd: Position) {
         self.identifier = identifier
@@ -75,6 +89,17 @@ struct PklClass : ASTNode {
     var leftBraceIsPresent: Bool = false
     var rightBraceIsPresent: Bool = false
 
+    var children: [any ASTNode]? {
+        var children: [any ASTNode] = []
+        if properties != nil {
+            children.append(contentsOf: properties!)
+        }
+        if functions != nil {
+            children.append(contentsOf: functions!)
+        }
+        return children
+    }
+
     init(properties: [PklClassProperty]? = nil, functions: [PklFunctionDeclaration]? = nil, leftBraceIsPresent: Bool = false, rightBraceIsPresent: Bool = false,
         positionStart: Position, positionEnd: Position) {
         self.properties = properties
@@ -122,6 +147,17 @@ struct PklClassDeclaration : ASTNode {
     var classNode: PklClass?
     var classKeyword: String?
     var classIdentifier: PklIdentifier?
+
+    var children: [any ASTNode]? {
+        var children: [any ASTNode] = []
+        if classNode != nil {
+            children.append(classNode!)
+        }
+        if classIdentifier != nil {
+            children.append(classIdentifier!)
+        }
+        return children
+    }
 
     init(classNode: PklClass? = nil, classKeyword: String? = nil, classIdentifier: PklIdentifier? = nil, positionStart: Position, positionEnd: Position) {
         self.classNode = classNode

@@ -11,6 +11,10 @@ struct PklModule : ASTNode {
 
     var contents: [any ASTNode]
 
+    var children: [any ASTNode]? {
+        return contents
+    }
+
     init(contents: [any ASTNode], positionStart: Position, positionEnd: Position) {
         self.contents = contents
         self.positionStart = positionStart

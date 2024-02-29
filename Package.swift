@@ -10,7 +10,7 @@ let package = Package(
     ],
     dependencies: [
         // LSP
-        .package(url: "https://github.com/ChimeHQ/LanguageServer", revision: "main"),
+        .package(url: "https://github.com/jayadamsmorgan/LanguageServer", revision: "main"),
         // Logging
         .package(url: "https://github.com/apple/swift-log.git", from: "1.5.4"),
         // Arg parsing

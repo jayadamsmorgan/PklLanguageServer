@@ -11,6 +11,8 @@ struct PklStringLiteral : ASTNode {
 
     var value: String?
 
+    var children: [any ASTNode]? = nil
+
     init(value: String? = nil, positionStart: Position, positionEnd: Position) {
         self.value = value
         self.positionStart = positionStart

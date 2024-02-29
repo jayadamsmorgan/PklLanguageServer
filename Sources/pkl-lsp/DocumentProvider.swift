@@ -27,6 +27,8 @@ public actor DocumentProvider {
     var workspaceFolders: [WorkspaceFolder]
 
     private let treeSitterParser: TreeSitterParser
+    
+    private let renameHandler: RenameHandler
 
     public init(connection: JSONRPCClientConnection, logger: Logger) {
         self.logger = logger
@@ -34,6 +36,7 @@ public actor DocumentProvider {
         self.connection = connection
         self.workspaceFolders = []
         self.treeSitterParser = TreeSitterParser(logger: logger)
+        self.renameHandler = RenameHandler(logger: logger)
     }
 
 
@@ -60,6 +63,7 @@ public actor DocumentProvider {
         //     workspaceDiagnostics: false,
         //     id: "diagnosticIDTest"
         // ))
+        s.renameProvider = .optionA(true)
         return s
     }
 
@@ -105,6 +109,19 @@ public actor DocumentProvider {
         completionItems.append(contentsOf: await getDocumentPropertiesCompletions(doc: document))
         let completionList = CompletionList(isIncomplete: false, items: completionItems)
         return completionList
+    }
+
+    public func handleRenaming(params: RenameParams) async -> WorkspaceEdit? {
+        guard let document = documents[params.textDocument.uri] else {
+            logger.error("LSP Rename: Document \(params.textDocument.uri) is not registered.")
+            return nil
+        }
+        let astTree = treeSitterParser.astParsedTrees[document]
+        guard let module = astTree else {
+            logger.error("LSP Rename: AST for \(params.textDocument.uri) is not available.")
+            return nil
+        }
+        return await renameHandler.rename(document: document, module: module, params: params)
     }
 
     public func workspaceDidChangeWorkspaceFolders(_ params: DidChangeWorkspaceFoldersParams) async {
@@ -203,8 +220,7 @@ public actor DocumentProvider {
         do {
             let newDocument = try document.withAppliedChanges(changes, nextVersion: nextVersion)
             documents[documentUri] = newDocument
-            let tree = treeSitterParser.parseDocumentTreeSitter(oldDocument: document, newDocument: newDocument, changes: changes)
-            // TODO: parse tree with ASTs
+            treeSitterParser.parseDocumentTreeSitter(oldDocument: document, newDocument: newDocument, changes: changes)
         }
         catch {
             logger.error("Error updating document: \(error)")
@@ -220,8 +236,7 @@ public actor DocumentProvider {
 
         let document = Document(textDocument: params.textDocument)
         documents[documentUri] = document
-        let tree = treeSitterParser.parseDocumentTreeSitter(newDocument: document)
-        // TODO: parse tree with ASTs
+        treeSitterParser.parseDocumentTreeSitter(newDocument: document)
     }
 
     public func unregisterDocument(_ params: DidCloseTextDocumentParams) async {

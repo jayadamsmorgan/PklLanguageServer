@@ -12,19 +12,19 @@
     {
       "identity" : "languageserver",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/ChimeHQ/LanguageServer",
+      "location" : "https://github.com/jayadamsmorgan/LanguageServer",
       "state" : {
         "branch" : "main",
-        "revision" : "585b09d9c6f7f81736a023092ee7a5d56cf8ebab"
+        "revision" : "6be5d02ea34bf1eccbf350966a08d72c21e73b0f"
       }
     },
     {
       "identity" : "languageserverprotocol",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/ChimeHQ/LanguageServerProtocol",
+      "location" : "https://github.com/jayadamsmorgan/LanguageServerProtocol",
       "state" : {
-        "revision" : "f5a53e0386b34a0e06333ec9376f5972f7d20c28",
-        "version" : "0.13.0"
+        "branch" : "main",
+        "revision" : "544f1d38e41d39964e59a90b81d2f0c968c3c1d7"
       }
     },
     {
@@ -87,7 +87,7 @@
       "location" : "https://github.com/apple/tree-sitter-pkl",
       "state" : {
         "branch" : "main",
-        "revision" : "385f759bba9b4ee76a78c456e5aff39be3dc225b"
+        "revision" : "b79c8c4d2419e82324d9aca31e9de47ed8304f1f"
       }
     }
   ],

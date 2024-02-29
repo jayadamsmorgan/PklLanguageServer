@@ -23,6 +23,8 @@ struct PklNumberLiteral : ASTNode {
 
     var value: String?
     var type: PklNumberType
+
+    var children: [any ASTNode]? = nil
     
     init(value: String? = nil, type: PklNumberType, positionStart: Position, positionEnd: Position) {
         self.value = value
