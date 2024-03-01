@@ -5,6 +5,7 @@ import Puppy
 import UniSocket
 import pkl_lsp
 
+let pklLSVersion: String = "0.0.1-alpha"
 
 // Allow loglevel as `ArgumentParser.Option`
 extension Logger.Level : ExpressibleByArgument { }
@@ -20,20 +21,24 @@ struct PklLSPServer : AsyncParsableCommand {
 
     static var configuration = CommandConfiguration(commandName: "pkl-lsp-server")
 
-    @Option(help: "Log level")
-    var log: Logger.Level = .debug
+    @Option(name: .shortAndLong, help: "Log level")
+    var log: Logger.Level = .info
 
-    @Option(help: "Log file")
-    var logFile: String = "pkl-lsp-server.log"
+    @Option(name: [.customShort("f"), .long], help: "Log file")
+    var logFile: String?
     
-    @Flag(help: "Stdio transport")
-    var stdio: Bool = false
-
-    @Option(help: "Named pipe transport")
+    @Option(name: .shortAndLong, help: "Named pipe transport")
     var pipe: String?
 
-    @Option(help: "Socket transport")
+    @Option(name: .shortAndLong, help: "Socket transport")
     var socket: String?
+
+    @Flag(name: .shortAndLong, help: "Print language server version")
+    var version: Bool = false
+
+    var stdio: Bool {
+        !(pipe != nil || socket != nil)
+    }
 
     func puppyLevel(_ level: Logger.Level) -> LogLevel {
       switch level {
@@ -48,7 +53,7 @@ struct PklLSPServer : AsyncParsableCommand {
     }
 
     func logHandlerFactory(_ label: String, fileLogger: FileLogger) -> LogHandler {
-        if let _ = ProcessInfo.processInfo.environment["PKL_LSP_DISABLE_LOGGING"] {
+        guard let _ = logFile else {
             return NullLogHandler(label: label)
         }
 
@@ -70,7 +75,7 @@ struct PklLSPServer : AsyncParsableCommand {
     func validate() throws {
         let numTransports = stdio.intValue + (pipe != nil).intValue + (socket != nil).intValue
         guard numTransports == 1 else {
-            throw ValidationError("Exactly one transport method must be defined (stdio, pipe, socket)")
+            throw ValidationError("Exactly one transport method must be defined (stdio (default), pipe (--pipe), socket (--socket))")
         }
     }
 
@@ -80,24 +85,34 @@ struct PklLSPServer : AsyncParsableCommand {
     }
 
     func run() async throws {
-        let logFileURL = URL(fileURLWithPath: logFile)
-        let fileLogger = try FileLogger(loggerLabel, logLevel: puppyLevel(log), fileURL: logFileURL)
-        var logger = Logger(label: fileLogger.label) { logHandlerFactory($0, fileLogger: fileLogger)}
-        logger.logLevel = log
+        if version {
+            print("Pkl Language Server version \(pklLSVersion)")
+            return
+        }
+        var logger: Logger?
+        if let logFile = logFile {
+            let logFileURL = URL(fileURLWithPath: logFile)
+            let fileLogger = try FileLogger(loggerLabel, logLevel: puppyLevel(log), fileURL: logFileURL)
+            logger = Logger(label: fileLogger.label) { logHandlerFactory($0, fileLogger: fileLogger)}
+            logger?.logLevel = log
+        } else {
+            logger = Logger(label: loggerLabel)
+            logger?.logLevel = log
+        }
 
         if stdio {
-            await run(logger: logger, channel: DataChannel.stdioPipe())
+            await run(logger: logger!, channel: DataChannel.stdioPipe())
         }
 
         if let socket = socket {
             let socket = try UniSocket(type: .tcp, peer: socket, timeout: (connect: 5, read: nil, write: 5))
             try socket.attach()
-            await run(logger: logger, channel: DataChannel(socket: socket))
+            await run(logger: logger!, channel: DataChannel(socket: socket))
         }
         else if let pipe = pipe {
             let socket = try UniSocket(type: .local, peer: pipe, timeout: (connect: 5, read: nil, write: 5))
             try socket.attach()
-            await run(logger: logger, channel: DataChannel(socket: socket))
+            await run(logger: logger!, channel: DataChannel(socket: socket))
         }
     }
 }
