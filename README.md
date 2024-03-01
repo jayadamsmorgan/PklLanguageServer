@@ -18,7 +18,7 @@ I would really love to make it a community driven project, so don't hesitate to 
 
 The [Discord Server][discord] is there for any question, help, advice or just casual chatting.
 
-Also check out [Unofficial Pkl Community Discord Server](https://discord.gg/3PufS9Jn), lots of great people there discussing Pkl. They also have a channel about LSPs!
+Also check out [Unofficial Pkl Community Discord Server][community discord], lots of great people there discussing Pkl. They also have a channel about LSPs!
 
 And don't forget to check [Code of Conduct](CODE_OF_CONDUCT.md).
 
@@ -46,5 +46,18 @@ Check help for more options:
 pkl-lsp-server -h
 ```
 
+## Honorable mentions
+
+Huge shoutout to Mattie, creator of [LanguageServerProtocol][lsplib] and [SwiftTreeSitter][tslib] libraries.
+
+This project could not have been possible without his great work and huge help. Check out his awesome [blog][matts blog].
+
+
+
 [discord]: https://discord.gg/GTe5JvcT
+[community discord]: https://discord.gg/3PufS9Jn
 [discord badge]: https://img.shields.io/badge/Discord-purple?logo=Discord&label=Chat&color=%235A64EC
+
+[lsplib]: https://github.com/ChimeHQ/LanguageServerProtocol
+[tslib]: https://github.com/ChimeHQ/SwiftTreeSitter
+[matts blog]: https://www.massicotte.org/
