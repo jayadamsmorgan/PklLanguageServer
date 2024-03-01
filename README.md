@@ -38,7 +38,12 @@ sudo cp .build/release/pkl-lsp-server /usr/bin/.
 
 Now you can run the server with:
 ```
-pkl-lsp-server --stdio
+pkl-lsp-server
+```
+
+Check help for more options:
+```
+pkl-lsp-server -h
 ```
 
 [discord]: https://discord.gg/GTe5JvcT
