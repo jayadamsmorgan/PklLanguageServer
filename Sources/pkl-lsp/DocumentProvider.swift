@@ -5,7 +5,6 @@ import LanguageServer
 import Logging
 
 
-
 public protocol TextDocumentProtocol {
     var uri: DocumentUri { get }
 }
@@ -83,7 +82,7 @@ public actor DocumentProvider {
 
         logger.info("Initialize in working directory: \(FileManager.default.currentDirectoryPath), with rootUri: \(rootUri ?? "nil"), workspace folders: \(workspaceFolders)")
 
-        let serverInfo = ServerInfo(name: "pkl", version: "0.0.1")
+        let serverInfo = ServerInfo(name: "pkl", version: PklServer.pklLSVersion)
         return .success(InitializationResponse(capabilities: getServerCapabilities(), serverInfo: serverInfo))
     }
 

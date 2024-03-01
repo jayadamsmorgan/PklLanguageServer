@@ -15,6 +15,8 @@ public struct PklErrorHandler: ErrorHandler {
 
 public actor PklServer {
 
+    public static let pklLSVersion: String = "0.0.1-alpha"
+
     let connection: JSONRPCClientConnection
     private let logger: Logger
     private let dispatcher: EventDispatcher

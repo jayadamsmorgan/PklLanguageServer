@@ -5,7 +5,6 @@ import Puppy
 import UniSocket
 import pkl_lsp
 
-let pklLSVersion: String = "0.0.1-alpha"
 
 // Allow loglevel as `ArgumentParser.Option`
 extension Logger.Level : ExpressibleByArgument { }
@@ -86,7 +85,7 @@ struct PklLSPServer : AsyncParsableCommand {
 
     func run() async throws {
         if version {
-            print("Pkl Language Server version \(pklLSVersion)")
+            print("Pkl Language Server version \(PklServer.pklLSVersion)")
             return
         }
         var logger: Logger?
