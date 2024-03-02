@@ -2,6 +2,7 @@ import Foundation
 import LanguageServerProtocol
 import Logging
 
+
 public class RenameHandler {
 
     public let logger: Logger
@@ -10,20 +11,8 @@ public class RenameHandler {
         self.logger = logger
     }
 
-    private func getASTIdentifiers(node: any ASTNode, identifiers: inout [PklIdentifier]) {
-        if let children = node.children {
-            for child in children {
-                if let identifier = child as? PklIdentifier {
-                    identifiers.append(identifier)
-                }
-                getASTIdentifiers(node: child, identifiers: &identifiers)
-            }
-        }
-    }
-
-    public func rename(document: Document, module: any ASTNode, params: RenameParams) async -> WorkspaceEdit? {
-        var identifiers: [PklIdentifier] = []
-        getASTIdentifiers(node: module, identifiers: &identifiers)
+    public func provide(document: Document, module: any ASTNode, params: RenameParams) async -> RenameResponse {
+        var identifiers: [PklIdentifier] = ASTHelper.getASTIdentifiers(node: module)
         logger.debug("LSP Rename: Found \(identifiers) identifiers in \(params.textDocument.uri).")
         let positionIdentifier: PklIdentifier? = identifiers.first(where: {
             $0.positionStart.line == params.position.line &&
@@ -43,6 +32,8 @@ public class RenameHandler {
             let edit = TextEdit(range: LSPRange(start: positionStart, end: positionEnd), newText: params.newName)
             changes.append(edit)
         }
-        return WorkspaceEdit(changes: [params.textDocument.uri: changes])
+        return WorkspaceEdit(changes: [params.textDocument.uri : changes])
     }
+
 }
+

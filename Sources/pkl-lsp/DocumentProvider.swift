@@ -28,6 +28,10 @@ public actor DocumentProvider {
     private let treeSitterParser: TreeSitterParser
     
     private let renameHandler: RenameHandler
+    private let documentSymbolsHandler: DocumentSymbolsHandler
+    private let completionHandler: CompletionHandler
+    private let semanticTokensHandler: SemanticTokensHandler
+    private let definitionHandler: DefinitionHandler
 
     public init(connection: JSONRPCClientConnection, logger: Logger) {
         self.logger = logger
@@ -35,7 +39,12 @@ public actor DocumentProvider {
         self.connection = connection
         self.workspaceFolders = []
         self.treeSitterParser = TreeSitterParser(logger: logger)
+
         self.renameHandler = RenameHandler(logger: logger)
+        self.documentSymbolsHandler = DocumentSymbolsHandler(logger: logger)
+        self.completionHandler = CompletionHandler(logger: logger)
+        self.semanticTokensHandler = SemanticTokensHandler(logger: logger)
+        self.definitionHandler = DefinitionHandler(logger: logger)
     }
 
 
@@ -82,35 +91,24 @@ public actor DocumentProvider {
 
         logger.info("Initialize in working directory: \(FileManager.default.currentDirectoryPath), with rootUri: \(rootUri ?? "nil"), workspace folders: \(workspaceFolders)")
 
-        let serverInfo = ServerInfo(name: "pkl", version: PklServer.pklLSVersion)
+        let serverInfo = ServerInfo(name: "pkl-lsp-server", version: PklServer.pklLSVersion)
         return .success(InitializationResponse(capabilities: getServerCapabilities(), serverInfo: serverInfo))
     }
 
-    typealias CompletionItems = [CompletionItem]
-
-    private func getDocumentFunctionCompletions(doc: Document) async -> CompletionItems {
-        let completionItems: CompletionItems = []
-        return completionItems
-    }
-
-    private func getDocumentPropertiesCompletions(doc: Document) async -> CompletionItems {
-        let completionItems: CompletionItems = []
-        return completionItems
-    }
-
-    public func complete(completionParams: CompletionParams) async -> CompletionList? {
-        guard let document = documents[completionParams.textDocument.uri] else {
-            logger.error("LSP Completion: Document \(completionParams.textDocument.uri) is not registered.")
+    public func provideCompletion(params: CompletionParams) async -> CompletionResponse {
+        guard let document = documents[params.textDocument.uri] else {
+            logger.error("LSP Completion: Document \(params.textDocument.uri) is not registered.")
             return nil
         }
-        var completionItems = PklKeywords.allCases.map { CompletionItem(label: $0.rawValue, kind: .keyword) }
-        completionItems.append(contentsOf: await getDocumentFunctionCompletions(doc: document))
-        completionItems.append(contentsOf: await getDocumentPropertiesCompletions(doc: document))
-        let completionList = CompletionList(isIncomplete: false, items: completionItems)
-        return completionList
+        let astTree = treeSitterParser.astParsedTrees[document]
+        guard let module = astTree else {
+            logger.error("LSP Completion: Document \(params.textDocument.uri) is not available.")
+            return nil
+        }
+        return await completionHandler.provide(document: document, module: module, params: params)
     }
 
-    public func handleRenaming(params: RenameParams) async -> WorkspaceEdit? {
+    public func provideRenaming(params: RenameParams) async -> RenameResponse {
         guard let document = documents[params.textDocument.uri] else {
             logger.error("LSP Rename: Document \(params.textDocument.uri) is not registered.")
             return nil
@@ -120,7 +118,46 @@ public actor DocumentProvider {
             logger.error("LSP Rename: AST for \(params.textDocument.uri) is not available.")
             return nil
         }
-        return await renameHandler.rename(document: document, module: module, params: params)
+        return await renameHandler.provide(document: document, module: module, params: params)
+    }
+
+    public func provideDocumentSymbols(params: DocumentSymbolParams) async -> DocumentSymbolResponse {
+        guard let document = documents[params.textDocument.uri] else {
+            logger.error("LSP Document Symbols: Document \(params.textDocument.uri) is not registered.")
+            return nil
+        }
+        let astTree = treeSitterParser.astParsedTrees[document]
+        guard let module = astTree else {
+            logger.error("LSP Document Symbols: AST for \(params.textDocument.uri) is not available.")
+            return nil
+        }
+        return await documentSymbolsHandler.provide(document: document, module: module, params: params)
+    }
+
+    public func provideSemanticTokens(params: SemanticTokensParams) async -> SemanticTokensResponse {
+        guard let document = documents[params.textDocument.uri] else {
+            logger.error("LSP Semantic Tokens: Document \(params.textDocument.uri) is not registered.")
+            return nil
+        }
+        let astTree = treeSitterParser.astParsedTrees[document]
+        guard let module = astTree else {
+            logger.error("LSP Semantic Tokens: AST for \(params.textDocument.uri) is not available.")
+            return nil
+        }
+        return await semanticTokensHandler.provide(document: document, module: module, params: params)
+    }
+
+    public func provideDefinition(params: TextDocumentPositionParams) async -> DefinitionResponse {
+        guard let document = documents[params.textDocument.uri] else {
+            logger.error("LSP Definition: Document \(params.textDocument.uri) is not registered.")
+            return nil
+        }
+        let astTree = treeSitterParser.astParsedTrees[document]
+        guard let module = astTree else {
+            logger.error("LSP Definition: AST for \(params.textDocument.uri) is not available.")
+            return nil
+        }
+        return await definitionHandler.provide(document: document, module: module, params: params)
     }
 
     public func workspaceDidChangeWorkspaceFolders(_ params: DidChangeWorkspaceFoldersParams) async {
@@ -136,8 +173,7 @@ public actor DocumentProvider {
             let tail = uri[start...]
             let relPath = tail.trimmingPrefix("/")
             return String(relPath)
-        }
-            else {
+        } else {
             return nil
         }
     }
