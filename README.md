@@ -9,11 +9,13 @@ Language server for Apple Pkl language written in Swift.
 </div>
 
 ## Overview
+
 This language server is still in a **very early development stage**.
 
 The goal of this project is to make a fully functional Language Server for Pkl language and have lots of fun.
 
 ## Contributing
+
 I would really love to make it a community driven project, so don't hesitate to contribute or help in any way possible.
 
 The [Discord Server][discord] is there for any question, help, advice or just casual chatting.
@@ -22,9 +24,27 @@ Also check out [Unofficial Pkl Community Discord Server][community discord], lot
 
 And don't forget to check [Code of Conduct](CODE_OF_CONDUCT.md).
 
+## Feature Status
+
+| Feature               | Status |
+| --------------------- | :----: |
+| Completion            |  WIP   |
+| Definition            |  WIP   |
+| Diagnostics           |  TBA   |
+| Document Symbols      |   🟠   |
+| Renaming              |   🟠   |
+| Semantic Highlighting |  WIP   |
+
+- **🟢** -- Feature is working
+- **🟠** -- Feature is working, however due to early development stage may be incomplete or not working as intended
+- **🔴** -- Not planned
+- **TBA** -- Work on the feature is not yet in progress, but it's being looked into
+- **WIP** -- Development work on the feature is actively progressing
+
 ## Installing and running from source:
 
 Clone repository and build the project:
+
 ```
 git clone https://github.com/jayadamsmorgan/PklLanguageServer
 cd PklLanguageServer
@@ -32,16 +52,19 @@ swift build -c release
 ```
 
 Install (optional):
+
 ```
 sudo cp .build/release/pkl-lsp-server /usr/bin/.
 ```
 
 Now you can run the server with:
+
 ```
 pkl-lsp-server
 ```
 
 Check help for more options:
+
 ```
 pkl-lsp-server -h
 ```
@@ -52,12 +75,9 @@ Huge shoutout to Mattie, creator of [LanguageServerProtocol][lsplib] and [SwiftT
 
 This project could not have been possible without his great work and huge help. Check out his awesome [blog][matts blog].
 
-
-
 [discord]: https://discord.gg/GTe5JvcT
 [community discord]: https://discord.gg/3PufS9Jn
 [discord badge]: https://img.shields.io/badge/Discord-purple?logo=Discord&label=Chat&color=%235A64EC
-
 [lsplib]: https://github.com/ChimeHQ/LanguageServerProtocol
 [tslib]: https://github.com/ChimeHQ/SwiftTreeSitter
 [matts blog]: https://www.massicotte.org/
