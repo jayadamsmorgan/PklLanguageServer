@@ -11,8 +11,75 @@ public class CompletionHandler {
         self.logger = logger
     }
 
-    public func provide(document: Document, module: any ASTNode, params: CompletionParams) async -> CompletionResponse {
+    private func iterate(node: any ASTNode) -> [CompletionItem] {
+        var completions: [CompletionItem] = []
+        if let object = node as? PklClassDeclaration {
+            completions.append(CompletionItem(
+                label: object.classIdentifier?.value ?? "",
+                kind: .class,
+                detail: "Pickle object"
+            ))
+        }
+        if let function = node as? PklFunctionDeclaration {
+            completions.append(CompletionItem(
+                label: function.body?.identifier?.value ?? "",
+                kind: .function,
+                detail: "Pickle function"
+            ))
+        }
+        return completions
+    }
+
+    private func getPositionContext(module: any ASTNode, position: Position) -> (any ASTNode)? {
+        for node in module.children ?? [] {
+            if node.positionStart.line <= position.line
+                && node.positionEnd.line >= position.line
+                && node.positionStart.character <= position.character
+                && node.positionEnd.character >= position.character {
+                if let context = getPositionContext(module: node, position: position) {
+                    return context
+                }
+                return node
+            }
+        }
         return nil
+    }
+
+    public func provide(document: Document, module: any ASTNode, params: CompletionParams) async -> CompletionResponse {
+        let positionContext = getPositionContext(module: module, position: params.position)
+        if positionContext != nil && params.context?.triggerCharacter == "." {
+            let completions = iterate(node: positionContext!)
+            return CompletionResponse(.optionB(CompletionList(isIncomplete: false, items: completions)))
+        }
+        let keywordCompletions: [CompletionItem] = PklKeywords.allCases.map { keyword in
+            CompletionItem(
+                label: keyword.rawValue,
+                kind: .keyword,
+                detail: "Pickle keyword"
+            )
+        }
+        let objectCompletions: [CompletionItem] = module.children?.compactMap { node in
+            if let object = node as? PklClassDeclaration {
+                return CompletionItem(
+                    label: object.classIdentifier?.value ?? "",
+                    kind: .class,
+                    detail: "Pickle object"
+                )
+            }
+            return nil
+        } ?? []
+        let functionCompletions: [CompletionItem] = module.children?.compactMap { node in
+            if let function = node as? PklFunctionDeclaration {
+                return CompletionItem(
+                    label: function.body?.identifier?.value ?? "",
+                    kind: .function,
+                    detail: "Pickle function"
+                )
+            }
+            return nil
+        } ?? []
+        let completions = keywordCompletions + objectCompletions + functionCompletions
+        return CompletionResponse(.optionB(CompletionList(isIncomplete: false, items: completions)))
     }
 }
 
