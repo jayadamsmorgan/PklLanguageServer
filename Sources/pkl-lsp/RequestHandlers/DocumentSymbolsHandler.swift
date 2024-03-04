@@ -2,9 +2,7 @@ import Foundation
 import LanguageServerProtocol
 import Logging
 
-
 public class DocumentSymbolsHandler {
-
     public let logger: Logger
 
     public init(logger: Logger) {
@@ -24,10 +22,12 @@ public class DocumentSymbolsHandler {
                     kind: .class,
                     range: LSPRange(
                         start: Position(line: classNode.positionStart.line, character: classNode.positionStart.character / 2),
-                        end: Position(line: classNode.positionEnd.line, character: classNode.positionEnd.character / 2)),
+                        end: Position(line: classNode.positionEnd.line, character: classNode.positionEnd.character / 2)
+                    ),
                     selectionRange: LSPRange(
                         start: Position(line: classNode.positionStart.line, character: classNode.positionStart.character / 2),
-                        end: Position(line: classNode.positionEnd.line, character: classNode.positionEnd.character / 2)),
+                        end: Position(line: classNode.positionEnd.line, character: classNode.positionEnd.character / 2)
+                    ),
                     children: getSymbols(node: classNode)
                 )
                 symbols.append(classSymbol)
@@ -39,10 +39,12 @@ public class DocumentSymbolsHandler {
                     kind: .function,
                     range: LSPRange(
                         start: Position(line: functionNode.positionStart.line, character: functionNode.positionStart.character / 2),
-                        end: Position(line: functionNode.positionEnd.line, character: functionNode.positionEnd.character / 2)),
+                        end: Position(line: functionNode.positionEnd.line, character: functionNode.positionEnd.character / 2)
+                    ),
                     selectionRange: LSPRange(
                         start: Position(line: functionNode.positionStart.line, character: functionNode.positionStart.character / 2),
-                        end: Position(line: functionNode.positionEnd.line, character: functionNode.positionEnd.character / 2)),
+                        end: Position(line: functionNode.positionEnd.line, character: functionNode.positionEnd.character / 2)
+                    ),
                     children: getSymbols(node: functionNode)
                 )
                 symbols.append(functionSymbol)
@@ -54,10 +56,12 @@ public class DocumentSymbolsHandler {
                     kind: .module,
                     range: LSPRange(
                         start: Position(line: objectNode.positionStart.line, character: objectNode.positionStart.character / 2),
-                        end: Position(line: objectNode.positionEnd.line, character: objectNode.positionEnd.character / 2)),
+                        end: Position(line: objectNode.positionEnd.line, character: objectNode.positionEnd.character / 2)
+                    ),
                     selectionRange: LSPRange(
                         start: Position(line: objectNode.positionStart.line, character: objectNode.positionStart.character / 2),
-                        end: Position(line: objectNode.positionEnd.line, character: objectNode.positionEnd.character / 2)),
+                        end: Position(line: objectNode.positionEnd.line, character: objectNode.positionEnd.character / 2)
+                    ),
                     children: getSymbols(node: objectNode)
                 )
                 symbols.append(objectSymbol)
@@ -69,10 +73,12 @@ public class DocumentSymbolsHandler {
                     kind: .property,
                     range: LSPRange(
                         start: Position(line: propertyNode.positionStart.line, character: propertyNode.positionStart.character / 2),
-                        end: Position(line: propertyNode.positionEnd.line, character: propertyNode.positionEnd.character / 2)),
+                        end: Position(line: propertyNode.positionEnd.line, character: propertyNode.positionEnd.character / 2)
+                    ),
                     selectionRange: LSPRange(
                         start: Position(line: propertyNode.positionStart.line, character: propertyNode.positionStart.character / 2),
-                        end: Position(line: propertyNode.positionEnd.line, character: propertyNode.positionEnd.character / 2)),
+                        end: Position(line: propertyNode.positionEnd.line, character: propertyNode.positionEnd.character / 2)
+                    ),
                     children: getSymbols(node: propertyNode)
                 )
                 symbols.append(propertySymbol)
@@ -84,10 +90,12 @@ public class DocumentSymbolsHandler {
                     kind: .property,
                     range: LSPRange(
                         start: Position(line: propertyNode.positionStart.line, character: propertyNode.positionStart.character / 2),
-                        end: Position(line: propertyNode.positionEnd.line, character: propertyNode.positionEnd.character / 2)),
+                        end: Position(line: propertyNode.positionEnd.line, character: propertyNode.positionEnd.character / 2)
+                    ),
                     selectionRange: LSPRange(
                         start: Position(line: propertyNode.positionStart.line, character: propertyNode.positionStart.character / 2),
-                        end: Position(line: propertyNode.positionEnd.line, character: propertyNode.positionEnd.character / 2)),
+                        end: Position(line: propertyNode.positionEnd.line, character: propertyNode.positionEnd.character / 2)
+                    ),
                     children: getSymbols(node: propertyNode)
                 )
                 symbols.append(propertySymbol)
@@ -96,11 +104,9 @@ public class DocumentSymbolsHandler {
         return symbols
     }
 
-    public func provide(document: Document, module: any ASTNode, params: DocumentSymbolParams) async -> DocumentSymbolResponse {
+    public func provide(document _: Document, module: any ASTNode, params: DocumentSymbolParams) async -> DocumentSymbolResponse {
         let symbols: [DocumentSymbol] = getSymbols(node: module)
         logger.debug("LSP DocumentSymbols: Found \(symbols.count) symbols in \(params.textDocument.uri).")
         return DocumentSymbolResponse(.optionA(symbols))
     }
-
 }
-

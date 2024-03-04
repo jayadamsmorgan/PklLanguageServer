@@ -1,7 +1,6 @@
 import Foundation
 import LanguageServerProtocol
 
-
 enum PklNumberType {
     case int
     case uint
@@ -14,9 +13,8 @@ enum PklNumberType {
     case uint32
 }
 
-struct PklNumberLiteral : ASTNode {
-
-    let uniqueID: UUID = UUID()
+struct PklNumberLiteral: ASTNode {
+    let uniqueID: UUID = .init()
 
     var positionStart: Position
     var positionEnd: Position
@@ -25,7 +23,7 @@ struct PklNumberLiteral : ASTNode {
     var type: PklNumberType
 
     var children: [any ASTNode]? = nil
-    
+
     init(value: String? = nil, type: PklNumberType, positionStart: Position, positionEnd: Position) {
         self.value = value
         self.type = type
@@ -40,4 +38,3 @@ struct PklNumberLiteral : ASTNode {
         return [ASTDiagnosticError("Provide number value", .error, positionStart, positionEnd)]
     }
 }
-

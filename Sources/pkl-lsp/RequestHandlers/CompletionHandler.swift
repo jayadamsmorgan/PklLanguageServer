@@ -2,9 +2,7 @@ import Foundation
 import LanguageServerProtocol
 import Logging
 
-
 public class CompletionHandler {
-
     public let logger: Logger
 
     public init(logger: Logger) {
@@ -30,24 +28,9 @@ public class CompletionHandler {
         return completions
     }
 
-    private func getPositionContext(module: any ASTNode, position: Position) -> (any ASTNode)? {
-        for node in module.children ?? [] {
-            if node.positionStart.line <= position.line
-                && node.positionEnd.line >= position.line
-                && node.positionStart.character <= position.character
-                && node.positionEnd.character >= position.character {
-                if let context = getPositionContext(module: node, position: position) {
-                    return context
-                }
-                return node
-            }
-        }
-        return nil
-    }
-
-    public func provide(document: Document, module: any ASTNode, params: CompletionParams) async -> CompletionResponse {
-        let positionContext = getPositionContext(module: module, position: params.position)
-        if positionContext != nil && params.context?.triggerCharacter == "." {
+    public func provide(document _: Document, module: any ASTNode, params: CompletionParams) async -> CompletionResponse {
+        let positionContext = ASTHelper.getPositionContext(module: module, position: params.position)
+        if positionContext != nil, params.context?.triggerCharacter == "." {
             let completions = iterate(node: positionContext!)
             return CompletionResponse(.optionB(CompletionList(isIncomplete: false, items: completions)))
         }
@@ -83,7 +66,7 @@ public class CompletionHandler {
     }
 }
 
-enum PklKeywords : String, CaseIterable {
+enum PklKeywords: String, CaseIterable {
     case abstract
     case amends
     case `as`
@@ -117,4 +100,3 @@ enum PklKeywords : String, CaseIterable {
     case `typealias`
     case when
 }
-

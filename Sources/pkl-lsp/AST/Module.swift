@@ -1,10 +1,8 @@
 import Foundation
 import LanguageServerProtocol
 
-
-struct PklModule : ASTNode {
-
-    var uniqueID: UUID = UUID()
+struct PklModule: ASTNode {
+    var uniqueID: UUID = .init()
 
     var positionEnd: Position
     var positionStart: Position
@@ -12,7 +10,7 @@ struct PklModule : ASTNode {
     var contents: [any ASTNode]
 
     var children: [any ASTNode]? {
-        return contents
+        contents
     }
 
     init(contents: [any ASTNode], positionStart: Position, positionEnd: Position) {
@@ -30,4 +28,3 @@ struct PklModule : ASTNode {
         return nil
     }
 }
-

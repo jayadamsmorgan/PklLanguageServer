@@ -1,13 +1,12 @@
-import Foundation
 import ArgumentParser
+import Foundation
 import JSONRPC
+import pkl_lsp
 import Puppy
 import UniSocket
-import pkl_lsp
-
 
 // Allow loglevel as `ArgumentParser.Option`
-extension Logger.Level : ExpressibleByArgument { }
+extension Logger.Level: ExpressibleByArgument {}
 
 extension Bool {
     var intValue: Int {
@@ -16,8 +15,7 @@ extension Bool {
 }
 
 @main
-struct PklLSPServer : AsyncParsableCommand {
-
+struct PklLSPServer: AsyncParsableCommand {
     static var configuration = CommandConfiguration(commandName: "pkl-lsp-server")
 
     @Option(name: .shortAndLong, help: "Log level")
@@ -25,7 +23,7 @@ struct PklLSPServer : AsyncParsableCommand {
 
     @Option(name: [.customShort("f"), .long], help: "Log file")
     var logFile: String?
-    
+
     @Option(name: .shortAndLong, help: "Named pipe transport")
     var pipe: String?
 
@@ -40,7 +38,7 @@ struct PklLSPServer : AsyncParsableCommand {
     }
 
     func puppyLevel(_ level: Logger.Level) -> LogLevel {
-      switch level {
+        switch level {
         case .trace: .trace
         case .debug: .debug
         case .info: .info
@@ -48,7 +46,7 @@ struct PklLSPServer : AsyncParsableCommand {
         case .warning: .warning
         case .error: .error
         case .critical: .critical
-      }
+        }
     }
 
     func logHandlerFactory(_ label: String, fileLogger: FileLogger) -> LogHandler {
@@ -67,7 +65,7 @@ struct PklLSPServer : AsyncParsableCommand {
 
         return MultiplexLogHandler([
             puppyHandler,
-            StreamLogHandler.standardOutput(label: label)
+            StreamLogHandler.standardOutput(label: label),
         ])
     }
 
@@ -89,10 +87,10 @@ struct PklLSPServer : AsyncParsableCommand {
             return
         }
         var logger: Logger?
-        if let logFile = logFile {
+        if let logFile {
             let logFileURL = URL(fileURLWithPath: logFile)
             let fileLogger = try FileLogger(loggerLabel, logLevel: puppyLevel(log), fileURL: logFileURL)
-            logger = Logger(label: fileLogger.label) { logHandlerFactory($0, fileLogger: fileLogger)}
+            logger = Logger(label: fileLogger.label) { logHandlerFactory($0, fileLogger: fileLogger) }
             logger?.logLevel = log
         } else {
             logger = Logger(label: loggerLabel)
@@ -103,16 +101,14 @@ struct PklLSPServer : AsyncParsableCommand {
             await run(logger: logger!, channel: DataChannel.stdioPipe())
         }
 
-        if let socket = socket {
+        if let socket {
             let socket = try UniSocket(type: .tcp, peer: socket, timeout: (connect: 5, read: nil, write: 5))
             try socket.attach()
             await run(logger: logger!, channel: DataChannel(socket: socket))
-        }
-        else if let pipe = pipe {
+        } else if let pipe {
             let socket = try UniSocket(type: .local, peer: pipe, timeout: (connect: 5, read: nil, write: 5))
             try socket.attach()
             await run(logger: logger!, channel: DataChannel(socket: socket))
         }
     }
 }
-

@@ -1,32 +1,31 @@
-import JSONRPC
 import Foundation
-import LanguageServerProtocol
+import JSONRPC
 import LanguageServer
+import LanguageServerProtocol
 import Logging
-
 
 public protocol TextDocumentProtocol {
     var uri: DocumentUri { get }
 }
 
-extension TextDocumentIdentifier : TextDocumentProtocol {}
-extension TextDocumentItem : TextDocumentProtocol {}
-extension VersionedTextDocumentIdentifier : TextDocumentProtocol {}
+extension TextDocumentIdentifier: TextDocumentProtocol {}
+extension TextDocumentItem: TextDocumentProtocol {}
+extension VersionedTextDocumentIdentifier: TextDocumentProtocol {}
 
-public enum GetDocumentContextError : Error {
+public enum GetDocumentContextError: Error {
     case invalidUri(DocumentUri)
     case documentNotOpened(DocumentUri)
 }
 
 public actor DocumentProvider {
-    private var documents: [DocumentUri:Document]
+    private var documents: [DocumentUri: Document]
     public let logger: Logger
     let connection: JSONRPCClientConnection
     var rootUri: String?
     var workspaceFolders: [WorkspaceFolder]
 
     private let treeSitterParser: TreeSitterParser
-    
+
     private let renameHandler: RenameHandler
     private let documentSymbolsHandler: DocumentSymbolsHandler
     private let completionHandler: CompletionHandler
@@ -37,27 +36,27 @@ public actor DocumentProvider {
         self.logger = logger
         documents = [:]
         self.connection = connection
-        self.workspaceFolders = []
-        self.treeSitterParser = TreeSitterParser(logger: logger)
+        workspaceFolders = []
+        treeSitterParser = TreeSitterParser(logger: logger)
 
-        self.renameHandler = RenameHandler(logger: logger)
-        self.documentSymbolsHandler = DocumentSymbolsHandler(logger: logger)
-        self.completionHandler = CompletionHandler(logger: logger)
-        self.semanticTokensHandler = SemanticTokensHandler(logger: logger)
-        self.definitionHandler = DefinitionHandler(logger: logger)
+        renameHandler = RenameHandler(logger: logger)
+        documentSymbolsHandler = DocumentSymbolsHandler(logger: logger)
+        completionHandler = CompletionHandler(logger: logger)
+        semanticTokensHandler = SemanticTokensHandler(logger: logger)
+        definitionHandler = DefinitionHandler(logger: logger)
     }
-
 
     private func getServerCapabilities() -> ServerCapabilities {
         var s = ServerCapabilities()
         let documentSelector = DocumentFilter(pattern: "**/*.pkl")
-        let tokenLegend = SemanticTokensLegend(tokenTypes: TokenType.allCases.map { $0.description }, tokenModifiers: ["private", "public"])
+        let tokenLegend = SemanticTokensLegend(tokenTypes: TokenType.allCases.map(\.description), tokenModifiers: ["private", "public"])
         s.completionProvider = .init(
             workDoneProgress: false,
             triggerCharacters: ["."],
             allCommitCharacters: [],
             resolveProvider: false,
-            completionItem: CompletionOptions.CompletionItem(labelDetailsSupport: true))
+            completionItem: CompletionOptions.CompletionItem(labelDetailsSupport: true)
+        )
         s.textDocumentSync = .optionA(TextDocumentSyncOptions(openClose: false, change: TextDocumentSyncKind.full, willSave: false, willSaveWaitUntil: false, save: nil))
         s.textDocumentSync = .optionB(TextDocumentSyncKind.full)
         s.definitionProvider = .optionA(true)
@@ -75,18 +74,15 @@ public actor DocumentProvider {
         return s
     }
 
-
     public func initialize(_ params: InitializeParams) async -> Result<InitializationResponse, AnyJSONRPCResponseError> {
-
         if let workspaceFolders = params.workspaceFolders {
             self.workspaceFolders = workspaceFolders
         }
 
         if let rootUri = params.rootUri {
             self.rootUri = rootUri
-        }
-            else if let rootPath = params.rootPath {
-            self.rootUri = rootPath
+        } else if let rootPath = params.rootPath {
+            rootUri = rootPath
         }
 
         logger.info("Initialize in working directory: \(FileManager.default.currentDirectoryPath), with rootUri: \(rootUri ?? "nil"), workspace folders: \(workspaceFolders)")
@@ -183,10 +179,9 @@ public actor DocumentProvider {
         let relativePath: String
     }
 
-
     func getWorkspaceFile(_ uri: DocumentUri) -> WorkspaceFile? {
-        var wsRoots = workspaceFolders.map { $0.uri }
-        if let rootUri = rootUri {
+        var wsRoots = workspaceFolders.map(\.uri)
+        if let rootUri {
             wsRoots.append(rootUri)
         }
 
@@ -205,7 +200,7 @@ public actor DocumentProvider {
     }
 
     func uriAsFilepath(_ uri: DocumentUri) -> String? {
-        guard let url = URL.init(string: uri) else {
+        guard let url = URL(string: uri) else {
             return nil
         }
 
@@ -216,7 +211,6 @@ public actor DocumentProvider {
     // > Over the wire, it will still be transferred as a string, but this guarantees that the contents of that string can be parsed as a valid URI.
     public static func validateDocumentUri(_ uri: DocumentUri) -> DocumentUri? {
         if let url = URL(string: uri) {
-
             // Make sure the URL is a fully qualified path with scheme
             if url.scheme != nil {
                 return uri
@@ -228,7 +222,6 @@ public actor DocumentProvider {
 
     public static func validateDocumentUrl(_ uri: DocumentUri) -> URL? {
         if let url = URL(string: uri) {
-
             // Make sure the URL is a fully qualified path with scheme
             if url.scheme != nil {
                 return url
@@ -256,8 +249,7 @@ public actor DocumentProvider {
             let newDocument = try document.withAppliedChanges(changes, nextVersion: nextVersion)
             documents[documentUri] = newDocument
             treeSitterParser.parseDocumentTreeSitter(oldDocument: document, newDocument: newDocument, changes: changes)
-        }
-        catch {
+        } catch {
             logger.error("Error updating document: \(error)")
         }
     }
@@ -283,6 +275,4 @@ public actor DocumentProvider {
 
         documents[documentUri] = nil
     }
-
 }
-

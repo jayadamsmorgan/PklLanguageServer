@@ -1,9 +1,8 @@
 import Foundation
 import LanguageServerProtocol
 
-
-struct PklFunctionParameter : ASTNode {
-    var uniqueID: UUID = UUID()
+struct PklFunctionParameter: ASTNode {
+    var uniqueID: UUID = .init()
 
     var positionStart: Position
     var positionEnd: Position
@@ -44,13 +43,12 @@ struct PklFunctionParameter : ASTNode {
             let error = ASTDiagnosticError("Missing identifier", .error, positionStart, positionEnd)
             errors.append(error)
         }
-        return errors.count > 0 ? errors : nil 
+        return errors.count > 0 ? errors : nil
     }
 }
 
-struct PklFunctionParameterList : ASTNode {
-
-    var uniqueID: UUID = UUID()
+struct PklFunctionParameterList: ASTNode {
+    var uniqueID: UUID = .init()
 
     var positionStart: Position
     var positionEnd: Position
@@ -88,7 +86,7 @@ struct PklFunctionParameterList : ASTNode {
                 }
             }
         }
-        if parameters != nil && commasAmount != parameters!.count - 1 {
+        if parameters != nil, commasAmount != parameters!.count - 1 {
             let error = ASTDiagnosticError("Provide comma(s) between parameters", .error, positionStart, positionEnd)
             errors.append(error)
         }
@@ -104,9 +102,8 @@ struct PklFunctionParameterList : ASTNode {
     }
 }
 
-struct PklFunctionDeclaration : ASTNode {
-
-    let uniqueID: UUID = UUID()
+struct PklFunctionDeclaration: ASTNode {
+    let uniqueID: UUID = .init()
 
     var positionStart: Position
     var positionEnd: Position
@@ -156,9 +153,8 @@ struct PklFunctionDeclaration : ASTNode {
     }
 }
 
-struct PklClassFunctionBody : ASTNode {
-
-    let uniqueID: UUID = UUID()
+struct PklClassFunctionBody: ASTNode {
+    let uniqueID: UUID = .init()
 
     var positionStart: Position
     var positionEnd: Position
@@ -182,8 +178,9 @@ struct PklClassFunctionBody : ASTNode {
         return children
     }
 
-    init(isFunctionKeywordPresent: Bool = false, identifier: PklIdentifier?, params: PklFunctionParameterList?, typeAnnotation: PklTypeAnnotation? = nil,
-        positionStart: Position, positionEnd: Position) {
+    init(isFunctionKeywordPresent: Bool = false, identifier: PklIdentifier?, params: PklFunctionParameterList?, typeAnnotation _: PklTypeAnnotation? = nil,
+         positionStart: Position, positionEnd: Position)
+    {
         self.isFunctionKeywordPresent = isFunctionKeywordPresent
         self.identifier = identifier
         self.params = params
@@ -212,6 +209,4 @@ struct PklClassFunctionBody : ASTNode {
         }
         return errors.count > 0 ? errors : nil
     }
-
 }
-

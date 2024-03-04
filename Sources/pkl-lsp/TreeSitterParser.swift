@@ -1,17 +1,15 @@
 import Foundation
-import Logging
 import LanguageServerProtocol
+import Logging
 import SwiftTreeSitter
 import TreeSitterPkl
 
-
 public class TreeSitterParser {
-
     let logger: Logger
 
     let parser = Parser()
-    var parsedTrees: [Document : MutableTree]
-    var astParsedTrees: [Document : any ASTNode]
+    var parsedTrees: [Document: MutableTree]
+    var astParsedTrees: [Document: any ASTNode]
 
     public init(logger: Logger) {
         self.logger = logger
@@ -30,7 +28,7 @@ public class TreeSitterParser {
         oldDocument: Document,
         newDocument: Document,
         previousParsingTree: MutableTree,
-        changes: [TextDocumentContentChangeEvent]
+        changes _: [TextDocumentContentChangeEvent]
     ) -> MutableTree? {
         let edit = InputEdit.from(oldString: oldDocument.text, newString: newDocument.text)
         previousParsingTree.edit(edit)
@@ -63,7 +61,6 @@ public class TreeSitterParser {
             return
         }
         astParsedTrees[newDocument] = astParsing
-        return
     }
 
     public func parseDocumentTreeSitter(oldDocument: Document, newDocument: Document, changes: [TextDocumentContentChangeEvent]) {
@@ -108,311 +105,310 @@ public class TreeSitterParser {
     }
 
     private func tsNodeToASTNode(node: Node, in document: Document) -> (any ASTNode)? {
-        guard let tsSymbol = PklTreeSitterSymbols.init(node.symbol) else {
+        guard let tsSymbol = PklTreeSitterSymbols(node.symbol) else {
             logger.debug("Unable to parse node with symbol \(node.symbol)")
             return nil
         }
 
         switch tsSymbol {
-
         case .sym_identifier:
-            self.logger.debug("Starting building identifier...")
+            logger.debug("Starting building identifier...")
             let identifier = document.getTextInByteRange(node.byteRange)
-            self.logger.debug("Identifier built succesfully.")
+            logger.debug("Identifier built succesfully.")
             return PklIdentifier(value: identifier, positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
 
         case .anon_sym_module:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_extends:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_amends:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_import:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_as:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_import_STAR:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_class:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_LBRACE:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_RBRACE:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_typealias:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_EQ:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_function:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_AT:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_RBRACK:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_LBRACK_LBRACK:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_RBRACK_RBRACK:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_for:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_LPAREN:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_COMMA:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_in:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_RPAREN:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_when:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_DOT_DOT_DOT:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_DOT_DOT_DOT_QMARK:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_DASH_GT:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_COLON:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_unknown:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_nothing:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_QMARK:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_PIPE:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_STAR:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_LT:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_GT:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_out:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_external:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_abstract:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_open:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_local:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_hidden:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_fixed:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_const:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_thisExpr:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_outerExpr:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
 
         case .sym_nullLiteral: // NULL LITERAL
-            self.logger.debug("Null literal built succesfully.")
+            logger.debug("Null literal built succesfully.")
             return PklNullLiteral(positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
 
         case .sym_trueLiteral: // BOOLEAN LITERAL
-            self.logger.debug("Boolean literal built succesfully.")
+            logger.debug("Boolean literal built succesfully.")
             return PklBooleanLiteral(value: true, positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
 
         case .sym_falseLiteral: // BOOLEAN LITERAL
-            self.logger.debug("Boolean literal built succesfully.")
+            logger.debug("Boolean literal built succesfully.")
             return PklBooleanLiteral(value: false, positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
 
         case .sym_intLiteral: // INTEGER LITERAL
-            self.logger.debug("Starting building integer literal...")
+            logger.debug("Starting building integer literal...")
             let value = document.getTextInByteRange(node.byteRange)
-            self.logger.debug("Integer literal built succesfully.")
+            logger.debug("Integer literal built succesfully.")
             return PklNumberLiteral(value: value, type: .int,
-                positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
+                                    positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
 
         case .sym_floatLiteral: // FLOAT LITERAL
-            self.logger.debug("Starting building float literal...")
+            logger.debug("Starting building float literal...")
             let value = document.getTextInByteRange(node.byteRange)
-            self.logger.debug("Float literal built succesfully.")
+            logger.debug("Float literal built succesfully.")
             return PklNumberLiteral(value: value, type: .float,
-                positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
+                                    positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
 
         case .anon_sym_DQUOTE:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_stringConstant_token1:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_POUND_DQUOTE:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_DQUOTE_POUND:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_POUND_POUND_DQUOTE:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_DQUOTE_POUND_POUND:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_POUND_POUND_POUND_DQUOTE:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_DQUOTE_POUND_POUND_POUND:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_POUND_POUND_POUND_POUND_DQUOTE:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_DQUOTE_POUND_POUND_POUND_POUND:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_POUND_POUND_POUND_POUND_POUND_DQUOTE:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_DQUOTE_POUND_POUND_POUND_POUND_POUND:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_POUND_POUND_POUND_POUND_POUND_POUND_DQUOTE:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_DQUOTE_POUND_POUND_POUND_POUND_POUND_POUND:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_DQUOTE_DQUOTE_DQUOTE:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_POUND_DQUOTE_DQUOTE_DQUOTE:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_DQUOTE_DQUOTE_DQUOTE_POUND:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_POUND_POUND_DQUOTE_DQUOTE_DQUOTE:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_DQUOTE_DQUOTE_DQUOTE_POUND_POUND:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_POUND_POUND_POUND_DQUOTE_DQUOTE_DQUOTE:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_DQUOTE_DQUOTE_DQUOTE_POUND_POUND_POUND:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_POUND_POUND_POUND_POUND_DQUOTE_DQUOTE_DQUOTE:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_DQUOTE_DQUOTE_DQUOTE_POUND_POUND_POUND_POUND:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_POUND_POUND_POUND_POUND_POUND_DQUOTE_DQUOTE_DQUOTE:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_DQUOTE_DQUOTE_DQUOTE_POUND_POUND_POUND_POUND_POUND:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_POUND_POUND_POUND_POUND_POUND_POUND_DQUOTE_DQUOTE_DQUOTE:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_DQUOTE_DQUOTE_DQUOTE_POUND_POUND_POUND_POUND_POUND_POUND:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_escapeSequence:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_escapeSequence1:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_escapeSequence2:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_escapeSequence3:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_escapeSequence4:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_escapeSequence5:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_escapeSequence6:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_BSLASH_LPAREN:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_BSLASH_POUND_LPAREN:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_BSLASH_POUND_POUND_LPAREN:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_BSLASH_POUND_POUND_POUND_LPAREN:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_BSLASH_POUND_POUND_POUND_POUND_LPAREN:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_BSLASH_POUND_POUND_POUND_POUND_POUND_LPAREN:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_BSLASH_POUND_POUND_POUND_POUND_POUND_POUND_LPAREN:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_new:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_super:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_DOT:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_QMARK_DOT:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_BANG_BANG:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_DASH:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_BANG:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_STAR_STAR:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_QMARK_QMARK:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_SLASH:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_TILDE_SLASH:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_PERCENT:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_PLUS:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_LT_EQ:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_GT_EQ:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_EQ_EQ:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_BANG_EQ:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_AMP_AMP:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_PIPE_PIPE:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_PIPE_GT:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_is:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_if:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_else:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_let:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_throw:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_trace:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_read:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_read_QMARK:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .anon_sym_read_STAR:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_lineComment:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_docComment:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_blockComment:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym__sl1_string_chars:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym__sl2_string_chars:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym__sl3_string_chars:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym__sl4_string_chars:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym__sl5_string_chars:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym__sl6_string_chars:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym__ml_string_chars:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym__ml1_string_chars:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym__ml2_string_chars:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym__ml3_string_chars:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym__ml4_string_chars:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym__ml5_string_chars:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym__ml6_string_chars:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym__open_square_bracket:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym__open_entry_bracket:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
 
         case .sym_module: // MODULE (ROOT)
-            self.logger.debug("Starting building module...")
+            logger.debug("Starting building module...")
             var contents: [any ASTNode] = []
             node.enumerateChildren(block: { childNode in
                 if let astNode = tsNodeToASTNode(node: childNode, in: document) {
@@ -420,28 +416,28 @@ public class TreeSitterParser {
                 }
             })
             let module = PklModule(contents: contents,
-                positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
+                                   positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
             if let errors = module.diagnosticErrors() {
                 logger.debug("AST Diagnostic errors: \(errors)")
             }
-            self.logger.debug("Module built succesfully.")
+            logger.debug("Module built succesfully.")
             return module
 
         case .sym_moduleHeader:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_moduleClause:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_extendsOrAmendsClause:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_importClause:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_importGlobClause:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym__moduleMember:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
 
         case .sym_clazz: // CLASS DECLARATION
-            self.logger.debug("Starting building class...")
+            logger.debug("Starting building class...")
             var classNode: PklClass?
             var classKeyword: String?
             var classIdentifier: PklIdentifier?
@@ -459,19 +455,19 @@ public class TreeSitterParser {
                     return
                 }
             })
-            self.logger.debug("Class built succesfully.")
+            logger.debug("Class built succesfully.")
             return PklClassDeclaration(classNode: classNode, classKeyword: classKeyword, classIdentifier: classIdentifier,
-                positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
+                                       positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
 
         case .sym_classExtendsClause:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
 
         case .sym_classBody: // CLASS BODY
-            self.logger.debug("Starting building class body...")
+            logger.debug("Starting building class body...")
             var properties: [PklClassProperty] = []
             var functions: [PklFunctionDeclaration] = []
-            var leftBraceIsPresent: Bool = false
-            var rightBraceIsPresent: Bool = false
+            var leftBraceIsPresent = false
+            var rightBraceIsPresent = false
             node.enumerateChildren(block: { childNode in
                 if childNode.symbol == PklTreeSitterSymbols.sym_classProperty.rawValue {
                     if let property = tsNodeToASTNode(node: childNode, in: document) as? PklClassProperty {
@@ -500,15 +496,15 @@ public class TreeSitterParser {
                     return
                 }
             })
-            self.logger.debug("Class body built succesfully.")
+            logger.debug("Class body built succesfully.")
             return PklClass(properties: properties, functions: functions, leftBraceIsPresent: leftBraceIsPresent, rightBraceIsPresent: rightBraceIsPresent,
-                positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
+                            positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
 
         case .sym_typeAlias:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
 
         case .sym_classProperty: // CLASS PROPERTY
-            self.logger.debug("Starting building class property...")
+            logger.debug("Starting building class property...")
 
             // Problem here: object amending is not being parsed with tree-sitter so we need to find a way to parse it.
             // The best solution is of course to make it work upstream in tree-sitter-pkl, but we may need to find a workaround for now.
@@ -531,8 +527,8 @@ public class TreeSitterParser {
             var propertyIdentifier: PklIdentifier?
             var typeAnnotation: PklTypeAnnotation?
             var value: (any ASTNode)? // Can be either a PklObjectBody or a PklValue
-            var isHidden: Bool = false
-            var isEqualsPresent: Bool = false
+            var isHidden = false
+            var isEqualsPresent = false
             node.enumerateChildren(block: { childNode in
                 if childNode.symbol == PklTreeSitterSymbols.sym_identifier.rawValue {
                     propertyIdentifier = tsNodeToASTNode(node: childNode, in: document) as? PklIdentifier
@@ -558,12 +554,12 @@ public class TreeSitterParser {
                     return
                 }
             })
-            self.logger.debug("Class property built succesfully.")
+            logger.debug("Class property built succesfully.")
             return PklClassProperty(identifier: propertyIdentifier, typeAnnotation: typeAnnotation, isEqualsPresent: isEqualsPresent, value: value, isHidden: isHidden,
-                positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
+                                    positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
 
         case .sym_classMethod:
-            self.logger.debug("Starting building class method...")
+            logger.debug("Starting building class method...")
             var functionValue: (any ASTNode)?
             var body: PklClassFunctionBody?
             node.enumerateChildren(block: { childNode in
@@ -573,13 +569,13 @@ public class TreeSitterParser {
                 }
                 // TODO: parse function value && type checking
             })
-            self.logger.debug("Class method built succesfully.")
+            logger.debug("Class method built succesfully.")
             return PklFunctionDeclaration(body: body, functionValue: functionValue,
-                positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
+                                          positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
 
         case .sym_methodHeader: // METHOD HEADER
-            self.logger.debug("Starting building method header...")
-            var isFunctionKeywordPresent: Bool = false
+            logger.debug("Starting building method header...")
+            var isFunctionKeywordPresent = false
             var identifier: PklIdentifier?
             var typeAnnotation: PklTypeAnnotation?
             var params: PklFunctionParameterList?
@@ -601,18 +597,18 @@ public class TreeSitterParser {
                     return
                 }
             })
-            self.logger.debug("Method header built succesfully.")
+            logger.debug("Method header built succesfully.")
             return PklClassFunctionBody(isFunctionKeywordPresent: isFunctionKeywordPresent, identifier: identifier, params: params, typeAnnotation: typeAnnotation,
-                positionStart: node.pointRange.upperBound.toPosition(), positionEnd: node.pointRange.lowerBound.toPosition())
+                                        positionStart: node.pointRange.upperBound.toPosition(), positionEnd: node.pointRange.lowerBound.toPosition())
 
         case .sym_annotation:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
 
         case .sym_objectBody: // OBJECT BODY
-            self.logger.debug("Starting building object body...")
+            logger.debug("Starting building object body...")
             var properties: [PklObjectProperty] = []
-            var leftBraceIsPresent: Bool = false
-            var rightBraceIsPresent: Bool = false
+            var leftBraceIsPresent = false
+            var rightBraceIsPresent = false
             node.enumerateChildren(block: { childNode in
                 if childNode.symbol == PklTreeSitterSymbols.sym_objectProperty.rawValue {
                     if let property = tsNodeToASTNode(node: childNode, in: document) as? PklObjectProperty {
@@ -635,15 +631,15 @@ public class TreeSitterParser {
                     return
                 }
             })
-            self.logger.debug("Object body built succesfully.")
+            logger.debug("Object body built succesfully.")
             return PklObjectBody(properties: properties, isLeftBracePresent: leftBraceIsPresent, isRightBracePresent: rightBraceIsPresent,
-                positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
+                                 positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
 
         case .sym__objectMember:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
 
         case .sym_objectProperty: // OBJECT PROPERTY
-            self.logger.debug("Starting building object property...")
+            logger.debug("Starting building object property...")
             var identifier: PklIdentifier?
             var typeAnnotation: PklTypeAnnotation?
             var value: (any ASTNode)?
@@ -662,29 +658,29 @@ public class TreeSitterParser {
                 }
             })
             return PklObjectProperty(identifier: identifier, typeAnnotation: typeAnnotation, value: value,
-                positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
+                                     positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
 
         case .sym_objectMethod:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_objectEntry:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_objectElement:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_objectPredicate:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_forGenerator:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_whenGenerator:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_objectSpread:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_objectBodyParameters:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
 
         case .sym_typeAnnotation: // TYPE ANNOTATION
-            self.logger.debug("Starting building type annotation...")
+            logger.debug("Starting building type annotation...")
             var type: PklType?
-            var colonIsPresent: Bool = false
+            var colonIsPresent = false
             node.enumerateChildren(block: { childNode in
                 if childNode.symbol == PklTreeSitterSymbols.anon_sym_COLON.rawValue {
                     colonIsPresent = true
@@ -695,29 +691,29 @@ public class TreeSitterParser {
                     return
                 }
             })
-            self.logger.debug("Type annotation built succesfully.")
+            logger.debug("Type annotation built succesfully.")
             return PklTypeAnnotation(type: type, colonIsPresent: colonIsPresent, positionStart: node.pointRange.lowerBound.toPosition(),
-                positionEnd: node.pointRange.upperBound.toPosition())
+                                     positionEnd: node.pointRange.upperBound.toPosition())
 
         case .sym_type: // TYPE
-            self.logger.debug("Starting building type...")
+            logger.debug("Starting building type...")
             let typeIdentifier = document.getTextInByteRange(node.byteRange)
-            self.logger.debug("Type built succesfully.")
+            logger.debug("Type built succesfully.")
             return PklType(identifier: typeIdentifier,
-                positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
+                           positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
 
         case .sym_typeArgumentList:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_typeParameterList:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_typeParameter:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_parameterList: // PARAMETER LIST
-            self.logger.debug("Starting building parameter list...")
+            logger.debug("Starting building parameter list...")
             var parameters: [PklFunctionParameter] = []
-            var leftParenIsPresent: Bool = false
-            var rightParenIsPresent: Bool = false
-            var commasAmount: Int = 0
+            var leftParenIsPresent = false
+            var rightParenIsPresent = false
+            var commasAmount = 0
             node.enumerateChildren(block: { childNode in
                 if childNode.symbol == PklTreeSitterSymbols.anon_sym_LPAREN.rawValue {
                     let leftParen = document.getTextInByteRange(childNode.byteRange)
@@ -744,100 +740,100 @@ public class TreeSitterParser {
                     return
                 }
             })
-            self.logger.debug("Parameter list built succesfully.")
+            logger.debug("Parameter list built succesfully.")
             return PklFunctionParameterList(parameters: parameters, isLeftParenPresent: leftParenIsPresent, isRightParenPresent: rightParenIsPresent,
-                positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
+                                            positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
 
         case .sym_argumentList:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_modifier:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym__expr:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_variableObjectLiteral:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym__expr2:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_parenthesizedExpr:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_moduleExpr:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_variableExpr:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_stringConstant:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
 
         case .sym_slStringLiteral: // SINGLE-LINE STRING LITERAL
-            self.logger.debug("Starting building single-line string literal...")
+            logger.debug("Starting building single-line string literal...")
             let value: String? = document.getTextInByteRange(node.byteRange)
-            self.logger.debug("Single-line string literal built succesfully.")
+            logger.debug("Single-line string literal built succesfully.")
             return PklStringLiteral(value: value, positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
 
         case .sym_mlStringLiteral: // MULTI-LINE STRING LITERAL
-            self.logger.debug("Starting building multi-line string literal...")
+            logger.debug("Starting building multi-line string literal...")
             let value: String? = document.getTextInByteRange(node.byteRange)
-            self.logger.debug("Multi-line string literal built succesfully.")
+            logger.debug("Multi-line string literal built succesfully.")
             return PklStringLiteral(value: value, positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
 
         case .sym_interpolationExpr:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_interpolationExpr1:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_interpolationExpr2:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_interpolationExpr3:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_interpolationExpr4:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_interpolationExpr5:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_interpolationExpr6:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_newExpr:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_objectLiteral:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_methodCallExpr:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_propertyCallExpr:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_subscriptExpr:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_unaryExpr:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_binaryExprRightAssoc:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_binaryExpr:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_isExpr:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_asExpr:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_ifExpr:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_letExpr:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_throwExpr:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_traceExpr:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_readExpr:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_readOrNullExpr:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_readGlobExpr:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_importExpr:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_importGlobExpr:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_functionLiteral:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .sym_qualifiedIdentifier:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
 
         case .sym_typedIdentifier: // TYPED IDENTIFIER
-            self.logger.debug("Starting building typed identifier...")
+            logger.debug("Starting building typed identifier...")
             var identifier: PklIdentifier?
             var typeAnnotation: PklTypeAnnotation?
             node.enumerateChildren(block: { childNode in
@@ -850,75 +846,73 @@ public class TreeSitterParser {
                     return
                 }
             })
-            self.logger.debug("Typed identifier built succesfully.")
+            logger.debug("Typed identifier built succesfully.")
             return PklFunctionParameter(identifier: identifier, typeAnnotation: typeAnnotation,
-                positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
+                                        positionStart: node.pointRange.lowerBound.toPosition(), positionEnd: node.pointRange.upperBound.toPosition())
 
         case .aux_sym_module_repeat1:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_module_repeat2:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_moduleHeader_repeat1:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_moduleClause_repeat1:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_classBody_repeat1:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_classProperty_repeat1:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_objectBody_repeat1:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_objectBodyParameters_repeat1:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_type_repeat1:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_type_repeat2:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_typeParameterList_repeat1:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_stringConstant_repeat1:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_stringConstant_repeat2:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_slStringLiteral_repeat1:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_slStringLiteral_repeat2:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_slStringLiteral_repeat3:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_slStringLiteral_repeat4:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_slStringLiteral_repeat5:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_slStringLiteral_repeat6:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_slStringLiteral_repeat7:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_mlStringLiteral_repeat1:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_mlStringLiteral_repeat2:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_mlStringLiteral_repeat3:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_mlStringLiteral_repeat4:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_mlStringLiteral_repeat5:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_mlStringLiteral_repeat6:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_mlStringLiteral_repeat7:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         case .aux_sym_qualifiedIdentifier_repeat1:
-            self.logger.debug("Not implemented")
+            logger.debug("Not implemented")
         }
         return nil
     }
-
 }
 
-extension Point {
-    public func toPosition() -> Position {
-        return Position.init((Int(self.row), Int(self.column)))
+public extension Point {
+    func toPosition() -> Position {
+        Position((Int(row), Int(column)))
     }
 }
-

@@ -1,8 +1,6 @@
 import Foundation
 
-
 public enum PklTreeSitterSymbols: UInt32 {
-
     public init?(_ rawValue: Int) {
         if rawValue < 0 || rawValue > 237 {
             return nil
@@ -247,6 +245,4 @@ public enum PklTreeSitterSymbols: UInt32 {
     case aux_sym_mlStringLiteral_repeat6 = 235
     case aux_sym_mlStringLiteral_repeat7 = 236
     case aux_sym_qualifiedIdentifier_repeat1 = 237
-
 }
-

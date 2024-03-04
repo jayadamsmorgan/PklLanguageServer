@@ -42,7 +42,7 @@ let package = Package(
             ],
             path: "Sources/pkl-lsp",
             swiftSettings: [
-                .enableExperimentalFeature("SwiftConcurrency")
+                .enableExperimentalFeature("SwiftConcurrency"),
             ]
         ),
         .executableTarget(
@@ -56,10 +56,9 @@ let package = Package(
                 .product(name: "UniSocket", package: "swift-unisocket"),
             ],
             path: "Sources/pkl-lsp-server",
-                        swiftSettings: [
-                .enableExperimentalFeature("SwiftConcurrency")
+            swiftSettings: [
+                .enableExperimentalFeature("SwiftConcurrency"),
             ]
         ),
     ]
-
 )

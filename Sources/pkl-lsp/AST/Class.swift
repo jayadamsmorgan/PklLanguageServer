@@ -1,10 +1,8 @@
 import Foundation
 import LanguageServerProtocol
 
-
-struct PklClassProperty : ASTNode {
-
-    let uniqueID: UUID = UUID()
+struct PklClassProperty: ASTNode {
+    let uniqueID: UUID = .init()
 
     var positionStart: Position
     var positionEnd: Position
@@ -30,7 +28,8 @@ struct PklClassProperty : ASTNode {
     }
 
     init(identifier: PklIdentifier? = nil, typeAnnotation: PklTypeAnnotation? = nil, isEqualsPresent: Bool = false, value: (any ASTNode)?,
-        isHidden: Bool = false, positionStart: Position, positionEnd: Position) {
+         isHidden: Bool = false, positionStart: Position, positionEnd: Position)
+    {
         self.identifier = identifier
         self.typeAnnotation = typeAnnotation
         self.isEqualsPresent = isEqualsPresent
@@ -47,15 +46,15 @@ struct PklClassProperty : ASTNode {
                 errors.append(contentsOf: typeErrors)
             }
         }
-        if !isEqualsPresent && value != nil && !(value is PklObjectBody) {
+        if !isEqualsPresent, value != nil, !(value is PklObjectBody) {
             let error = ASTDiagnosticError("Provide an equals sign", .error, positionStart, positionEnd)
             errors.append(error)
         }
-        if value is PklObjectBody && isEqualsPresent {
+        if value is PklObjectBody, isEqualsPresent {
             let error = ASTDiagnosticError("Extra equals sign", .error, positionStart, positionEnd)
             errors.append(error)
         }
-        if isEqualsPresent && value == nil {
+        if isEqualsPresent, value == nil {
             let error = ASTDiagnosticError("Provide a value", .error, positionStart, positionEnd)
             errors.append(error)
         }
@@ -64,7 +63,7 @@ struct PklClassProperty : ASTNode {
                 errors.append(contentsOf: valueErrors)
             }
         }
-        if typeAnnotation == nil && value == nil {
+        if typeAnnotation == nil, value == nil {
             let error = ASTDiagnosticError("Provide property type or value", .error, positionStart, positionEnd)
             errors.append(error)
         }
@@ -76,9 +75,8 @@ struct PklClassProperty : ASTNode {
     }
 }
 
-struct PklClass : ASTNode {
-
-    let uniqueID: UUID = UUID()
+struct PklClass: ASTNode {
+    let uniqueID: UUID = .init()
 
     var positionStart: Position
     var positionEnd: Position
@@ -100,8 +98,9 @@ struct PklClass : ASTNode {
         return children
     }
 
-    init(properties: [PklClassProperty]? = nil, functions: [PklFunctionDeclaration]? = nil, leftBraceIsPresent: Bool = false, rightBraceIsPresent: Bool = false,
-        positionStart: Position, positionEnd: Position) {
+    init(properties: [PklClassProperty]? = nil, functions _: [PklFunctionDeclaration]? = nil, leftBraceIsPresent: Bool = false, rightBraceIsPresent: Bool = false,
+         positionStart: Position, positionEnd: Position)
+    {
         self.properties = properties
         self.leftBraceIsPresent = leftBraceIsPresent
         self.rightBraceIsPresent = rightBraceIsPresent
@@ -137,9 +136,8 @@ struct PklClass : ASTNode {
     }
 }
 
-struct PklClassDeclaration : ASTNode {
-
-    let uniqueID: UUID = UUID()
+struct PklClassDeclaration: ASTNode {
+    let uniqueID: UUID = .init()
 
     var positionStart: Position
     var positionEnd: Position
@@ -185,4 +183,3 @@ struct PklClassDeclaration : ASTNode {
         return errors.count > 0 ? errors : nil
     }
 }
-

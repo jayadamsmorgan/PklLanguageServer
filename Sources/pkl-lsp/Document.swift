@@ -2,8 +2,7 @@ import Foundation
 import LanguageServerProtocol
 import SwiftTreeSitter
 
-
-public struct Document : Hashable {
+public struct Document: Hashable {
     public let uri: DocumentUri
     public let version: Int?
     public let text: String
@@ -21,13 +20,13 @@ public struct Document : Hashable {
     }
 }
 
-struct InvalidDocumentChangeRange : Error {
+struct InvalidDocumentChangeRange: Error {
     public let range: LSPRange
 }
 
-extension Document {
-    public func withAppliedChanges(_ changes: [TextDocumentContentChangeEvent], nextVersion: Int?) throws -> Document {
-        var text = self.text
+public extension Document {
+    func withAppliedChanges(_ changes: [TextDocumentContentChangeEvent], nextVersion: Int?) throws -> Document {
+        var text = text
         for change in changes {
             try Document.applyChange(change, on: &text)
         }
@@ -38,7 +37,7 @@ extension Document {
         let lineStart = text.index(startIndex, offsetBy: -startPos.character)
 
         var it = text[lineStart...]
-        for _ in startPos.line..<position.line {
+        for _ in startPos.line ..< position.line {
             guard let index = it.firstIndex(of: "\n") else {
                 return nil
             }
@@ -47,17 +46,17 @@ extension Document {
         return text.index(it.startIndex, offsetBy: position.character)
     }
 
-    public func getTextInByteRange(_ range: Range<UInt32>) -> String {
+    func getTextInByteRange(_ range: Range<UInt32>) -> String {
         let start = text.index(text.startIndex, offsetBy: Int(range.lowerBound / 2))
         let end = text.index(text.startIndex, offsetBy: Int(range.upperBound / 2))
-        return String(text[start..<end])
+        return String(text[start ..< end])
     }
 
-    public static func findPosition(_ position: Position, in text: String) -> String.Index? {
+    static func findPosition(_ position: Position, in text: String) -> String.Index? {
         findPosition(position, in: text, startIndex: text.startIndex, startPos: Position.zero)
     }
 
-    public static func findRange(_ range: LSPRange, in text: String) -> Range<String.Index>? {
+    static func findRange(_ range: LSPRange, in text: String) -> Range<String.Index>? {
         guard let startIndex = findPosition(range.start, in: text) else {
             return nil
         }
@@ -66,13 +65,11 @@ extension Document {
             return nil
         }
 
-        return startIndex..<endIndex
+        return startIndex ..< endIndex
     }
 
-    public static func applyChange(_ change: TextDocumentContentChangeEvent, on text: inout String) throws {
-
+    static func applyChange(_ change: TextDocumentContentChangeEvent, on text: inout String) throws {
         if let range = change.range {
-
             guard let range = findRange(range, in: change.text) else {
                 throw InvalidDocumentChangeRange(range: range)
             }
@@ -84,4 +81,3 @@ extension Document {
         }
     }
 }
-

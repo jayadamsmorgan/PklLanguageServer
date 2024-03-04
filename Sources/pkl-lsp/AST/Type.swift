@@ -1,17 +1,15 @@
 import Foundation
 import LanguageServerProtocol
 
-
-public enum PklStandardTypesIdentifiers : String, CaseIterable {
+public enum PklStandardTypesIdentifiers: String, CaseIterable {
     case Number
     case Int
     case Float
     case String
 }
 
-struct PklType : ASTNode {
-
-    let uniqueID: UUID = UUID()
+struct PklType: ASTNode {
+    let uniqueID: UUID = .init()
 
     var positionStart: Position
     var positionEnd: Position
@@ -34,13 +32,12 @@ struct PklType : ASTNode {
     }
 }
 
-struct PklTypeAnnotation : ASTNode {
-
-    let uniqueID: UUID = UUID()
+struct PklTypeAnnotation: ASTNode {
+    let uniqueID: UUID = .init()
 
     var positionStart: Position
     var positionEnd: Position
-    
+
     var type: PklType?
     var colonIsPresent: Bool = false
 
@@ -70,6 +67,4 @@ struct PklTypeAnnotation : ASTNode {
         }
         return errors.count > 0 ? errors : nil
     }
-
 }
-

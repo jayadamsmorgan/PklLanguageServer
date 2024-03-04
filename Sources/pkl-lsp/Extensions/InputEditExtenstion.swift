@@ -1,24 +1,22 @@
 import Foundation
 import SwiftTreeSitter
 
-
 extension InputEdit {
-
     // Helper function to find byte offsets for changes in the document
     private static func findChangeOffsets(in oldString: String, and newString: String) -> (firstChangeOffset: Int, lastChangeOffsetInOld: Int, lastNewCharOffsetInNew: Int) {
         let oldCharacters = Array(oldString)
         let newCharacters = Array(newString)
 
         // Default values set to 0, assuming 0 can signify no changes when applicable
-        var firstChangeOffset: Int = 0
-        var lastChangeOffsetInOld: Int = 0
-        var lastNewCharOffsetInNew: Int = 0
+        var firstChangeOffset = 0
+        var lastChangeOffsetInOld = 0
+        var lastNewCharOffsetInNew = 0
 
         var foundFirstChange = false
 
         // Check from the beginning for the first change
-        for index in 0..<min(oldCharacters.count, newCharacters.count) {
-            if oldCharacters[index] != newCharacters[index] && !foundFirstChange {
+        for index in 0 ..< min(oldCharacters.count, newCharacters.count) {
+            if oldCharacters[index] != newCharacters[index], !foundFirstChange {
                 firstChangeOffset = oldString.utf16.index(oldString.startIndex, offsetBy: index).utf16Offset(in: oldString)
                 foundFirstChange = true
                 break
@@ -27,7 +25,7 @@ extension InputEdit {
 
         // If the strings are of different lengths but identical up to the length of the shorter string,
         // the first change is at the end of the shorter string.
-        if !foundFirstChange && oldCharacters.count != newCharacters.count {
+        if !foundFirstChange, oldCharacters.count != newCharacters.count {
             firstChangeOffset = min(oldCharacters.count, newCharacters.count)
             foundFirstChange = true
         }
@@ -39,7 +37,7 @@ extension InputEdit {
 
         // Check from the end for the last change
         var indexFromEnd = 0
-        while indexFromEnd < oldCharacters.count && indexFromEnd < newCharacters.count {
+        while indexFromEnd < oldCharacters.count, indexFromEnd < newCharacters.count {
             if oldCharacters[oldCharacters.count - 1 - indexFromEnd] != newCharacters[newCharacters.count - 1 - indexFromEnd] {
                 lastChangeOffsetInOld = oldString.utf16.index(oldString.startIndex, offsetBy: oldCharacters.count - indexFromEnd - 1).utf16Offset(in: oldString)
                 lastNewCharOffsetInNew = newString.utf16.index(newString.startIndex, offsetBy: newCharacters.count - indexFromEnd - 1).utf16Offset(in: newString)
@@ -100,7 +98,6 @@ extension InputEdit {
         let newEndPoint = pointInText(forUtf16Offset: newEndByte, in: newString)
 
         return InputEdit(startByte: startByte, oldEndByte: oldEndByte, newEndByte: newEndByte,
-            startPoint: startPoint, oldEndPoint: oldEndPoint, newEndPoint: newEndPoint)
+                         startPoint: startPoint, oldEndPoint: oldEndPoint, newEndPoint: newEndPoint)
     }
 }
-

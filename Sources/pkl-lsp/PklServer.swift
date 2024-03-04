@@ -1,9 +1,8 @@
 import Foundation
-import LanguageServer
 import JSONRPC
-import Semaphore
+import LanguageServer
 import Logging
-
+import Semaphore
 
 public struct PklErrorHandler: ErrorHandler {
     let logger: Logger
@@ -14,7 +13,6 @@ public struct PklErrorHandler: ErrorHandler {
 }
 
 public actor PklServer {
-
     public static let pklLSVersion: String = "0.0.1-alpha"
 
     let connection: JSONRPCClientConnection
@@ -31,7 +29,7 @@ public actor PklServer {
         exitSemaphore = AsyncSemaphore(value: 0)
 
         let notificationHandler =
-        PklNotificationHandler(connection: connection, logger: logger, documentProvider: documentProvider, exitSemaphore: exitSemaphore)
+            PklNotificationHandler(connection: connection, logger: logger, documentProvider: documentProvider, exitSemaphore: exitSemaphore)
         let errorHandler = PklErrorHandler(logger: logger)
 
         dispatcher = EventDispatcher(connection: connection, requestHandler: requestHandler, notificationHandler: notificationHandler, errorHandler: errorHandler)
@@ -45,4 +43,3 @@ public actor PklServer {
         logger.debug("Pkl LSP Server exited.")
     }
 }
-

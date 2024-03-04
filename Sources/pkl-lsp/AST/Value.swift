@@ -1,10 +1,8 @@
 import Foundation
 import LanguageServerProtocol
 
-
-struct PklValue : ASTNode {
-
-    let uniqueID: UUID = UUID()
+struct PklValue: ASTNode {
+    let uniqueID: UUID = .init()
 
     var positionStart: Position
     var positionEnd: Position
@@ -28,6 +26,4 @@ struct PklValue : ASTNode {
         }
         return [ASTDiagnosticError("Provide value", .error, positionStart, positionEnd)]
     }
-
 }
-

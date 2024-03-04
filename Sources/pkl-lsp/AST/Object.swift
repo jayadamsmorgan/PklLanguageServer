@@ -1,10 +1,8 @@
 import Foundation
 import LanguageServerProtocol
 
-
-struct PklObjectBody : ASTNode {
-
-    let uniqueID: UUID = UUID()
+struct PklObjectBody: ASTNode {
+    let uniqueID: UUID = .init()
 
     var positionStart: Position
     var positionEnd: Position
@@ -15,7 +13,7 @@ struct PklObjectBody : ASTNode {
     var properties: [PklObjectProperty]?
 
     var children: [any ASTNode]? {
-        return properties
+        properties
     }
 
     init(properties: [PklObjectProperty]?, isLeftBracePresent: Bool = false, isRightBracePresent: Bool = false, positionStart: Position, positionEnd: Position) {
@@ -36,7 +34,7 @@ struct PklObjectBody : ASTNode {
             let error = ASTDiagnosticError("Provide right brace", .error, positionStart, positionEnd)
             errors.append(error)
         }
-        if let properties = properties {
+        if let properties {
             for property in properties {
                 if let propertyErrors = property.diagnosticErrors() {
                     errors.append(contentsOf: propertyErrors)
@@ -45,12 +43,10 @@ struct PklObjectBody : ASTNode {
         }
         return errors.count > 0 ? errors : nil
     }
-
 }
 
-struct PklObjectProperty : ASTNode {
-
-    let uniqueID: UUID = UUID()
+struct PklObjectProperty: ASTNode {
+    let uniqueID: UUID = .init()
 
     var positionStart: Position
     var positionEnd: Position
@@ -87,7 +83,7 @@ struct PklObjectProperty : ASTNode {
             let error = ASTDiagnosticError("Provide property identifier", .error, positionStart, positionEnd)
             errors.append(error)
         }
-        if typeAnnotation == nil && value == nil {
+        if typeAnnotation == nil, value == nil {
             let error = ASTDiagnosticError("Provide property type or value", .error, positionStart, positionEnd)
             errors.append(error)
         }
@@ -103,6 +99,4 @@ struct PklObjectProperty : ASTNode {
         }
         return nil
     }
-
 }
-

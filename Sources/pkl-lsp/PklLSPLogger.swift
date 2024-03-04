@@ -1,14 +1,14 @@
-import Logging
 import Foundation
-
+import Logging
 
 public let loggerLabel: String = "pkl-lsp"
 
-internal extension Logger {
+extension Logger {
     func trace(_ message: String) {
         let date = Date().description
         trace(Logger.Message(stringLiteral: "[\(date)]: [TRACE] \(message)"))
     }
+
     func debug(_ message: String) {
         let date = Date().description
         debug(Logger.Message(stringLiteral: "[\(date)]: [DEBUG] \(message)"))
@@ -31,13 +31,12 @@ internal extension Logger {
 }
 
 public struct NullLogHandler: LogHandler, Sendable {
-
     public var logLevel: Logger.Level = .critical
     public var metadata: Logger.Metadata
 
     public subscript(metadataKey key: String) -> Logger.Metadata.Value? {
         get {
-            return metadata[key]
+            metadata[key]
         }
         set(newValue) {
             metadata[key] = newValue
@@ -51,13 +50,11 @@ public struct NullLogHandler: LogHandler, Sendable {
         self.metadata = metadata
     }
 
-    public func log(level: Logger.Level,
-        message: Logger.Message,
-        metadata: Logger.Metadata?,
-        source: String,
-        file: String,
-        function: String,
-        line: UInt) {}
-
+    public func log(level _: Logger.Level,
+                    message _: Logger.Message,
+                    metadata _: Logger.Metadata?,
+                    source _: String,
+                    file _: String,
+                    function _: String,
+                    line _: UInt) {}
 }
-

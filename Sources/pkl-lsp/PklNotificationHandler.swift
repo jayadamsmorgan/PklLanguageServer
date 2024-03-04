@@ -1,12 +1,11 @@
-import JSONRPC
-import LanguageServerProtocol
-import LanguageServer
 import Foundation
-import Semaphore
+import JSONRPC
+import LanguageServer
+import LanguageServerProtocol
 import Logging
+import Semaphore
 
-
-public struct PklNotificationHandler : NotificationHandler {
+public struct PklNotificationHandler: NotificationHandler {
     public let connection: JSONRPCClientConnection
     public let logger: Logger
     var documentProvider: DocumentProvider
@@ -21,21 +20,18 @@ public struct PklNotificationHandler : NotificationHandler {
         logger.trace("Begin handle notification: \(notification.method)")
         await defaultNotificationDispatch(notification)
         let t = Date().timeIntervalSince(t0)
-        logger.trace("Complete handle notification: \(notification.method), after \(Int(t*1000))ms")
+        logger.trace("Complete handle notification: \(notification.method), after \(Int(t * 1000))ms")
     }
 
     private func withErrorLogging(_ fn: () async throws -> Void) async {
         do {
             try await fn()
-        }
-        catch {
+        } catch {
             logger.error("Error: \(error)")
         }
     }
 
-    public func initialized(_ params: InitializedParams) async {
-
-    }
+    public func initialized(_: InitializedParams) async {}
 
     public func exit() async {
         await connection.stop()
@@ -54,49 +50,30 @@ public struct PklNotificationHandler : NotificationHandler {
         await documentProvider.unregisterDocument(params)
     }
 
-    public func textDocumentWillSave(_ params: WillSaveTextDocumentParams) async {
+    public func textDocumentWillSave(_: WillSaveTextDocumentParams) async {}
 
-    }
-
-    public func textDocumentDidSave(_ params: DidSaveTextDocumentParams) async {
-    }
+    public func textDocumentDidSave(_: DidSaveTextDocumentParams) async {}
 
     public func protocolCancelRequest(_ params: CancelParams) async {
         // NOTE: For cancel to work we must pass JSONRPC request ids to handlers
         logger.trace("Cancel request: \(params.id)")
     }
 
-    public func protocolSetTrace(_ params: SetTraceParams) async {
+    public func protocolSetTrace(_: SetTraceParams) async {}
 
-    }
+    public func workspaceDidChangeWatchedFiles(_: DidChangeWatchedFilesParams) async {}
 
-    public func workspaceDidChangeWatchedFiles(_ params: DidChangeWatchedFilesParams) async {
-
-    }
-
-    public func windowWorkDoneProgressCancel(_ params: WorkDoneProgressCancelParams) async {
-
-    }
+    public func windowWorkDoneProgressCancel(_: WorkDoneProgressCancelParams) async {}
 
     public func workspaceDidChangeWorkspaceFolders(_ params: DidChangeWorkspaceFoldersParams) async {
         await documentProvider.workspaceDidChangeWorkspaceFolders(params)
     }
 
-    public func workspaceDidChangeConfiguration(_ params: DidChangeConfigurationParams)  async {
+    public func workspaceDidChangeConfiguration(_: DidChangeConfigurationParams) async {}
 
-    }
+    public func workspaceDidCreateFiles(_: CreateFilesParams) async {}
 
-    public func workspaceDidCreateFiles(_ params: CreateFilesParams) async {
+    public func workspaceDidRenameFiles(_: RenameFilesParams) async {}
 
-    }
-
-    public func workspaceDidRenameFiles(_ params: RenameFilesParams) async {
-
-    }
-
-    public func workspaceDidDeleteFiles(_ params: DeleteFilesParams) async {
-
-    }
-
+    public func workspaceDidDeleteFiles(_: DeleteFilesParams) async {}
 }
-

@@ -1,12 +1,11 @@
-import JSONRPC
-import LanguageServerProtocol
-import LanguageServer
 import Foundation
-import Semaphore
+import JSONRPC
+import LanguageServer
+import LanguageServerProtocol
 import Logging
+import Semaphore
 
-
-public struct PklRequestHandler : RequestHandler, Sendable {
+public struct PklRequestHandler: RequestHandler, Sendable {
     public let connection: JSONRPCClientConnection
     public let logger: Logger
 
@@ -27,7 +26,7 @@ public struct PklRequestHandler : RequestHandler, Sendable {
         logger.trace("Begin handle request: \(request)")
         await defaultRequestDispatch(id: id, request: request)
         let t = Date().timeIntervalSince(t0)
-        logger.trace("Complete handle request: \(request.method), after \(Int(t*1000))ms")
+        logger.trace("Complete handle request: \(request.method), after \(Int(t * 1000))ms")
     }
 
     public func initialize(id: JSONId, params: InitializeParams) async -> Result<InitializationResponse, AnyJSONRPCResponseError> {
@@ -44,13 +43,12 @@ public struct PklRequestHandler : RequestHandler, Sendable {
 
     public func completion(id: JSONId, params: CompletionParams) async -> Response<CompletionResponse> {
         logger.trace("Completion request id \(id)")
-        return .success(await documentProvider.provideCompletion(params: params))
-    
+        return await .success(documentProvider.provideCompletion(params: params))
     }
 
     public func semanticTokensFull(id: JSONId, params: SemanticTokensParams) async -> Response<SemanticTokensResponse> {
         logger.trace("Semantic Tokens request id \(id)")
-        return .success(await documentProvider.provideSemanticTokens(params: params))
+        return await .success(documentProvider.provideSemanticTokens(params: params))
     }
 
     public func shutdown(id: JSONId) async {
@@ -59,17 +57,16 @@ public struct PklRequestHandler : RequestHandler, Sendable {
 
     public func definition(id: JSONId, params: TextDocumentPositionParams) async -> Response<DefinitionResponse> {
         logger.trace("Definition request id \(id)")
-        return .success(await documentProvider.provideDefinition(params: params))
+        return await .success(documentProvider.provideDefinition(params: params))
     }
 
     public func documentSymbol(id: JSONId, params: DocumentSymbolParams) async -> Result<DocumentSymbolResponse, AnyJSONRPCResponseError> {
         logger.trace("Document Symbol request id \(id)")
-        return .success(await documentProvider.provideDocumentSymbols(params: params))
+        return await .success(documentProvider.provideDocumentSymbols(params: params))
     }
 
     public func rename(id: JSONId, params: RenameParams) async -> Response<RenameResponse> {
         logger.trace("Rename request id \(id)")
-        return .success(await documentProvider.provideRenaming(params: params))
+        return await .success(documentProvider.provideRenaming(params: params))
     }
 }
-

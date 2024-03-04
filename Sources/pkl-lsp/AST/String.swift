@@ -1,10 +1,8 @@
 import Foundation
 import LanguageServerProtocol
 
-
-struct PklStringLiteral : ASTNode {
-
-    let uniqueID: UUID = UUID()
+struct PklStringLiteral: ASTNode {
+    let uniqueID: UUID = .init()
 
     var positionStart: Position
     var positionEnd: Position
@@ -26,4 +24,3 @@ struct PklStringLiteral : ASTNode {
         return [ASTDiagnosticError("Provide string value", .error, positionStart, positionEnd)]
     }
 }
-
