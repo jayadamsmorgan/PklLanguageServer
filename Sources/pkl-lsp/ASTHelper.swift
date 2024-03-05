@@ -16,10 +16,10 @@ public enum ASTHelper {
 
     static func getPositionContext(module: any ASTNode, position: Position) -> (any ASTNode)? {
         for node in module.children ?? [] {
-            if node.positionStart.line <= position.line,
-               node.positionEnd.line >= position.line,
-               node.positionStart.character / 2 <= position.character,
-               node.positionEnd.character / 2 >= position.character
+            if node.range.positionRange.lowerBound.line <= position.line,
+               node.range.positionRange.upperBound.line >= position.line,
+               node.range.positionRange.lowerBound.character / 2 <= position.character,
+               node.range.positionRange.upperBound.character / 2 >= position.character
             {
                 if let context = getPositionContext(module: node, position: position) {
                     return context

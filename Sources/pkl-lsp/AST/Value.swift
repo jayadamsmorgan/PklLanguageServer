@@ -4,8 +4,7 @@ import LanguageServerProtocol
 struct PklValue: ASTNode {
     let uniqueID: UUID = .init()
 
-    var positionStart: Position
-    var positionEnd: Position
+    var range: ASTRange
 
     var value: String?
 
@@ -13,17 +12,16 @@ struct PklValue: ASTNode {
 
     var children: [any ASTNode]? = nil
 
-    init(value: String? = nil, type: PklType? = nil, positionStart: Position, positionEnd: Position) {
+    init(value: String? = nil, type: PklType? = nil, range: ASTRange) {
         self.value = value
-        self.positionStart = positionStart
-        self.positionEnd = positionEnd
         self.type = type
+        self.range = range
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
         if value != nil {
             return nil
         }
-        return [ASTDiagnosticError("Provide value", .error, positionStart, positionEnd)]
+        return [ASTDiagnosticError("Provide value", .error, range)]
     }
 }

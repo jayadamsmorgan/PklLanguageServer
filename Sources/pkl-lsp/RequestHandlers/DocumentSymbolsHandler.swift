@@ -20,14 +20,8 @@ public class DocumentSymbolsHandler {
                     name: classNode.classIdentifier?.value ?? "Unknown",
                     detail: "class",
                     kind: .class,
-                    range: LSPRange(
-                        start: Position(line: classNode.positionStart.line, character: classNode.positionStart.character / 2),
-                        end: Position(line: classNode.positionEnd.line, character: classNode.positionEnd.character / 2)
-                    ),
-                    selectionRange: LSPRange(
-                        start: Position(line: classNode.positionStart.line, character: classNode.positionStart.character / 2),
-                        end: Position(line: classNode.positionEnd.line, character: classNode.positionEnd.character / 2)
-                    ),
+                    range: classNode.range.getLSPRange(),
+                    selectionRange: classNode.range.getLSPRange(),
                     children: getSymbols(node: classNode)
                 )
                 symbols.append(classSymbol)
@@ -37,14 +31,8 @@ public class DocumentSymbolsHandler {
                     name: functionNode.body?.identifier?.value ?? "Unknown",
                     detail: "function",
                     kind: .function,
-                    range: LSPRange(
-                        start: Position(line: functionNode.positionStart.line, character: functionNode.positionStart.character / 2),
-                        end: Position(line: functionNode.positionEnd.line, character: functionNode.positionEnd.character / 2)
-                    ),
-                    selectionRange: LSPRange(
-                        start: Position(line: functionNode.positionStart.line, character: functionNode.positionStart.character / 2),
-                        end: Position(line: functionNode.positionEnd.line, character: functionNode.positionEnd.character / 2)
-                    ),
+                    range: functionNode.range.getLSPRange(),
+                    selectionRange: functionNode.range.getLSPRange(),
                     children: getSymbols(node: functionNode)
                 )
                 symbols.append(functionSymbol)
@@ -54,14 +42,8 @@ public class DocumentSymbolsHandler {
                     name: "Object",
                     detail: "object",
                     kind: .module,
-                    range: LSPRange(
-                        start: Position(line: objectNode.positionStart.line, character: objectNode.positionStart.character / 2),
-                        end: Position(line: objectNode.positionEnd.line, character: objectNode.positionEnd.character / 2)
-                    ),
-                    selectionRange: LSPRange(
-                        start: Position(line: objectNode.positionStart.line, character: objectNode.positionStart.character / 2),
-                        end: Position(line: objectNode.positionEnd.line, character: objectNode.positionEnd.character / 2)
-                    ),
+                    range: objectNode.range.getLSPRange(),
+                    selectionRange: objectNode.range.getLSPRange(),
                     children: getSymbols(node: objectNode)
                 )
                 symbols.append(objectSymbol)
@@ -71,14 +53,8 @@ public class DocumentSymbolsHandler {
                     name: propertyNode.identifier?.value ?? "Unknown",
                     detail: "property",
                     kind: .property,
-                    range: LSPRange(
-                        start: Position(line: propertyNode.positionStart.line, character: propertyNode.positionStart.character / 2),
-                        end: Position(line: propertyNode.positionEnd.line, character: propertyNode.positionEnd.character / 2)
-                    ),
-                    selectionRange: LSPRange(
-                        start: Position(line: propertyNode.positionStart.line, character: propertyNode.positionStart.character / 2),
-                        end: Position(line: propertyNode.positionEnd.line, character: propertyNode.positionEnd.character / 2)
-                    ),
+                    range: propertyNode.range.getLSPRange(),
+                    selectionRange: propertyNode.range.getLSPRange(),
                     children: getSymbols(node: propertyNode)
                 )
                 symbols.append(propertySymbol)
@@ -88,14 +64,8 @@ public class DocumentSymbolsHandler {
                     name: propertyNode.identifier?.value ?? "Unknown",
                     detail: "property",
                     kind: .property,
-                    range: LSPRange(
-                        start: Position(line: propertyNode.positionStart.line, character: propertyNode.positionStart.character / 2),
-                        end: Position(line: propertyNode.positionEnd.line, character: propertyNode.positionEnd.character / 2)
-                    ),
-                    selectionRange: LSPRange(
-                        start: Position(line: propertyNode.positionStart.line, character: propertyNode.positionStart.character / 2),
-                        end: Position(line: propertyNode.positionEnd.line, character: propertyNode.positionEnd.character / 2)
-                    ),
+                    range: propertyNode.range.getLSPRange(),
+                    selectionRange: propertyNode.range.getLSPRange(),
                     children: getSymbols(node: propertyNode)
                 )
                 symbols.append(propertySymbol)

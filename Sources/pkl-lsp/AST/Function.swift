@@ -4,8 +4,7 @@ import LanguageServerProtocol
 struct PklFunctionParameter: ASTNode {
     var uniqueID: UUID = .init()
 
-    var positionStart: Position
-    var positionEnd: Position
+    var range: ASTRange
 
     var identifier: PklIdentifier?
     var typeAnnotation: PklTypeAnnotation?
@@ -21,11 +20,10 @@ struct PklFunctionParameter: ASTNode {
         return children
     }
 
-    init(identifier: PklIdentifier?, typeAnnotation: PklTypeAnnotation?, positionStart: Position, positionEnd: Position) {
+    init(identifier: PklIdentifier?, typeAnnotation: PklTypeAnnotation?, range: ASTRange) {
         self.identifier = identifier
         self.typeAnnotation = typeAnnotation
-        self.positionStart = positionStart
-        self.positionEnd = positionEnd
+        self.range = range
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
@@ -36,11 +34,11 @@ struct PklFunctionParameter: ASTNode {
             }
         }
         if typeAnnotation == nil {
-            let error = ASTDiagnosticError("Missing type annotation", .error, positionStart, positionEnd)
+            let error = ASTDiagnosticError("Missing type annotation", .error, range)
             errors.append(error)
         }
         if identifier == nil {
-            let error = ASTDiagnosticError("Missing identifier", .error, positionStart, positionEnd)
+            let error = ASTDiagnosticError("Missing identifier", .error, range)
             errors.append(error)
         }
         return errors.count > 0 ? errors : nil
@@ -50,8 +48,7 @@ struct PklFunctionParameter: ASTNode {
 struct PklFunctionParameterList: ASTNode {
     var uniqueID: UUID = .init()
 
-    var positionStart: Position
-    var positionEnd: Position
+    var range: ASTRange
 
     var parameters: [PklFunctionParameter]?
     var isLeftParenPresent: Bool = false
@@ -66,13 +63,14 @@ struct PklFunctionParameterList: ASTNode {
         return children
     }
 
-    init(parameters: [PklFunctionParameter]?, isLeftParenPresent: Bool = false, isRightParenPresent: Bool = false, commasAmount: Int = 0, positionStart: Position, positionEnd: Position) {
+    init(parameters: [PklFunctionParameter]?, isLeftParenPresent: Bool = false, isRightParenPresent: Bool = false,
+         commasAmount: Int = 0, range: ASTRange)
+    {
         self.parameters = parameters
         self.isLeftParenPresent = isLeftParenPresent
         self.isRightParenPresent = isRightParenPresent
         self.commasAmount = commasAmount
-        self.positionStart = positionStart
-        self.positionEnd = positionEnd
+        self.range = range
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
@@ -87,15 +85,15 @@ struct PklFunctionParameterList: ASTNode {
             }
         }
         if parameters != nil, commasAmount != parameters!.count - 1 {
-            let error = ASTDiagnosticError("Provide comma(s) between parameters", .error, positionStart, positionEnd)
+            let error = ASTDiagnosticError("Provide comma(s) between parameters", .error, range)
             errors.append(error)
         }
         if !isLeftParenPresent {
-            let error = ASTDiagnosticError("Provide left parenthesis", .error, positionStart, positionEnd)
+            let error = ASTDiagnosticError("Provide left parenthesis", .error, range)
             errors.append(error)
         }
         if !isRightParenPresent {
-            let error = ASTDiagnosticError("Provide right parenthesis", .error, positionStart, positionEnd)
+            let error = ASTDiagnosticError("Provide right parenthesis", .error, range)
             errors.append(error)
         }
         return errors.count > 0 ? errors : nil
@@ -105,8 +103,7 @@ struct PklFunctionParameterList: ASTNode {
 struct PklFunctionDeclaration: ASTNode {
     let uniqueID: UUID = .init()
 
-    var positionStart: Position
-    var positionEnd: Position
+    var range: ASTRange
 
     var body: PklClassFunctionBody?
     var functionValue: (any ASTNode)?
@@ -122,11 +119,10 @@ struct PklFunctionDeclaration: ASTNode {
         return children
     }
 
-    init(body: PklClassFunctionBody?, functionValue: (any ASTNode)?, positionStart: Position, positionEnd: Position) {
+    init(body: PklClassFunctionBody?, functionValue: (any ASTNode)?, range: ASTRange) {
         self.body = body
         self.functionValue = functionValue
-        self.positionStart = positionStart
-        self.positionEnd = positionEnd
+        self.range = range
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
@@ -137,7 +133,7 @@ struct PklFunctionDeclaration: ASTNode {
             }
         }
         if body == nil {
-            let error = ASTDiagnosticError("Provide function body", .error, positionStart, positionEnd)
+            let error = ASTDiagnosticError("Provide function body", .error, range)
             errors.append(error)
         }
         if functionValue != nil {
@@ -146,7 +142,7 @@ struct PklFunctionDeclaration: ASTNode {
             }
         }
         if functionValue == nil {
-            let error = ASTDiagnosticError("Provide function value", .error, positionStart, positionEnd)
+            let error = ASTDiagnosticError("Provide function value", .error, range)
             errors.append(error)
         }
         return errors.count > 0 ? errors : nil
@@ -156,8 +152,7 @@ struct PklFunctionDeclaration: ASTNode {
 struct PklClassFunctionBody: ASTNode {
     let uniqueID: UUID = .init()
 
-    var positionStart: Position
-    var positionEnd: Position
+    var range: ASTRange
 
     var isFunctionKeywordPresent: Bool = false
     var identifier: PklIdentifier?
@@ -178,20 +173,19 @@ struct PklClassFunctionBody: ASTNode {
         return children
     }
 
-    init(isFunctionKeywordPresent: Bool = false, identifier: PklIdentifier?, params: PklFunctionParameterList?, typeAnnotation _: PklTypeAnnotation? = nil,
-         positionStart: Position, positionEnd: Position)
+    init(isFunctionKeywordPresent: Bool = false, identifier: PklIdentifier?, params: PklFunctionParameterList?,
+         typeAnnotation _: PklTypeAnnotation? = nil, range: ASTRange)
     {
         self.isFunctionKeywordPresent = isFunctionKeywordPresent
         self.identifier = identifier
         self.params = params
-        self.positionStart = positionStart
-        self.positionEnd = positionEnd
+        self.range = range
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
         var errors: [ASTDiagnosticError] = []
         if !isFunctionKeywordPresent {
-            let error = ASTDiagnosticError("Provide function keyword", .error, positionStart, positionEnd)
+            let error = ASTDiagnosticError("Provide function keyword", .error, range)
             errors.append(error)
         }
         if typeAnnotation != nil {
@@ -200,11 +194,11 @@ struct PklClassFunctionBody: ASTNode {
             }
         }
         if typeAnnotation == nil {
-            let error = ASTDiagnosticError("Provide function type annotation", .error, positionStart, positionEnd)
+            let error = ASTDiagnosticError("Provide function type annotation", .error, range)
             errors.append(error)
         }
         if identifier == nil {
-            let error = ASTDiagnosticError("Provide function identifier", .error, positionStart, positionEnd)
+            let error = ASTDiagnosticError("Provide function identifier", .error, range)
             errors.append(error)
         }
         return errors.count > 0 ? errors : nil

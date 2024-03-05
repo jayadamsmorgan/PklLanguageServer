@@ -11,49 +11,45 @@ public enum PklStandardTypesIdentifiers: String, CaseIterable {
 struct PklType: ASTNode {
     let uniqueID: UUID = .init()
 
-    var positionStart: Position
-    var positionEnd: Position
+    var range: ASTRange
 
     var identifier: String?
 
     var children: [any ASTNode]? = nil
 
-    init(identifier: String? = nil, positionStart: Position, positionEnd: Position) {
+    init(identifier: String? = nil, range: ASTRange) {
         self.identifier = identifier
-        self.positionStart = positionStart
-        self.positionEnd = positionEnd
+        self.range = range
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
         if identifier != nil {
             return nil
         }
-        return [ASTDiagnosticError("Provide type identifier", .error, positionStart, positionEnd)]
+        return [ASTDiagnosticError("Provide type identifier", .error, range)]
     }
 }
 
 struct PklTypeAnnotation: ASTNode {
     let uniqueID: UUID = .init()
 
-    var positionStart: Position
-    var positionEnd: Position
+    var range: ASTRange
 
     var type: PklType?
     var colonIsPresent: Bool = false
 
     var children: [any ASTNode]? = nil
 
-    init(type: PklType? = nil, colonIsPresent: Bool = false, positionStart: Position, positionEnd: Position) {
+    init(type: PklType? = nil, colonIsPresent: Bool = false, range: ASTRange) {
         self.type = type
         self.colonIsPresent = colonIsPresent
-        self.positionStart = positionStart
-        self.positionEnd = positionEnd
+        self.range = range
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
         var errors: [ASTDiagnosticError] = []
         if !colonIsPresent {
-            let error = ASTDiagnosticError("Missing colon before type identifier", .error, positionStart, positionEnd)
+            let error = ASTDiagnosticError("Missing colon before type identifier", .error, range)
             errors.append(error)
         }
         if type != nil {
@@ -62,7 +58,7 @@ struct PklTypeAnnotation: ASTNode {
             }
         }
         if type == nil {
-            let error = ASTDiagnosticError("Provide type identifier", .error, positionStart, positionEnd)
+            let error = ASTDiagnosticError("Provide type identifier", .error, range)
             errors.append(error)
         }
         return errors.count > 0 ? errors : nil

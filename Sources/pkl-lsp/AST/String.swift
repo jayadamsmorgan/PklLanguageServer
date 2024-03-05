@@ -4,23 +4,21 @@ import LanguageServerProtocol
 struct PklStringLiteral: ASTNode {
     let uniqueID: UUID = .init()
 
-    var positionStart: Position
-    var positionEnd: Position
+    var range: ASTRange
 
     var value: String?
 
     var children: [any ASTNode]? = nil
 
-    init(value: String? = nil, positionStart: Position, positionEnd: Position) {
+    init(value: String? = nil, range: ASTRange) {
         self.value = value
-        self.positionStart = positionStart
-        self.positionEnd = positionEnd
+        self.range = range
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
         if value != nil {
             return nil
         }
-        return [ASTDiagnosticError("Provide string value", .error, positionStart, positionEnd)]
+        return [ASTDiagnosticError("Provide string value", .error, range)]
     }
 }

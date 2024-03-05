@@ -16,25 +16,23 @@ enum PklNumberType {
 struct PklNumberLiteral: ASTNode {
     let uniqueID: UUID = .init()
 
-    var positionStart: Position
-    var positionEnd: Position
+    var range: ASTRange
 
     var value: String?
     var type: PklNumberType
 
     var children: [any ASTNode]? = nil
 
-    init(value: String? = nil, type: PklNumberType, positionStart: Position, positionEnd: Position) {
+    init(value: String? = nil, type: PklNumberType, range: ASTRange) {
         self.value = value
         self.type = type
-        self.positionStart = positionStart
-        self.positionEnd = positionEnd
+        self.range = range
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
         if value != nil {
             return nil
         }
-        return [ASTDiagnosticError("Provide number value", .error, positionStart, positionEnd)]
+        return [ASTDiagnosticError("Provide number value", .error, range)]
     }
 }

@@ -17,9 +17,9 @@ public class RenameHandler {
         // I don't really like this solution, but it works for now
         // Not sure if it's also a good idea to divide it by 2 at AST initialization, need to think about it
         let positionIdentifier: PklIdentifier? = identifiers.first(where: {
-            $0.positionStart.line == params.position.line &&
-                $0.positionStart.character / 2 <= params.position.character &&
-                $0.positionEnd.character / 2 >= params.position.character
+            $0.range.positionRange.lowerBound.line == params.position.line &&
+                $0.range.positionRange.lowerBound.character / 2 <= params.position.character &&
+                $0.range.positionRange.upperBound.character / 2 >= params.position.character
         })
         guard let positionIdentifier else {
             logger.debug("LSP Rename: No identifier found at position \(params.position) in \(params.textDocument.uri).")
@@ -29,8 +29,8 @@ public class RenameHandler {
         identifiers = identifiers.filter { $0.value == positionIdentifier.value }
         var changes: [TextEdit] = []
         for identifier in identifiers {
-            let positionStart = Position(line: identifier.positionStart.line, character: identifier.positionStart.character / 2)
-            let positionEnd = Position(line: identifier.positionEnd.line, character: identifier.positionEnd.character / 2)
+            let positionStart = Position(line: identifier.range.positionRange.lowerBound.line, character: identifier.range.positionRange.lowerBound.character / 2)
+            let positionEnd = Position(line: identifier.range.positionRange.upperBound.line, character: identifier.range.positionRange.upperBound.character / 2)
             let edit = TextEdit(range: LSPRange(start: positionStart, end: positionEnd), newText: params.newName)
             changes.append(edit)
         }

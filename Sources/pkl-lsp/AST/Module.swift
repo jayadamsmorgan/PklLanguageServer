@@ -4,8 +4,7 @@ import LanguageServerProtocol
 struct PklModule: ASTNode {
     var uniqueID: UUID = .init()
 
-    var positionEnd: Position
-    var positionStart: Position
+    var range: ASTRange
 
     var contents: [any ASTNode]
 
@@ -13,10 +12,9 @@ struct PklModule: ASTNode {
         contents
     }
 
-    init(contents: [any ASTNode], positionStart: Position, positionEnd: Position) {
+    init(contents: [any ASTNode], range: ASTRange) {
         self.contents = contents
-        self.positionStart = positionStart
-        self.positionEnd = positionEnd
+        self.range = range
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {

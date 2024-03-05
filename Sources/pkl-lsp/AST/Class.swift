@@ -4,8 +4,7 @@ import LanguageServerProtocol
 struct PklClassProperty: ASTNode {
     let uniqueID: UUID = .init()
 
-    var positionStart: Position
-    var positionEnd: Position
+    var range: ASTRange
 
     var identifier: PklIdentifier?
     var typeAnnotation: PklTypeAnnotation?
@@ -28,15 +27,14 @@ struct PklClassProperty: ASTNode {
     }
 
     init(identifier: PklIdentifier? = nil, typeAnnotation: PklTypeAnnotation? = nil, isEqualsPresent: Bool = false, value: (any ASTNode)?,
-         isHidden: Bool = false, positionStart: Position, positionEnd: Position)
+         isHidden: Bool = false, range: ASTRange)
     {
         self.identifier = identifier
         self.typeAnnotation = typeAnnotation
         self.isEqualsPresent = isEqualsPresent
         self.value = value
         self.isHidden = isHidden
-        self.positionStart = positionStart
-        self.positionEnd = positionEnd
+        self.range = range
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
@@ -47,15 +45,15 @@ struct PklClassProperty: ASTNode {
             }
         }
         if !isEqualsPresent, value != nil, !(value is PklObjectBody) {
-            let error = ASTDiagnosticError("Provide an equals sign", .error, positionStart, positionEnd)
+            let error = ASTDiagnosticError("Provide an equals sign", .error, range)
             errors.append(error)
         }
         if value is PklObjectBody, isEqualsPresent {
-            let error = ASTDiagnosticError("Extra equals sign", .error, positionStart, positionEnd)
+            let error = ASTDiagnosticError("Extra equals sign", .error, range)
             errors.append(error)
         }
         if isEqualsPresent, value == nil {
-            let error = ASTDiagnosticError("Provide a value", .error, positionStart, positionEnd)
+            let error = ASTDiagnosticError("Provide a value", .error, range)
             errors.append(error)
         }
         if value != nil {
@@ -64,11 +62,11 @@ struct PklClassProperty: ASTNode {
             }
         }
         if typeAnnotation == nil, value == nil {
-            let error = ASTDiagnosticError("Provide property type or value", .error, positionStart, positionEnd)
+            let error = ASTDiagnosticError("Provide property type or value", .error, range)
             errors.append(error)
         }
         if identifier == nil {
-            let error = ASTDiagnosticError("Provide property identifier", .error, positionStart, positionEnd)
+            let error = ASTDiagnosticError("Provide property identifier", .error, range)
             errors.append(error)
         }
         return errors.count > 0 ? errors : nil
@@ -78,8 +76,7 @@ struct PklClassProperty: ASTNode {
 struct PklClass: ASTNode {
     let uniqueID: UUID = .init()
 
-    var positionStart: Position
-    var positionEnd: Position
+    var range: ASTRange
 
     var properties: [PklClassProperty]?
     var functions: [PklFunctionDeclaration]?
@@ -99,23 +96,22 @@ struct PklClass: ASTNode {
     }
 
     init(properties: [PklClassProperty]? = nil, functions _: [PklFunctionDeclaration]? = nil, leftBraceIsPresent: Bool = false, rightBraceIsPresent: Bool = false,
-         positionStart: Position, positionEnd: Position)
+         range: ASTRange)
     {
         self.properties = properties
         self.leftBraceIsPresent = leftBraceIsPresent
         self.rightBraceIsPresent = rightBraceIsPresent
-        self.positionStart = positionStart
-        self.positionEnd = positionEnd
+        self.range = range
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
         var errors: [ASTDiagnosticError] = []
         if !rightBraceIsPresent {
-            let error = ASTDiagnosticError("Missing right brace symbol", .error, positionStart, positionEnd)
+            let error = ASTDiagnosticError("Missing right brace symbol", .error, range)
             errors.append(error)
         }
         if !leftBraceIsPresent {
-            let error = ASTDiagnosticError("Missing left brace symbol", .error, positionStart, positionEnd)
+            let error = ASTDiagnosticError("Missing left brace symbol", .error, range)
             errors.append(error)
         }
         if properties != nil {
@@ -139,8 +135,7 @@ struct PklClass: ASTNode {
 struct PklClassDeclaration: ASTNode {
     let uniqueID: UUID = .init()
 
-    var positionStart: Position
-    var positionEnd: Position
+    var range: ASTRange
 
     var classNode: PklClass?
     var classKeyword: String?
@@ -157,12 +152,11 @@ struct PklClassDeclaration: ASTNode {
         return children
     }
 
-    init(classNode: PklClass? = nil, classKeyword: String? = nil, classIdentifier: PklIdentifier? = nil, positionStart: Position, positionEnd: Position) {
+    init(classNode: PklClass? = nil, classKeyword: String? = nil, classIdentifier: PklIdentifier? = nil, range: ASTRange) {
         self.classNode = classNode
         self.classKeyword = classKeyword
         self.classIdentifier = classIdentifier
-        self.positionStart = positionStart
-        self.positionEnd = positionEnd
+        self.range = range
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
@@ -173,11 +167,11 @@ struct PklClassDeclaration: ASTNode {
             }
         }
         if classKeyword != "class" {
-            let error = ASTDiagnosticError("Missing class keyword", .error, positionStart, positionEnd)
+            let error = ASTDiagnosticError("Missing class keyword", .error, range)
             errors.append(error)
         }
         if classIdentifier == nil {
-            let error = ASTDiagnosticError("Provide class identifier", .error, positionStart, positionEnd)
+            let error = ASTDiagnosticError("Provide class identifier", .error, range)
             errors.append(error)
         }
         return errors.count > 0 ? errors : nil

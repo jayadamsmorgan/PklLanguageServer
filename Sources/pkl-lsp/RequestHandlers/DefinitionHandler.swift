@@ -10,10 +10,10 @@ public class DefinitionHandler {
     }
 
     public func provide(document: Document, module: any ASTNode, params: TextDocumentPositionParams) async -> DefinitionResponse {
-        let postionContext = ASTHelper.getPositionContext(module: module, position: params.position)
-        logger.debug("Position context: \(String(describing: postionContext))")
-        if let context = postionContext {
-            return DefinitionResponse(.optionA(Location(uri: document.uri, range: LSPRange(start: context.positionStart, end: context.positionEnd))))
+        let positionContext = ASTHelper.getPositionContext(module: module, position: params.position)
+        logger.debug("Position context: \(String(describing: positionContext))")
+        if let context = positionContext {
+            return DefinitionResponse(.optionA(Location(uri: document.uri, range: context.range.getLSPRange())))
         }
         return nil
     }
