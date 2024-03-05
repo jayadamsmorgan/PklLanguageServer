@@ -443,7 +443,9 @@ public class TreeSitterParser {
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
             let module = PklModule(contents: contents, range: range)
             if let errors = module.diagnosticErrors() {
-                logger.debug("AST Diagnostic errors: \(errors)")
+                for error in errors {
+                    logger.debug("AST Diagnostic error: \(error)")
+                }
             }
             logger.debug("Module built succesfully.")
             return module
@@ -624,13 +626,14 @@ public class TreeSitterParser {
 
         case .sym_objectBody: // OBJECT BODY
             logger.debug("Starting building object body...")
-            var properties: [PklObjectProperty] = []
+            var objectProperties: [PklObjectProperty] = []
+            var objectEntries: [PklObjectEntry] = []
             var leftBraceIsPresent = false
             var rightBraceIsPresent = false
             node.enumerateChildren(block: { childNode in
                 if childNode.symbol == PklTreeSitterSymbols.sym_objectProperty.rawValue {
                     if let property = tsNodeToASTNode(node: childNode, in: document) as? PklObjectProperty {
-                        properties.append(property)
+                        objectProperties.append(property)
                     }
                     return
                 }
@@ -648,10 +651,17 @@ public class TreeSitterParser {
                     }
                     return
                 }
+                if childNode.symbol == PklTreeSitterSymbols.sym_objectEntry.rawValue {
+                    if let property = tsNodeToASTNode(node: childNode, in: document) as? PklObjectEntry {
+                        objectEntries.append(property)
+                    }
+                    return
+                }
             })
             logger.debug("Object body built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
-            return PklObjectBody(properties: properties, isLeftBracePresent: leftBraceIsPresent, isRightBracePresent: rightBraceIsPresent, range: range)
+            return PklObjectBody(objectProperties: objectProperties, objectEntries: objectEntries,
+                isLeftBracePresent: leftBraceIsPresent, isRightBracePresent: rightBraceIsPresent, range: range)
 
         case .sym__objectMember:
             logger.debug("Not implemented")
@@ -661,23 +671,24 @@ public class TreeSitterParser {
             var identifier: PklIdentifier?
             var typeAnnotation: PklTypeAnnotation?
             var value: (any ASTNode)?
+            var isEqualsPresent: Bool = false
             node.enumerateChildren(block: { childNode in
                 if childNode.symbol == PklTreeSitterSymbols.sym_identifier.rawValue {
                     identifier = tsNodeToASTNode(node: childNode, in: document) as? PklIdentifier
-                    return
-                }
-                if childNode.symbol == PklTreeSitterSymbols.sym_typeAnnotation.rawValue {
+                } else if childNode.symbol == PklTreeSitterSymbols.sym_typeAnnotation.rawValue {
                     typeAnnotation = tsNodeToASTNode(node: childNode, in: document) as? PklTypeAnnotation
-                    return
-                }
-                if childNode.symbol == PklTreeSitterSymbols.sym_objectBody.rawValue {
+                } else if childNode.symbol == PklTreeSitterSymbols.sym_objectBody.rawValue {
                     value = tsNodeToASTNode(node: childNode, in: document)
-                    return
+                } else if childNode.symbol == PklTreeSitterSymbols.anon_sym_EQ.rawValue {
+                    isEqualsPresent = true
+                } else {
+                    value = tsNodeToASTNode(node: childNode, in: document)
                 }
             })
             logger.debug("Object property built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
-            return PklObjectProperty(identifier: identifier, typeAnnotation: typeAnnotation, value: value, range: range)
+            return PklObjectProperty(identifier: identifier, typeAnnotation: typeAnnotation,
+                isEqualsPresent: isEqualsPresent, value: value, range: range)
 
         case .sym_objectMethod:
             logger.debug("Not implemented")

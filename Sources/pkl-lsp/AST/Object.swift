@@ -9,16 +9,26 @@ struct PklObjectBody: ASTNode {
     var isLeftBracePresent: Bool = false
     var isRightBracePresent: Bool = false
 
-    var properties: [PklObjectProperty]?
+    var objectProperties: [PklObjectProperty]?
+    var objectEntries: [PklObjectEntry]?
 
     var children: [any ASTNode]? {
-        properties
+        var children: [any ASTNode] = []
+        if let objectProperties = objectProperties {
+            children.append(contentsOf: objectProperties)
+        }
+        if let objectEntries = objectEntries {
+            children.append(contentsOf: objectEntries)
+        }
+        return children
     }
 
-    init(properties: [PklObjectProperty]?, isLeftBracePresent: Bool = false, isRightBracePresent: Bool = false, range: ASTRange) {
+    init(objectProperties: [PklObjectProperty]?, objectEntries: [PklObjectEntry]?,
+        isLeftBracePresent: Bool = false, isRightBracePresent: Bool = false, range: ASTRange) {
         self.isLeftBracePresent = isLeftBracePresent
         self.isRightBracePresent = isRightBracePresent
-        self.properties = properties
+        self.objectEntries = objectEntries
+        self.objectProperties = objectProperties
         self.range = range
     }
 
@@ -32,8 +42,15 @@ struct PklObjectBody: ASTNode {
             let error = ASTDiagnosticError("Provide right brace", .error, range)
             errors.append(error)
         }
-        if let properties {
-            for property in properties {
+        if let objectProperties {
+            for property in objectProperties {
+                if let propertyErrors = property.diagnosticErrors() {
+                    errors.append(contentsOf: propertyErrors)
+                }
+            }
+        }
+        if let objectEntries {
+            for property in objectEntries {
                 if let propertyErrors = property.diagnosticErrors() {
                     errors.append(contentsOf: propertyErrors)
                 }
@@ -52,6 +69,8 @@ struct PklObjectProperty: ASTNode {
     var typeAnnotation: PklTypeAnnotation?
     var value: (any ASTNode)?
 
+    var isEqualsPresent: Bool = false
+
     var children: [any ASTNode]? {
         var children: [any ASTNode] = []
         if identifier != nil {
@@ -66,9 +85,10 @@ struct PklObjectProperty: ASTNode {
         return children
     }
 
-    init(identifier: PklIdentifier? = nil, typeAnnotation: PklTypeAnnotation? = nil, value: (any ASTNode)?, range: ASTRange) {
+    init(identifier: PklIdentifier? = nil, typeAnnotation: PklTypeAnnotation? = nil, isEqualsPresent: Bool, value: (any ASTNode)?, range: ASTRange) {
         self.identifier = identifier
         self.typeAnnotation = typeAnnotation
+        self.isEqualsPresent = isEqualsPresent
         self.value = value
         self.range = range
     }
@@ -81,6 +101,14 @@ struct PklObjectProperty: ASTNode {
         }
         if typeAnnotation == nil, value == nil {
             let error = ASTDiagnosticError("Provide property type or value", .error, range)
+            errors.append(error)
+        }
+        if value is PklObjectBody && isEqualsPresent {
+            let error = ASTDiagnosticError("Extraneous equals sign before object body", .error, range)
+            errors.append(error)
+        }
+        if value != nil && !(value is PklObjectBody) && !isEqualsPresent {
+            let error = ASTDiagnosticError("Missing equals sign", .error, range)
             errors.append(error)
         }
         if typeAnnotation != nil {
@@ -150,7 +178,11 @@ struct PklObjectEntry: ASTNode {
             let error = ASTDiagnosticError("Provide right square bracket", .error, range)
             errors.append(error)
         }
-        if !isEqualsPresent {
+        if value is PklObjectBody && isEqualsPresent {
+            let error = ASTDiagnosticError("Extraneous equals sign", .error, range)
+            errors.append(error)
+        }
+        if value != nil && !(value is PklObjectBody) && !isEqualsPresent {
             let error = ASTDiagnosticError("Missing equals sign", .error, range)
             errors.append(error)
         }
