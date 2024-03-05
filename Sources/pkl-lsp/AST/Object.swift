@@ -14,17 +14,18 @@ struct PklObjectBody: ASTNode {
 
     var children: [any ASTNode]? {
         var children: [any ASTNode] = []
-        if let objectProperties = objectProperties {
+        if let objectProperties {
             children.append(contentsOf: objectProperties)
         }
-        if let objectEntries = objectEntries {
+        if let objectEntries {
             children.append(contentsOf: objectEntries)
         }
         return children
     }
 
     init(objectProperties: [PklObjectProperty]?, objectEntries: [PklObjectEntry]?,
-        isLeftBracePresent: Bool = false, isRightBracePresent: Bool = false, range: ASTRange) {
+         isLeftBracePresent: Bool = false, isRightBracePresent: Bool = false, range: ASTRange)
+    {
         self.isLeftBracePresent = isLeftBracePresent
         self.isRightBracePresent = isRightBracePresent
         self.objectEntries = objectEntries
@@ -103,11 +104,11 @@ struct PklObjectProperty: ASTNode {
             let error = ASTDiagnosticError("Provide property type or value", .error, range)
             errors.append(error)
         }
-        if value is PklObjectBody && isEqualsPresent {
+        if value is PklObjectBody, isEqualsPresent {
             let error = ASTDiagnosticError("Extraneous equals sign before object body", .error, range)
             errors.append(error)
         }
-        if value != nil && !(value is PklObjectBody) && !isEqualsPresent {
+        if value != nil, !(value is PklObjectBody), !isEqualsPresent {
             let error = ASTDiagnosticError("Missing equals sign", .error, range)
             errors.append(error)
         }
@@ -178,11 +179,11 @@ struct PklObjectEntry: ASTNode {
             let error = ASTDiagnosticError("Provide right square bracket", .error, range)
             errors.append(error)
         }
-        if value is PklObjectBody && isEqualsPresent {
+        if value is PklObjectBody, isEqualsPresent {
             let error = ASTDiagnosticError("Extraneous equals sign", .error, range)
             errors.append(error)
         }
-        if value != nil && !(value is PklObjectBody) && !isEqualsPresent {
+        if value != nil, !(value is PklObjectBody), !isEqualsPresent {
             let error = ASTDiagnosticError("Missing equals sign", .error, range)
             errors.append(error)
         }

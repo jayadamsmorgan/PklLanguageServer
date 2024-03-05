@@ -661,7 +661,7 @@ public class TreeSitterParser {
             logger.debug("Object body built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
             return PklObjectBody(objectProperties: objectProperties, objectEntries: objectEntries,
-                isLeftBracePresent: leftBraceIsPresent, isRightBracePresent: rightBraceIsPresent, range: range)
+                                 isLeftBracePresent: leftBraceIsPresent, isRightBracePresent: rightBraceIsPresent, range: range)
 
         case .sym__objectMember:
             logger.debug("Not implemented")
@@ -671,7 +671,7 @@ public class TreeSitterParser {
             var identifier: PklIdentifier?
             var typeAnnotation: PklTypeAnnotation?
             var value: (any ASTNode)?
-            var isEqualsPresent: Bool = false
+            var isEqualsPresent = false
             node.enumerateChildren(block: { childNode in
                 if childNode.symbol == PklTreeSitterSymbols.sym_identifier.rawValue {
                     identifier = tsNodeToASTNode(node: childNode, in: document) as? PklIdentifier
@@ -688,7 +688,7 @@ public class TreeSitterParser {
             logger.debug("Object property built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
             return PklObjectProperty(identifier: identifier, typeAnnotation: typeAnnotation,
-                isEqualsPresent: isEqualsPresent, value: value, range: range)
+                                     isEqualsPresent: isEqualsPresent, value: value, range: range)
 
         case .sym_objectMethod:
             logger.debug("Not implemented")
