@@ -26,3 +26,24 @@ struct PklModule: ASTNode {
         return nil
     }
 }
+
+struct PklModuleAmending: ASTNode {
+    var uniqueID: UUID = .init()
+
+    var range: ASTRange
+
+    var module: PklModule
+
+    var children: [any ASTNode]? {
+        [module]
+    }
+
+    init(module: PklModule, range: ASTRange) {
+        self.module = module
+        self.range = range
+    }
+
+    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+        return module.diagnosticErrors()
+    }
+}

@@ -1,6 +1,12 @@
 import Foundation
 import LanguageServerProtocol
 
+enum PklStringType {
+    case constant
+    case singleLine
+    case multiLine
+}
+
 struct PklStringLiteral: ASTNode {
     let uniqueID: UUID = .init()
 
@@ -8,10 +14,13 @@ struct PklStringLiteral: ASTNode {
 
     var value: String?
 
+    var type: PklStringType
+
     var children: [any ASTNode]? = nil
 
-    init(value: String? = nil, range: ASTRange) {
+    init(value: String? = nil, type: PklStringType, range: ASTRange) {
         self.value = value
+        self.type = type
         self.range = range
     }
 

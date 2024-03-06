@@ -23,7 +23,9 @@ public actor PklServer {
     public init(_ dataChannel: DataChannel, logger: Logger) {
         self.logger = logger
         connection = JSONRPCClientConnection(dataChannel)
-        let documentProvider = DocumentProvider(connection: connection, logger: logger)
+        let treeSitterParser = TreeSitterParser(logger: logger)
+        let documentProvider = DocumentProvider(connection: connection, logger: logger, treeSitterParser: treeSitterParser)
+        treeSitterParser.setDocumentProvider(documentProvider)
         let requestHandler = PklRequestHandler(connection: connection, logger: logger, documentProvider: documentProvider)
 
         exitSemaphore = AsyncSemaphore(value: 0)

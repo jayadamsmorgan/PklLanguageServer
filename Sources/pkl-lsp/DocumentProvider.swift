@@ -32,12 +32,12 @@ public actor DocumentProvider {
     private let semanticTokensHandler: SemanticTokensHandler
     private let definitionHandler: DefinitionHandler
 
-    public init(connection: JSONRPCClientConnection, logger: Logger) {
+    public init(connection: JSONRPCClientConnection, logger: Logger, treeSitterParser: TreeSitterParser) {
         self.logger = logger
         documents = [:]
         self.connection = connection
         workspaceFolders = []
-        treeSitterParser = TreeSitterParser(logger: logger)
+        self.treeSitterParser = treeSitterParser
 
         renameHandler = RenameHandler(logger: logger)
         documentSymbolsHandler = DocumentSymbolsHandler(logger: logger)
@@ -248,7 +248,7 @@ public actor DocumentProvider {
         do {
             let newDocument = try document.withAppliedChanges(changes, nextVersion: nextVersion)
             documents[documentUri] = newDocument
-            treeSitterParser.parseDocumentTreeSitter(oldDocument: document, newDocument: newDocument, changes: changes)
+            await treeSitterParser.parseDocumentTreeSitter(oldDocument: document, newDocument: newDocument, changes: changes)
         } catch {
             logger.error("Error updating document: \(error)")
         }
@@ -263,7 +263,7 @@ public actor DocumentProvider {
 
         let document = Document(textDocument: params.textDocument)
         documents[documentUri] = document
-        treeSitterParser.parseDocumentTreeSitter(newDocument: document)
+        await treeSitterParser.parseDocumentTreeSitter(newDocument: document)
     }
 
     public func unregisterDocument(_ params: DidCloseTextDocumentParams) async {
