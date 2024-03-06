@@ -44,6 +44,6 @@ struct PklModuleAmending: ASTNode {
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
-        return module.diagnosticErrors()
+        module.diagnosticErrors()
     }
 }

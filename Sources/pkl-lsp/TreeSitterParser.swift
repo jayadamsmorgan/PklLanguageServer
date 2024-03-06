@@ -455,7 +455,7 @@ public class TreeSitterParser {
         case .sym_module: // MODULE (ROOT)
             logger.debug("Starting building module...")
             var contents: [any ASTNode] = []
-            for childPosition in 0..<node.childCount {
+            for childPosition in 0 ..< node.childCount {
                 guard let childNode = node.child(at: childPosition) else {
                     continue
                 }
@@ -475,7 +475,7 @@ public class TreeSitterParser {
 
         case .sym_moduleHeader:
             logger.debug("Starting building module header...")
-            for childPosition in 0..<node.childCount {
+            for childPosition in 0 ..< node.childCount {
                 guard let childNode = node.child(at: childPosition) else {
                     continue
                 }
@@ -489,9 +489,9 @@ public class TreeSitterParser {
 
         case .sym_extendsOrAmendsClause:
             logger.debug("Building extends or amends clause...")
-            var amends: Bool = false
-            var extends: Bool = false
-            var path: String = ""
+            var amends = false
+            var extends = false
+            var path = ""
             node.enumerateChildren(block: { childNode in
                 if childNode.symbol == PklTreeSitterSymbols.anon_sym_extends.rawValue {
                     logger.debug("Extends clause found.")
@@ -533,7 +533,7 @@ public class TreeSitterParser {
             var classNode: PklClass?
             var classKeyword: String?
             var classIdentifier: PklIdentifier?
-            for childPosition in 0..<node.childCount {
+            for childPosition in 0 ..< node.childCount {
                 guard let childNode = node.child(at: childPosition) else {
                     continue
                 }
@@ -563,7 +563,7 @@ public class TreeSitterParser {
             var functions: [PklFunctionDeclaration] = []
             var leftBraceIsPresent = false
             var rightBraceIsPresent = false
-            for childPosition in 0..<node.childCount {
+            for childPosition in 0 ..< node.childCount {
                 guard let childNode = node.child(at: childPosition) else {
                     continue
                 }
@@ -628,7 +628,7 @@ public class TreeSitterParser {
             var value: (any ASTNode)? // Can be either a PklObjectBody or a PklValue
             var isHidden = false
             var isEqualsPresent = false
-            for childPosition in 0..<node.childCount {
+            for childPosition in 0 ..< node.childCount {
                 guard let childNode = node.child(at: childPosition) else {
                     continue
                 }
@@ -663,7 +663,7 @@ public class TreeSitterParser {
             logger.debug("Starting building class method...")
             var functionValue: (any ASTNode)?
             var body: PklClassFunctionBody?
-            for childPosition in 0..<node.childCount {
+            for childPosition in 0 ..< node.childCount {
                 guard let childNode = node.child(at: childPosition) else {
                     continue
                 }
@@ -683,7 +683,7 @@ public class TreeSitterParser {
             var identifier: PklIdentifier?
             var typeAnnotation: PklTypeAnnotation?
             var params: PklFunctionParameterList?
-            for childPosition in 0..<node.childCount {
+            for childPosition in 0 ..< node.childCount {
                 guard let childNode = node.child(at: childPosition) else {
                     continue
                 }
@@ -718,7 +718,7 @@ public class TreeSitterParser {
             var objectEntries: [PklObjectEntry] = []
             var leftBraceIsPresent = false
             var rightBraceIsPresent = false
-            for childPosition in 0..<node.childCount {
+            for childPosition in 0 ..< node.childCount {
                 guard let childNode = node.child(at: childPosition) else {
                     continue
                 }
@@ -763,7 +763,7 @@ public class TreeSitterParser {
             var typeAnnotation: PklTypeAnnotation?
             var value: (any ASTNode)?
             var isEqualsPresent = false
-            for childPosition in 0..<node.childCount {
+            for childPosition in 0 ..< node.childCount {
                 guard let childNode = node.child(at: childPosition) else {
                     continue
                 }
@@ -798,7 +798,7 @@ public class TreeSitterParser {
             var isRightBracketPresent = false
             var isLeftBracketPresent = false
             var isEqualsPresent = false
-            for childPosition in 0..<node.childCount {
+            for childPosition in 0 ..< node.childCount {
                 guard let childNode = node.child(at: childPosition) else {
                     continue
                 }
@@ -836,7 +836,7 @@ public class TreeSitterParser {
             logger.debug("Starting building type annotation...")
             var type: PklType?
             var colonIsPresent = false
-            for childPosition in 0..<node.childCount {
+            for childPosition in 0 ..< node.childCount {
                 guard let childNode = node.child(at: childPosition) else {
                     continue
                 }
@@ -872,7 +872,7 @@ public class TreeSitterParser {
             var leftParenIsPresent = false
             var rightParenIsPresent = false
             var commasAmount = 0
-            for childPosition in 0..<node.childCount {
+            for childPosition in 0 ..< node.childCount {
                 guard let childNode = node.child(at: childPosition) else {
                     continue
                 }
@@ -1004,7 +1004,7 @@ public class TreeSitterParser {
             logger.debug("Starting building typed identifier...")
             var identifier: PklIdentifier?
             var typeAnnotation: PklTypeAnnotation?
-            for childPosition in 0..<node.childCount {
+            for childPosition in 0 ..< node.childCount {
                 guard let childNode = node.child(at: childPosition) else {
                     continue
                 }
