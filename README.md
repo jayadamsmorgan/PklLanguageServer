@@ -41,7 +41,7 @@ And don't forget to check [Code of Conduct](CODE_OF_CONDUCT.md).
 - **TBA** -- Work on the feature is not yet in progress, but it's being looked into
 - **WIP** -- Development work on the feature is actively progressing
 
-## Installing and running from source:
+## Installing and running from source
 
 Clone repository and build the project:
 
@@ -68,6 +68,18 @@ Check help for more options:
 ```
 pkl-lsp-server -h
 ```
+
+## Debugging
+
+By default, `pkl-lsp-server` will use standard output and `info` log level to print logs.
+
+To write debug info into the file you can use:
+
+```
+pkl-lsp-server --log debug --log-file pkl-lsp.log
+```
+
+This will run the server and print out debug information into `pkl-lsp.log` file created in the directory where server was started.
 
 ## Honorable mentions
 
