@@ -5,6 +5,7 @@ struct PklValue: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
+    let importDepth: Int
 
     var value: String?
 
@@ -12,10 +13,11 @@ struct PklValue: ASTNode {
 
     var children: [any ASTNode]? = nil
 
-    init(value: String? = nil, type: PklType? = nil, range: ASTRange) {
+    init(value: String? = nil, type: PklType? = nil, range: ASTRange, importDepth: Int) {
         self.value = value
         self.type = type
         self.range = range
+        self.importDepth = importDepth
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {

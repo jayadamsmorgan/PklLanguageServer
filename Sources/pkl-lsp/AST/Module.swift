@@ -5,6 +5,7 @@ struct PklModule: ASTNode {
     var uniqueID: UUID = .init()
 
     var range: ASTRange
+    let importDepth: Int
 
     var contents: [any ASTNode]
 
@@ -12,9 +13,10 @@ struct PklModule: ASTNode {
         contents
     }
 
-    init(contents: [any ASTNode], range: ASTRange) {
+    init(contents: [any ASTNode], range: ASTRange, importDepth: Int) {
         self.contents = contents
         self.range = range
+        self.importDepth = importDepth
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
@@ -31,6 +33,7 @@ struct PklModuleAmending: ASTNode {
     var uniqueID: UUID = .init()
 
     var range: ASTRange
+    let importDepth: Int
 
     var module: PklModule
 
@@ -38,9 +41,10 @@ struct PklModuleAmending: ASTNode {
         [module]
     }
 
-    init(module: PklModule, range: ASTRange) {
+    init(module: PklModule, range: ASTRange, importDepth: Int) {
         self.module = module
         self.range = range
+        self.importDepth = importDepth
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {

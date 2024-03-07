@@ -20,6 +20,8 @@ public protocol ASTNode: IdentifiableNode, Hashable, ASTEvaluation {
     var range: ASTRange { get set }
 
     var children: [any ASTNode]? { get }
+
+    var importDepth: Int { get }
 }
 
 public protocol ASTEvaluation {

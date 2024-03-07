@@ -12,14 +12,16 @@ struct PklType: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
+    let importDepth: Int
 
     var identifier: String?
 
     var children: [any ASTNode]? = nil
 
-    init(identifier: String? = nil, range: ASTRange) {
+    init(identifier: String? = nil, range: ASTRange, importDepth: Int) {
         self.identifier = identifier
         self.range = range
+        self.importDepth = importDepth
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
@@ -34,16 +36,18 @@ struct PklTypeAnnotation: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
+    let importDepth: Int
 
     var type: PklType?
     var colonIsPresent: Bool = false
 
     var children: [any ASTNode]? = nil
 
-    init(type: PklType? = nil, colonIsPresent: Bool = false, range: ASTRange) {
+    init(type: PklType? = nil, colonIsPresent: Bool = false, range: ASTRange, importDepth: Int) {
         self.type = type
         self.colonIsPresent = colonIsPresent
         self.range = range
+        self.importDepth = importDepth
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {

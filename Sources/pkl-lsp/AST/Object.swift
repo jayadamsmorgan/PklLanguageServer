@@ -5,6 +5,7 @@ struct PklObjectBody: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
+    let importDepth: Int
 
     var isLeftBracePresent: Bool = false
     var isRightBracePresent: Bool = false
@@ -24,13 +25,14 @@ struct PklObjectBody: ASTNode {
     }
 
     init(objectProperties: [PklObjectProperty]?, objectEntries: [PklObjectEntry]?,
-         isLeftBracePresent: Bool = false, isRightBracePresent: Bool = false, range: ASTRange)
+         isLeftBracePresent: Bool = false, isRightBracePresent: Bool = false, range: ASTRange, importDepth: Int)
     {
         self.isLeftBracePresent = isLeftBracePresent
         self.isRightBracePresent = isRightBracePresent
         self.objectEntries = objectEntries
         self.objectProperties = objectProperties
         self.range = range
+        self.importDepth = importDepth
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
@@ -65,6 +67,7 @@ struct PklObjectProperty: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
+    let importDepth: Int
 
     var identifier: PklIdentifier?
     var typeAnnotation: PklTypeAnnotation?
@@ -86,12 +89,13 @@ struct PklObjectProperty: ASTNode {
         return children
     }
 
-    init(identifier: PklIdentifier? = nil, typeAnnotation: PklTypeAnnotation? = nil, isEqualsPresent: Bool, value: (any ASTNode)?, range: ASTRange) {
+    init(identifier: PklIdentifier? = nil, typeAnnotation: PklTypeAnnotation? = nil, isEqualsPresent: Bool, value: (any ASTNode)?, range: ASTRange, importDepth: Int) {
         self.identifier = identifier
         self.typeAnnotation = typeAnnotation
         self.isEqualsPresent = isEqualsPresent
         self.value = value
         self.range = range
+        self.importDepth = importDepth
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
@@ -130,6 +134,7 @@ struct PklObjectEntry: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
+    let importDepth: Int
 
     var strIdentifier: PklStringLiteral?
     var value: (any ASTNode)?
@@ -151,7 +156,7 @@ struct PklObjectEntry: ASTNode {
     }
 
     init(strIdentifier: PklStringLiteral? = nil, value: (any ASTNode)? = nil, isEqualsPresent: Bool, isLeftBracketPresent: Bool,
-         isRightBracketPresent: Bool, range: ASTRange)
+         isRightBracketPresent: Bool, range: ASTRange, importDepth: Int)
     {
         self.strIdentifier = strIdentifier
         self.value = value
@@ -159,6 +164,7 @@ struct PklObjectEntry: ASTNode {
         self.isLeftBracketPresent = isLeftBracketPresent
         self.isRightBracketPresent = isRightBracketPresent
         self.isEqualsPresent = isEqualsPresent
+        self.importDepth = importDepth
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
