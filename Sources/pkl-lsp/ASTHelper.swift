@@ -3,7 +3,7 @@ import LanguageServerProtocol
 import Logging
 
 public enum ASTHelper {
-    private static func iterate<T: ASTNode>(node: any ASTNode, array: inout [T]) {
+    public static func iterate<T: ASTNode>(node: any ASTNode, array: inout [T]) {
         if let children = node.children {
             for child in children {
                 if let child = child as? T {
@@ -48,15 +48,4 @@ public enum ASTHelper {
         return nil
     }
 
-    static func getASTIdentifiers(node: any ASTNode) -> [PklIdentifier] {
-        var identifiers: [PklIdentifier] = []
-        iterate(node: node, array: &identifiers)
-        return identifiers
-    }
-
-    static func getASTClasses(node: any ASTNode) -> [PklClass] {
-        var classes: [PklClass] = []
-        iterate(node: node, array: &classes)
-        return classes
-    }
 }

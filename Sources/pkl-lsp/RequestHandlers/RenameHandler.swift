@@ -10,7 +10,8 @@ public class RenameHandler {
     }
 
     public func provide(document _: Document, module: any ASTNode, params: RenameParams) async -> RenameResponse {
-        var identifiers: [PklIdentifier] = ASTHelper.getASTIdentifiers(node: module)
+        var identifiers: [PklIdentifier] = []
+        ASTHelper.iterate(node: module, array: &identifiers)
         logger.debug("LSP Rename: Found \(identifiers) identifiers in \(params.textDocument.uri).")
 
         // Character position is doubled after tree-siiter parsing due to UTF16 (I guess), so we need to divide it by 2
