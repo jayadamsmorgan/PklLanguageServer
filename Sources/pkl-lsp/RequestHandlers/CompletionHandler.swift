@@ -9,31 +9,47 @@ public class CompletionHandler {
         self.logger = logger
     }
 
-    private func iterate(node: any ASTNode) -> [CompletionItem] {
-        var completions: [CompletionItem] = []
-        if let object = node as? PklClassDeclaration {
-            completions.append(CompletionItem(
-                label: object.classIdentifier?.value ?? "",
-                kind: .class,
-                detail: "Pickle object"
-            ))
-        }
-        if let function = node as? PklFunctionDeclaration {
-            completions.append(CompletionItem(
-                label: function.body?.identifier?.value ?? "",
-                kind: .function,
-                detail: "Pickle function"
-            ))
-        }
-        return completions
-    }
-
     public func provide(document _: Document, module: any ASTNode, params: CompletionParams) async -> CompletionResponse {
-        let positionContext = ASTHelper.getPositionContext(module: module, position: params.position)
-        if positionContext != nil, params.context?.triggerCharacter == "." {
-            let completions = iterate(node: positionContext!)
-            return CompletionResponse(.optionB(CompletionList(isIncomplete: false, items: completions)))
+        //let positionContext = ASTHelper.getPositionContext(module: module, position: params.position)
+        var completions: [CompletionItem] = []
+        ASTHelper.enumerate(node: module) { node in
+            if let function = node as? PklFunctionDeclaration {
+                completions.append(CompletionItem(
+                    label: function.body?.identifier?.value ?? "",
+                    kind: .function,
+                    detail: "Pickle function"
+                ))
+            }
+            if let classDeclaration = node as? PklClassDeclaration {
+                completions.append(CompletionItem(
+                    label: classDeclaration.classIdentifier?.value ?? "",
+                    kind: .class,
+                    detail: "Pickle object"
+                ))
+            }
+            if let property = node as? PklClassProperty {
+                completions.append(CompletionItem(
+                    label: property.identifier?.value ?? "",
+                    kind: .property,
+                    detail: "Pickle property"
+                ))
+            }
+            if let object = node as? PklObjectProperty {
+                completions.append(CompletionItem(
+                    label: object.identifier?.value ?? "",
+                    kind: .class,
+                    detail: "Pickle object property"
+                ))
+            }
+            if let objectEntry = node as? PklObjectEntry {
+                completions.append(CompletionItem(
+                    label: objectEntry.strIdentifier?.value ?? "",
+                    kind: .class,
+                    detail: "Pickle object entry"
+                ))
+            }
         }
+
         let keywordCompletions: [CompletionItem] = PklKeywords.allCases.map { keyword in
             CompletionItem(
                 label: keyword.rawValue,
@@ -41,6 +57,8 @@ public class CompletionHandler {
                 detail: "Pickle keyword"
             )
         }
+        completions.append(contentsOf: keywordCompletions)
+
         let objectCompletions: [CompletionItem] = module.children?.compactMap { node in
             if let object = node as? PklClassDeclaration {
                 return CompletionItem(
@@ -51,6 +69,8 @@ public class CompletionHandler {
             }
             return nil
         } ?? []
+        completions.append(contentsOf: objectCompletions)
+
         let functionCompletions: [CompletionItem] = module.children?.compactMap { node in
             if let function = node as? PklFunctionDeclaration {
                 return CompletionItem(
@@ -61,7 +81,14 @@ public class CompletionHandler {
             }
             return nil
         } ?? []
-        let completions = keywordCompletions + objectCompletions + functionCompletions
+        completions.append(contentsOf: functionCompletions)
+
+        completions = completions.reduce(into: [CompletionItem]()) { result, completion in
+            if !result.contains(where: { $0.label == completion.label && $0.kind == completion.kind  && $0.detail == completion.detail }) {
+                result.append(completion)
+            }
+        }
+
         return CompletionResponse(.optionB(CompletionList(isIncomplete: false, items: completions)))
     }
 }

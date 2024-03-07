@@ -14,6 +14,24 @@ public enum ASTHelper {
         }
     }
 
+    static func enumerate(node: any ASTNode, block: (any ASTNode) -> Void) {
+        if let children = node.children {
+            for child in children {
+                block(node)
+                enumerate(node: child, block: block)
+            }
+        }
+    }
+
+    static func enumerate(node: any ASTNode, block: (any ASTNode) async -> Void) async {
+        if let children = node.children {
+            for child in children {
+                await block(node)
+                await enumerate(node: child, block: block)
+            }
+        }
+    }
+
     static func getPositionContext(module: any ASTNode, position: Position) -> (any ASTNode)? {
         for node in module.children ?? [] {
             if node.range.positionRange.lowerBound.line <= position.line,
