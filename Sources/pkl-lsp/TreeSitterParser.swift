@@ -58,7 +58,6 @@ public class TreeSitterParser {
         }
         logger.debug("Document \(newDocument) parsed succesfully. Tree: \(tree)")
         parsedTrees[newDocument] = tree
-        // logger.debug("RootNode: \(PklTreeSitterSymbols(rootNode.symbol)), range: \(rootNode.pointRange), text: \(newDocument.getTextInByteRange(rootNode.byteRange))")
         if logger.logLevel == .debug || logger.logLevel == .trace {
             listTreeSitterNodes(rootNode: rootNode, document: newDocument)
         }
@@ -127,7 +126,7 @@ public class TreeSitterParser {
             return
         }
         for childNode in children {
-            let text = rootNode.document.getTextInByteRange(childNode.range.byteRange)
+            let text = childNode.document.getTextInByteRange(childNode.range.byteRange)
             logger.debug(
                 "AST Node: \(type(of: childNode))," +
                     " depth: \(depth)," +
@@ -144,14 +143,24 @@ public class TreeSitterParser {
         var fileURL = URL(fileURLWithPath: currentDocument.uri)
         fileURL.deleteLastPathComponent()
         fileURL.appendPathComponent(relPath)
-        logger.debug("Module include: fileURL: \(fileURL.absoluteURL)")
-        guard let text = try? String(contentsOf: fileURL, encoding: .utf16) else {
-            logger.error("Module include: file not found: \(fileURL)")
+        fileURL.standardize()
+        do {
+            guard try fileURL.checkResourceIsReachable() else {
+                logger.debug("Module include: Unable to include module: Module is not reachable.")
+                return nil
+            }
+            logger.debug("Module include: fileURL: \(fileURL.absoluteURL)")
+            guard let text = try? String(contentsOf: fileURL, encoding: .utf8) else {
+                logger.error("Module include: file not found: \(fileURL)")
+                return nil
+            }
+            let document = Document(uri: fileURL.absoluteString, version: nil, text: text)
+            logger.debug("Module include: file found: \(fileURL.absoluteString)")
+            return document
+        } catch {
+            logger.debug("Module include: Unable to check if resource is reachable: \(error)")
             return nil
         }
-        let document = Document(uri: fileURL.absoluteString, version: nil, text: text)
-        logger.debug("Module include: file found: \(fileURL.absoluteString)")
-        return document
     }
 
     private func tsNodeToASTNode(node: Node, in document: Document, importDepth: Int) async -> (any ASTNode)? {
