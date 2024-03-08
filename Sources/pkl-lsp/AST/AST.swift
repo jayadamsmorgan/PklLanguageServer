@@ -22,6 +22,8 @@ public protocol ASTNode: IdentifiableNode, Hashable, ASTEvaluation {
     var children: [any ASTNode]? { get }
 
     var importDepth: Int { get }
+
+    var document: Document { get }
 }
 
 public protocol ASTEvaluation {

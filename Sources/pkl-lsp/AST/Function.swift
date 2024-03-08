@@ -6,6 +6,7 @@ struct PklFunctionParameter: ASTNode {
 
     var range: ASTRange
     let importDepth: Int
+    let document: Document
 
     var identifier: PklIdentifier?
     var typeAnnotation: PklTypeAnnotation?
@@ -21,11 +22,12 @@ struct PklFunctionParameter: ASTNode {
         return children
     }
 
-    init(identifier: PklIdentifier?, typeAnnotation: PklTypeAnnotation?, range: ASTRange, importDepth: Int) {
+    init(identifier: PklIdentifier?, typeAnnotation: PklTypeAnnotation?, range: ASTRange, importDepth: Int, document: Document) {
         self.identifier = identifier
         self.typeAnnotation = typeAnnotation
         self.range = range
         self.importDepth = importDepth
+        self.document = document
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
@@ -52,6 +54,7 @@ struct PklFunctionParameterList: ASTNode {
 
     var range: ASTRange
     let importDepth: Int
+    let document: Document
 
     var parameters: [PklFunctionParameter]?
     var isLeftParenPresent: Bool = false
@@ -67,7 +70,7 @@ struct PklFunctionParameterList: ASTNode {
     }
 
     init(parameters: [PklFunctionParameter]?, isLeftParenPresent: Bool = false, isRightParenPresent: Bool = false,
-         commasAmount: Int = 0, range: ASTRange, importDepth: Int)
+         commasAmount: Int = 0, range: ASTRange, importDepth: Int, document: Document)
     {
         self.parameters = parameters
         self.isLeftParenPresent = isLeftParenPresent
@@ -75,6 +78,7 @@ struct PklFunctionParameterList: ASTNode {
         self.commasAmount = commasAmount
         self.range = range
         self.importDepth = importDepth
+        self.document = document
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
@@ -109,6 +113,7 @@ struct PklFunctionDeclaration: ASTNode {
 
     var range: ASTRange
     let importDepth: Int
+    let document: Document
 
     var body: PklClassFunctionBody?
     var functionValue: (any ASTNode)?
@@ -124,11 +129,12 @@ struct PklFunctionDeclaration: ASTNode {
         return children
     }
 
-    init(body: PklClassFunctionBody?, functionValue: (any ASTNode)?, range: ASTRange, importDepth: Int) {
+    init(body: PklClassFunctionBody?, functionValue: (any ASTNode)?, range: ASTRange, importDepth: Int, document: Document) {
         self.body = body
         self.functionValue = functionValue
         self.range = range
         self.importDepth = importDepth
+        self.document = document
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
@@ -160,6 +166,7 @@ struct PklClassFunctionBody: ASTNode {
 
     var range: ASTRange
     let importDepth: Int
+    let document: Document
 
     var isFunctionKeywordPresent: Bool = false
     var identifier: PklIdentifier?
@@ -181,13 +188,14 @@ struct PklClassFunctionBody: ASTNode {
     }
 
     init(isFunctionKeywordPresent: Bool = false, identifier: PklIdentifier?, params: PklFunctionParameterList?,
-         typeAnnotation _: PklTypeAnnotation? = nil, range: ASTRange, importDepth: Int)
+         typeAnnotation _: PklTypeAnnotation? = nil, range: ASTRange, importDepth: Int, document: Document)
     {
         self.isFunctionKeywordPresent = isFunctionKeywordPresent
         self.identifier = identifier
         self.params = params
         self.range = range
         self.importDepth = importDepth
+        self.document = document
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {

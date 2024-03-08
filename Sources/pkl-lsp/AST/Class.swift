@@ -6,6 +6,7 @@ struct PklClassProperty: ASTNode {
 
     var range: ASTRange
     let importDepth: Int
+    let document: Document
 
     var identifier: PklIdentifier?
     var typeAnnotation: PklTypeAnnotation?
@@ -28,7 +29,7 @@ struct PklClassProperty: ASTNode {
     }
 
     init(identifier: PklIdentifier? = nil, typeAnnotation: PklTypeAnnotation? = nil, isEqualsPresent: Bool = false, value: (any ASTNode)?,
-         isHidden: Bool = false, range: ASTRange, importDepth: Int)
+         isHidden: Bool = false, range: ASTRange, importDepth: Int, document: Document)
     {
         self.identifier = identifier
         self.typeAnnotation = typeAnnotation
@@ -37,6 +38,7 @@ struct PklClassProperty: ASTNode {
         self.isHidden = isHidden
         self.range = range
         self.importDepth = importDepth
+        self.document = document
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
@@ -80,6 +82,7 @@ struct PklClass: ASTNode {
 
     var range: ASTRange
     let importDepth: Int
+    let document: Document
 
     var properties: [PklClassProperty]?
     var functions: [PklFunctionDeclaration]?
@@ -99,13 +102,14 @@ struct PklClass: ASTNode {
     }
 
     init(properties: [PklClassProperty]? = nil, functions _: [PklFunctionDeclaration]? = nil, leftBraceIsPresent: Bool = false, rightBraceIsPresent: Bool = false,
-         range: ASTRange, importDepth: Int)
+         range: ASTRange, importDepth: Int, document: Document)
     {
         self.properties = properties
         self.leftBraceIsPresent = leftBraceIsPresent
         self.rightBraceIsPresent = rightBraceIsPresent
         self.range = range
         self.importDepth = importDepth
+        self.document = document
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
@@ -141,6 +145,7 @@ struct PklClassDeclaration: ASTNode {
 
     var range: ASTRange
     let importDepth: Int
+    let document: Document
 
     var classNode: PklClass?
     var classKeyword: String?
@@ -157,12 +162,13 @@ struct PklClassDeclaration: ASTNode {
         return children
     }
 
-    init(classNode: PklClass? = nil, classKeyword: String? = nil, classIdentifier: PklIdentifier? = nil, range: ASTRange, importDepth: Int) {
+    init(classNode: PklClass? = nil, classKeyword: String? = nil, classIdentifier: PklIdentifier? = nil, range: ASTRange, importDepth _: Int, document: Document) {
         self.classNode = classNode
         self.classKeyword = classKeyword
         self.classIdentifier = classIdentifier
         self.range = range
-        self.importDepth = 0
+        importDepth = 0
+        self.document = document
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {

@@ -18,17 +18,19 @@ struct PklNumberLiteral: ASTNode {
 
     var range: ASTRange
     let importDepth: Int
+    let document: Document
 
     var value: String?
     var type: PklNumberType
 
     var children: [any ASTNode]? = nil
 
-    init(value: String? = nil, type: PklNumberType, range: ASTRange, importDepth: Int) {
+    init(value: String? = nil, type: PklNumberType, range: ASTRange, importDepth: Int, document: Document) {
         self.value = value
         self.type = type
         self.range = range
         self.importDepth = importDepth
+        self.document = document
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {

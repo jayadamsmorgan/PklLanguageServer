@@ -58,7 +58,7 @@ public class TreeSitterParser {
         }
         logger.debug("Document \(newDocument) parsed succesfully. Tree: \(tree)")
         parsedTrees[newDocument] = tree
-        logger.debug("RootNode: \(PklTreeSitterSymbols(rootNode.symbol)!), range: \(rootNode.pointRange), text: \(newDocument.getTextInByteRange(rootNode.byteRange))")
+        // logger.debug("RootNode: \(PklTreeSitterSymbols(rootNode.symbol)), range: \(rootNode.pointRange), text: \(newDocument.getTextInByteRange(rootNode.byteRange))")
         if logger.logLevel == .debug || logger.logLevel == .trace {
             listTreeSitterNodes(rootNode: rootNode, document: newDocument)
         }
@@ -67,7 +67,7 @@ public class TreeSitterParser {
             return
         }
         if logger.logLevel == .debug || logger.logLevel == .trace {
-            listASTNodes(rootNode: astParsing, document: newDocument)
+            listASTNodes(rootNode: astParsing)
         }
         astParsedTrees[newDocument] = astParsing
     }
@@ -94,7 +94,7 @@ public class TreeSitterParser {
                     return
                 }
                 if logger.logLevel == .debug || logger.logLevel == .trace {
-                    listASTNodes(rootNode: astParsing, document: newDocument)
+                    listASTNodes(rootNode: astParsing)
                 }
                 astParsedTrees[newDocument] = astParsing
                 return
@@ -112,58 +112,40 @@ public class TreeSitterParser {
                 return
             }
             let text = document.getTextInByteRange(node.byteRange)
-            if text.contains("\n") {
-                logger.debug(
-                    "TS Node: \(treeSitterSymbol),\n" + 
-                    " depth: \(depth),\n" +
-                    " range: \(node.pointRange),\n" +
-                    " text:\n\(text))"
-                )
-            } else {
-                logger.debug(
-                    "TS Node: \(treeSitterSymbol),\n" + 
-                    " depth: \(depth),\n" +
-                    " range: \(node.pointRange),\n" +
+            logger.debug(
+                "TS Node: \(treeSitterSymbol)," +
+                    " depth: \(depth)," +
+                    " range: \(node.pointRange)," +
                     " text: \(text))"
-                )
-            }
+            )
             listTreeSitterNodes(rootNode: node, depth: depth + 1, document: document)
         })
     }
 
-    private func listASTNodes(rootNode: any ASTNode, depth: Int = 0, document: Document) {
+    private func listASTNodes(rootNode: any ASTNode, depth: Int = 0) {
         guard let children = rootNode.children else {
             return
         }
         for childNode in children {
-            let text = document.getTextInByteRange(childNode.range.byteRange)
-            if text.contains("\n") {
-                logger.debug(
-                    "AST Node: \(type(of: childNode)),\n" +
-                    " depth: \(depth),\n" +
-                    " range: \(childNode.range.positionRange),\n" +
-                    " importDepth: \(childNode.importDepth),\n" +
-                    " text:\n\(document.getTextInByteRange(childNode.range.byteRange))"
-                )
-            } else {
-                logger.debug(
-                    "AST Node: \(type(of: childNode)),\n" +
-                    " depth: \(depth),\n" +
-                    " range: \(childNode.range.positionRange),\n" +
-                    " importDepth: \(childNode.importDepth),\n" +
-                    " text: \(document.getTextInByteRange(childNode.range.byteRange))"
-                )
-            }
-            listASTNodes(rootNode: childNode, depth: depth + 1, document: document)
+            let text = rootNode.document.getTextInByteRange(childNode.range.byteRange)
+            logger.debug(
+                "AST Node: \(type(of: childNode))," +
+                    " depth: \(depth)," +
+                    " range: \(childNode.range.positionRange)," +
+                    " importDepth: \(childNode.importDepth)," +
+                    " text: \(text))"
+            )
+            listASTNodes(rootNode: childNode, depth: depth + 1)
         }
     }
 
     public func includeModule(relPath: String, currentDocument: Document) async -> Document? {
+        logger.debug("Document: \(currentDocument.uri)")
         var fileURL = URL(fileURLWithPath: currentDocument.uri)
         fileURL.deleteLastPathComponent()
         fileURL.appendPathComponent(relPath)
         logger.debug("Module include: fileURL: \(fileURL.absoluteURL)")
-        guard let text = try? String(contentsOf: fileURL) else {
+        guard let text = try? String(contentsOf: fileURL, encoding: .utf16) else {
             logger.error("Module include: file not found: \(fileURL)")
             return nil
         }
@@ -184,7 +166,7 @@ public class TreeSitterParser {
             let identifier = document.getTextInByteRange(node.byteRange)
             logger.debug("Identifier built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
-            return PklIdentifier(value: identifier, range: range, importDepth: importDepth)
+            return PklIdentifier(value: identifier, range: range, importDepth: importDepth, document: document)
 
         case .anon_sym_module:
             logger.debug("Not implemented")
@@ -276,31 +258,31 @@ public class TreeSitterParser {
         case .sym_nullLiteral: // NULL LITERAL
             logger.debug("Null literal built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
-            return PklNullLiteral(range: range, importDepth: importDepth)
+            return PklNullLiteral(range: range, importDepth: importDepth, document: document)
 
         case .sym_trueLiteral: // BOOLEAN LITERAL
             logger.debug("Boolean literal built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
-            return PklBooleanLiteral(value: true, range: range, importDepth: importDepth)
+            return PklBooleanLiteral(value: true, range: range, importDepth: importDepth, document: document)
 
         case .sym_falseLiteral: // BOOLEAN LITERAL
             logger.debug("Boolean literal built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
-            return PklBooleanLiteral(value: false, range: range, importDepth: importDepth)
+            return PklBooleanLiteral(value: false, range: range, importDepth: importDepth, document: document)
 
         case .sym_intLiteral: // INTEGER LITERAL
             logger.debug("Starting building integer literal...")
             let value = document.getTextInByteRange(node.byteRange)
             logger.debug("Integer literal built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
-            return PklNumberLiteral(value: value, type: .int, range: range, importDepth: importDepth)
+            return PklNumberLiteral(value: value, type: .int, range: range, importDepth: importDepth, document: document)
 
         case .sym_floatLiteral: // FLOAT LITERAL
             logger.debug("Starting building float literal...")
             let value = document.getTextInByteRange(node.byteRange)
             logger.debug("Float literal built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
-            return PklNumberLiteral(value: value, type: .float, range: range, importDepth: importDepth)
+            return PklNumberLiteral(value: value, type: .float, range: range, importDepth: importDepth, document: document)
 
         case .anon_sym_DQUOTE:
             logger.debug("Not implemented")
@@ -495,7 +477,7 @@ public class TreeSitterParser {
                 }
             }
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
-            let module = PklModule(contents: contents, range: range, importDepth: importDepth)
+            let module = PklModule(contents: contents, range: range, importDepth: importDepth, document: document)
             if let errors = module.diagnosticErrors() {
                 for error in errors {
                     logger.debug("AST Diagnostic error: \(error)")
@@ -511,7 +493,7 @@ public class TreeSitterParser {
                     continue
                 }
                 if childNode.symbol == PklTreeSitterSymbols.sym_extendsOrAmendsClause.rawValue {
-                    await tsNodeToASTNode(node: childNode, in: document, importDepth: importDepth)
+                    return await tsNodeToASTNode(node: childNode, in: document, importDepth: importDepth) as? PklModuleAmending
                 }
             }
 
@@ -522,8 +504,11 @@ public class TreeSitterParser {
             logger.debug("Building extends or amends clause...")
             var amends = false
             var extends = false
-            var path = ""
-            node.enumerateChildren(block: { childNode in
+            var path: PklStringLiteral?
+            for childPosition in 0 ..< node.childCount {
+                guard let childNode = node.child(at: childPosition) else {
+                    continue
+                }
                 if childNode.symbol == PklTreeSitterSymbols.anon_sym_extends.rawValue {
                     logger.debug("Extends clause found.")
                     extends = true
@@ -531,25 +516,31 @@ public class TreeSitterParser {
                     logger.debug("Amends clause found.")
                     amends = true
                 } else if childNode.symbol == PklTreeSitterSymbols.sym_stringConstant.rawValue {
-                    path = document.getTextInByteRange(childNode.byteRange)
-                    path.removeAll(where: { $0 == "\"" })
-                    logger.debug("Path found: \(path)")
+                    path = await tsNodeToASTNode(node: childNode, in: document, importDepth: importDepth) as? PklStringLiteral
+                    logger.debug("Path found: \(path?.value ?? "nil")")
                 }
-            })
-            if path != "" {
-                guard let importDocument = await includeModule(relPath: path, currentDocument: document) else {
-                    logger.error("Failed to include module \(path) in \(document.uri).")
+            }
+            guard let path else {
+                logger.error("Failed to parse path in extends or amends clause.")
+                return nil
+            }
+            guard var pathValue = path.value else {
+                logger.error("Failed to parse path in extends or amends clause.")
+                return nil
+            }
+            pathValue.removeAll(where: { $0 == "\"" })
+            guard let importDocument = await includeModule(relPath: pathValue, currentDocument: document) else {
+                logger.error("Failed to include module \(pathValue) in \(document.uri).")
+                return nil
+            }
+            await parseDocumentTreeSitter(newDocument: importDocument, importDepth: importDepth + 1)
+            if amends {
+                guard let module = astParsedTrees[importDocument] as? PklModule else {
+                    logger.error("Amends clause: Failed to parse module \(importDocument.uri) to AST.")
                     return nil
                 }
-                await parseDocumentTreeSitter(newDocument: importDocument, importDepth: importDepth + 1)
-                if amends {
-                    guard let module = astParsedTrees[importDocument] as? PklModule else {
-                        logger.error("Amends clause: Failed to parse module \(importDocument.uri) to AST.")
-                        return nil
-                    }
-                    let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
-                    return PklModuleAmending(module: module, range: range, importDepth: importDepth)
-                }
+                let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
+                return PklModuleAmending(module: module, range: range, path: path, importDepth: importDepth, document: document)
             }
 
         case .sym_importClause:
@@ -583,7 +574,7 @@ public class TreeSitterParser {
             }
             logger.debug("Class built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
-            return PklClassDeclaration(classNode: classNode, classKeyword: classKeyword, classIdentifier: classIdentifier, range: range, importDepth: importDepth)
+            return PklClassDeclaration(classNode: classNode, classKeyword: classKeyword, classIdentifier: classIdentifier, range: range, importDepth: importDepth, document: document)
 
         case .sym_classExtendsClause:
             logger.debug("Not implemented")
@@ -628,7 +619,7 @@ public class TreeSitterParser {
             logger.debug("Class body built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
             return PklClass(properties: properties, functions: functions,
-                            leftBraceIsPresent: leftBraceIsPresent, rightBraceIsPresent: rightBraceIsPresent, range: range, importDepth: importDepth)
+                            leftBraceIsPresent: leftBraceIsPresent, rightBraceIsPresent: rightBraceIsPresent, range: range, importDepth: importDepth, document: document)
 
         case .sym_typeAlias:
             logger.debug("Not implemented")
@@ -688,7 +679,7 @@ public class TreeSitterParser {
             logger.debug("Class property built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
             return PklClassProperty(identifier: propertyIdentifier, typeAnnotation: typeAnnotation, isEqualsPresent: isEqualsPresent,
-                                    value: value, isHidden: isHidden, range: range, importDepth: importDepth)
+                                    value: value, isHidden: isHidden, range: range, importDepth: importDepth, document: document)
 
         case .sym_classMethod:
             logger.debug("Starting building class method...")
@@ -706,7 +697,7 @@ public class TreeSitterParser {
             }
             logger.debug("Class method built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
-            return PklFunctionDeclaration(body: body, functionValue: functionValue, range: range, importDepth: importDepth)
+            return PklFunctionDeclaration(body: body, functionValue: functionValue, range: range, importDepth: importDepth, document: document)
 
         case .sym_methodHeader: // METHOD HEADER
             logger.debug("Starting building method header...")
@@ -738,7 +729,7 @@ public class TreeSitterParser {
             logger.debug("Method header built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
             return PklClassFunctionBody(isFunctionKeywordPresent: isFunctionKeywordPresent, identifier: identifier,
-                                        params: params, typeAnnotation: typeAnnotation, range: range, importDepth: importDepth)
+                                        params: params, typeAnnotation: typeAnnotation, range: range, importDepth: importDepth, document: document)
 
         case .sym_annotation:
             logger.debug("Not implemented")
@@ -783,7 +774,7 @@ public class TreeSitterParser {
             logger.debug("Object body built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
             return PklObjectBody(objectProperties: objectProperties, objectEntries: objectEntries,
-                                 isLeftBracePresent: leftBraceIsPresent, isRightBracePresent: rightBraceIsPresent, range: range, importDepth: importDepth)
+                                 isLeftBracePresent: leftBraceIsPresent, isRightBracePresent: rightBraceIsPresent, range: range, importDepth: importDepth, document: document)
 
         case .sym__objectMember:
             logger.debug("Not implemented")
@@ -817,7 +808,7 @@ public class TreeSitterParser {
             logger.debug("Object property built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
             return PklObjectProperty(identifier: identifier, typeAnnotation: typeAnnotation,
-                                     isEqualsPresent: isEqualsPresent, value: value, range: range, importDepth: importDepth)
+                                     isEqualsPresent: isEqualsPresent, value: value, range: range, importDepth: importDepth, document: document)
 
         case .sym_objectMethod:
             logger.debug("Not implemented")
@@ -848,7 +839,7 @@ public class TreeSitterParser {
             logger.debug("Object entry built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
             return PklObjectEntry(strIdentifier: strIdentifier, value: value, isEqualsPresent: isEqualsPresent,
-                                  isLeftBracketPresent: isLeftBracketPresent, isRightBracketPresent: isRightBracketPresent, range: range, importDepth: importDepth)
+                                  isLeftBracketPresent: isLeftBracketPresent, isRightBracketPresent: isRightBracketPresent, range: range, importDepth: importDepth, document: document)
 
         case .sym_objectElement:
             logger.debug("Not implemented")
@@ -882,14 +873,14 @@ public class TreeSitterParser {
             }
             logger.debug("Type annotation built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
-            return PklTypeAnnotation(type: type, colonIsPresent: colonIsPresent, range: range, importDepth: importDepth)
+            return PklTypeAnnotation(type: type, colonIsPresent: colonIsPresent, range: range, importDepth: importDepth, document: document)
 
         case .sym_type: // TYPE
             logger.debug("Starting building type...")
             let typeIdentifier = document.getTextInByteRange(node.byteRange)
             logger.debug("Type built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
-            return PklType(identifier: typeIdentifier, range: range, importDepth: importDepth)
+            return PklType(identifier: typeIdentifier, range: range, importDepth: importDepth, document: document)
 
         case .sym_typeArgumentList:
             logger.debug("Not implemented")
@@ -934,7 +925,7 @@ public class TreeSitterParser {
             logger.debug("Parameter list built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
             return PklFunctionParameterList(parameters: parameters, isLeftParenPresent: leftParenIsPresent,
-                                            isRightParenPresent: rightParenIsPresent, range: range, importDepth: importDepth)
+                                            isRightParenPresent: rightParenIsPresent, range: range, importDepth: importDepth, document: document)
 
         case .sym_argumentList:
             logger.debug("Not implemented")
@@ -958,21 +949,21 @@ public class TreeSitterParser {
             let value: String? = document.getTextInByteRange(node.byteRange)
             logger.debug("String constant built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
-            return PklStringLiteral(value: value, type: .constant, range: range, importDepth: importDepth)
+            return PklStringLiteral(value: value, type: .constant, range: range, importDepth: importDepth, document: document)
 
         case .sym_slStringLiteral: // SINGLE-LINE STRING LITERAL
             logger.debug("Starting building single-line string literal...")
             let value: String? = document.getTextInByteRange(node.byteRange)
             logger.debug("Single-line string literal built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
-            return PklStringLiteral(value: value, type: .singleLine, range: range, importDepth: importDepth)
+            return PklStringLiteral(value: value, type: .singleLine, range: range, importDepth: importDepth, document: document)
 
         case .sym_mlStringLiteral: // MULTI-LINE STRING LITERAL
             logger.debug("Starting building multi-line string literal...")
             let value: String? = document.getTextInByteRange(node.byteRange)
             logger.debug("Multi-line string literal built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
-            return PklStringLiteral(value: value, type: .multiLine, range: range, importDepth: importDepth)
+            return PklStringLiteral(value: value, type: .multiLine, range: range, importDepth: importDepth, document: document)
 
         case .sym_interpolationExpr:
             logger.debug("Not implemented")
@@ -1050,7 +1041,7 @@ public class TreeSitterParser {
             }
             logger.debug("Typed identifier built succesfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
-            return PklFunctionParameter(identifier: identifier, typeAnnotation: typeAnnotation, range: range, importDepth: importDepth)
+            return PklFunctionParameter(identifier: identifier, typeAnnotation: typeAnnotation, range: range, importDepth: importDepth, document: document)
 
         case .aux_sym_module_repeat1:
             logger.debug("Not implemented")

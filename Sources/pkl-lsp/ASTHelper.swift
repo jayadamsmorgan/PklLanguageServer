@@ -14,6 +14,79 @@ public enum ASTHelper {
         }
     }
 
+    public static func allEndNodes(node: any ASTNode, importDepth: Int? = nil) -> [any ASTNode] {
+        var nodes = [any ASTNode]()
+        guard let children = node.children else {
+            return [node]
+        }
+        for child in children {
+            guard let importDepth else {
+                nodes.append(contentsOf: allEndNodes(node: child))
+                continue
+            }
+            if child.importDepth == importDepth {
+                nodes.append(contentsOf: allEndNodes(node: child))
+            }
+        }
+        return nodes
+    }
+
+    public static func allEndNodes<T: ASTNode>(node: any ASTNode, importDepth: Int? = nil) -> [T] {
+        var nodes = [T]()
+        guard let children = node.children else {
+            if let node = node as? T {
+                return [node]
+            }
+            return []
+        }
+        for child in children {
+            guard let importDepth else {
+                nodes.append(contentsOf: allEndNodes(node: child))
+                continue
+            }
+            if child.importDepth == importDepth {
+                nodes.append(contentsOf: allEndNodes(node: child))
+            }
+        }
+        return nodes
+    }
+
+    public static func allNodes(node: any ASTNode, importDepth: Int? = nil) -> [any ASTNode] {
+        var nodes = [any ASTNode]()
+        nodes.append(node)
+        if let children = node.children {
+            for child in children {
+                if let importDepth {
+                    if child.importDepth == importDepth {
+                        nodes.append(contentsOf: allNodes(node: child))
+                    }
+                } else {
+                    nodes.append(contentsOf: allNodes(node: child))
+                }
+            }
+        }
+        return nodes
+    }
+
+    public static func allNodes<T: ASTNode>(node: any ASTNode, importDepth: Int? = nil) -> [T] {
+        var nodes = [T]()
+        if let node = node as? T {
+            nodes.append(node)
+        }
+        if let children = node.children {
+            for child in children {
+                if let importDepth {
+                    if child.importDepth == importDepth {
+                        nodes.append(contentsOf: allNodes(node: child))
+                    }
+                } else {
+                    nodes.append(contentsOf: allNodes(node: child))
+                }
+            }
+        }
+        return nodes
+    }
+
     static func enumerate(node: any ASTNode, block: (any ASTNode) -> Void) {
         if let children = node.children {
             for child in children {
@@ -33,19 +106,20 @@ public enum ASTHelper {
     }
 
     static func getPositionContext(module: any ASTNode, position: Position) -> (any ASTNode)? {
-        for node in module.children ?? [] {
-            if node.range.positionRange.lowerBound.line <= position.line,
-               node.range.positionRange.upperBound.line >= position.line,
-               node.range.positionRange.lowerBound.character / 2 <= position.character,
-               node.range.positionRange.upperBound.character / 2 >= position.character
-            {
-                if let context = getPositionContext(module: node, position: position) {
-                    return context
-                }
-                return node
+        allEndNodes(node: module, importDepth: 0).first { node in
+            if node.range.positionRange.lowerBound.line > position.line {
+                return false
             }
+            if node.range.positionRange.upperBound.line < position.line {
+                return false
+            }
+            if node.range.positionRange.lowerBound.character / 2 > position.character {
+                return false
+            }
+            if node.range.positionRange.upperBound.character / 2 < position.character {
+                return false
+            }
+            return true
         }
-        return nil
     }
-
 }

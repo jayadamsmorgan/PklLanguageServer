@@ -8,6 +8,4 @@ public class DiagnosticsHandler {
     public init(logger: Logger) {
         self.logger = logger
     }
-
 }
-
