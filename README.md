@@ -28,8 +28,8 @@ And don't forget to check [Code of Conduct](CODE_OF_CONDUCT.md).
 
 | Feature               | Status |
 | --------------------- | :----: |
-| Completion            |  WIP   |
-| Definition            |  WIP   |
+| Completion            |   🟠   |
+| Definition            |   🟠   |
 | Diagnostics           |  TBA   |
 | Document Symbols      |   🟠   |
 | Renaming              |   🟠   |
