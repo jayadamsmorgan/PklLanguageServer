@@ -2,6 +2,7 @@ import Foundation
 import LanguageServerProtocol
 
 enum PklStringType {
+    case importString
     case constant
     case singleLine
     case multiLine

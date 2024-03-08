@@ -520,7 +520,7 @@ public class TreeSitterParser {
                     logger.debug("Path found: \(path?.value ?? "nil")")
                 }
             }
-            guard let path else {
+            guard var path else {
                 logger.error("Failed to parse path in extends or amends clause.")
                 return nil
             }
@@ -533,6 +533,7 @@ public class TreeSitterParser {
                 logger.error("Failed to include module \(pathValue) in \(document.uri).")
                 return nil
             }
+            path.type = .importString
             await parseDocumentTreeSitter(newDocument: importDocument, importDepth: importDepth + 1)
             if amends {
                 guard let module = astParsedTrees[importDocument] as? PklModule else {
