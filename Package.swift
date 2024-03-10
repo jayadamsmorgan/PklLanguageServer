@@ -4,6 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "PklLanguageServer",
+    platforms: [.macOS(.v13)],
     products: [
         .library(name: "pkl-lsp", targets: ["pkl-lsp"]),
         .executable(name: "pkl-lsp-server", targets: ["pkl-lsp-server"]),
