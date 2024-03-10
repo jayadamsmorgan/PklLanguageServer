@@ -1,0 +1,65 @@
+{
+  "name": "pkl-lsp-vscode",
+  "displayName": "pkl-lsp-vscode",
+  "description": "LSP Extenstion for Pkl language",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.87.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "pkl",
+        "aliases": [
+          "Pkl"
+        ],
+        "extensions": [
+          ".pkl",
+          ".pcf"
+        ],
+        "filenames": [
+          "PklProject"
+        ],
+        "firstLine": "^#!/.*\\bpkl\\b",
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "pkl",
+        "scopeName": "source.pkl",
+        "path": "./syntaxes/pkl.tmLanguage.json"
+      }
+    ],
+    "activationEvents": [
+      "onLanguage:pkl"
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^18.19.22",
+    "@types/vscode": "^1.87.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.2",
+    "@typescript-eslint/parser": "^7.0.2",
+    "@vscode/test-cli": "^0.0.6",
+    "@vscode/test-electron": "^2.3.9",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  }
+}

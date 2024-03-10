@@ -69,6 +69,11 @@ Check help for more options:
 pkl-lsp-server -h
 ```
 
+## Editor support
+
+- [Neovim](Editors/Neovim/README.md)
+- [VSCode](Editors/VSCode/README.md)
+
 ## Debugging
 
 By default, `pkl-lsp-server` will use standard output and `info` log level to print logs.
