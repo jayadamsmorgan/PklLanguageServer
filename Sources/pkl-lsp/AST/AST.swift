@@ -30,11 +30,6 @@ public protocol ASTEvaluation {
     func diagnosticErrors() -> [ASTDiagnosticError]?
 }
 
-public enum ASTDiagnosticErrorSeverity {
-    case warning
-    case error
-}
-
 public struct ASTRange: Hashable {
     let positionRange: Range<Position>
     let byteRange: Range<UInt32>
@@ -58,10 +53,10 @@ public struct ASTRange: Hashable {
 
 public struct ASTDiagnosticError: Hashable {
     let error: String
-    let severity: ASTDiagnosticErrorSeverity
-    let range: ASTRange
+    let severity: DiagnosticSeverity
+    var range: ASTRange
 
-    init(_ error: String, _ severity: ASTDiagnosticErrorSeverity, _ range: ASTRange) {
+    init(_ error: String, _ severity: DiagnosticSeverity, _ range: ASTRange) {
         self.error = error
         self.severity = severity
         self.range = range

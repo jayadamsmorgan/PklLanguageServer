@@ -55,6 +55,13 @@ struct PklModuleAmending: ASTNode {
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
-        module.diagnosticErrors()
+        guard var moduleErrors = module.diagnosticErrors() else {
+            return nil
+        }
+        // change range of errors to be in the context of the amending module
+        moduleErrors = moduleErrors.map { error in
+            ASTDiagnosticError("In included file: \(path.value ?? ""): \(error.error)", error.severity, range)
+        }
+        return moduleErrors
     }
 }

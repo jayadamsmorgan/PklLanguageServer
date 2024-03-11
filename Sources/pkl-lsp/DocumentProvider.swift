@@ -62,14 +62,14 @@ public actor DocumentProvider {
         s.definitionProvider = .optionA(true)
         s.documentSymbolProvider = .optionA(true)
         s.semanticTokensProvider = .optionB(SemanticTokensRegistrationOptions(documentSelector: [documentSelector], legend: tokenLegend, range: .optionA(false), full: .optionA(true)))
-        s.diagnosticProvider = .optionA(DiagnosticOptions(identifier: "test", interFileDependencies: false, workspaceDiagnostics: true))
-        // s.diagnosticProvider = .optionB(DiagnosticRegistrationOptions.init(
-        //     documentSelector: [documentSelector],
-        //     // identifier: "pkl",
-        //     interFileDependencies: false,
-        //     workspaceDiagnostics: false,
-        //     id: "diagnosticIDTest"
-        // ))
+        // s.diagnosticProvider = .optionA(DiagnosticOptions(identifier: "test", interFileDependencies: false, workspaceDiagnostics: false))
+        s.diagnosticProvider = .optionB(DiagnosticRegistrationOptions.init(
+            documentSelector: [documentSelector],
+            identifier: "pkl",
+            interFileDependencies: false,
+            workspaceDiagnostics: false,
+            id: "diagnosticIDTest"
+        ))
         s.renameProvider = .optionA(true)
         return s
     }
@@ -154,6 +154,20 @@ public actor DocumentProvider {
             return nil
         }
         return await definitionHandler.provide(document: document, module: module, params: params)
+    }
+
+    public func provideDiagnostics(document: Document) async throws {
+        guard let diagnostics = treeSitterParser.astParsedTrees[document]?.diagnosticErrors() else {
+            logger.error("LSP Diagnostics: AST for \(document.uri) is not available.")
+            try await connection.sendNotification(ServerNotification.textDocumentPublishDiagnostics(.init(uri: document.uri, diagnostics: [])))
+            return
+        }
+        let publishDiagnostics: [Diagnostic] = diagnostics.map { diagnostic in
+            let range = diagnostic.range.getLSPRange()
+            let diagnosticRange = LSPRange(start: Position((range.start.line, range.start.character / 2)), end: Position((range.end.line, range.end.character / 2))) 
+            return Diagnostic(range: diagnosticRange, severity: diagnostic.severity, message: diagnostic.error)
+        }
+        try await connection.sendNotification(ServerNotification.textDocumentPublishDiagnostics(.init(uri: document.uri, diagnostics: publishDiagnostics)))
     }
 
     public func workspaceDidChangeWorkspaceFolders(_ params: DidChangeWorkspaceFoldersParams) async {
@@ -248,7 +262,12 @@ public actor DocumentProvider {
         do {
             let newDocument = try document.withAppliedChanges(changes, nextVersion: nextVersion)
             documents[documentUri] = newDocument
-            await treeSitterParser.parseDocumentTreeSitter(oldDocument: document, newDocument: newDocument, changes: changes)
+            await treeSitterParser.parseDocumentTreeSitter(newDocument: newDocument)
+            do {
+                try await provideDiagnostics(document: newDocument)
+            } catch {
+                logger.error("Error providing diagnostics: \(error)")
+            }
         } catch {
             logger.error("Error updating document: \(error)")
         }
@@ -264,6 +283,11 @@ public actor DocumentProvider {
         let document = Document(textDocument: params.textDocument)
         documents[documentUri] = document
         await treeSitterParser.parseDocumentTreeSitter(newDocument: document)
+        do {
+            try await provideDiagnostics(document: document)
+        } catch {
+            logger.error("Error providing diagnostics: \(error)")
+        }
     }
 
     public func unregisterDocument(_ params: DidCloseTextDocumentParams) async {
