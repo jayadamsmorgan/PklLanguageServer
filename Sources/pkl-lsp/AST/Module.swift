@@ -62,10 +62,11 @@ struct PklModuleAmending: ASTNode {
         // change range of errors to be in the context of the amending module
         moduleErrors = moduleErrors.filter { $0.severity == .error }
         moduleErrors = moduleErrors.map { error in
-            if error.error.contains("In included file") {
+            if error.message.contains("In included file") {
                 return error
             }
-            return ASTDiagnosticError("In included file: \(path.value ?? ""): \(error.error)", error.severity, range)
+            let importedPosition = Position((error.range.positionRange.lowerBound.line + 1, error.range.positionRange.lowerBound.character / 2 + 1))
+            return ASTDiagnosticError("In included file: \(path.value ?? ""): \(importedPosition): \(error.message)", error.severity, range)
         }
         return moduleErrors
     }

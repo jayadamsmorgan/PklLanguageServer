@@ -52,12 +52,12 @@ public struct ASTRange: Hashable {
 }
 
 public struct ASTDiagnosticError: Hashable {
-    let error: String
+    let message: String
     let severity: DiagnosticSeverity
     var range: ASTRange
 
     init(_ error: String, _ severity: DiagnosticSeverity, _ range: ASTRange) {
-        self.error = error
+        message = error
         self.severity = severity
         self.range = range
     }

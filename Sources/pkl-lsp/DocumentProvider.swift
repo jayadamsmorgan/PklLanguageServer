@@ -173,7 +173,7 @@ public actor DocumentProvider {
         var publishDiagnostics: [Diagnostic] = diagnostics.map { diagnostic in
             let range = diagnostic.range.getLSPRange()
             let diagnosticRange = LSPRange(start: Position((range.start.line, range.start.character / 2)), end: Position((range.end.line, range.end.character / 2)))
-            return Diagnostic(range: diagnosticRange, severity: diagnostic.severity, message: diagnostic.error)
+            return Diagnostic(range: diagnosticRange, severity: diagnostic.severity, message: diagnostic.message)
         }
         if serverFlags.disableIncludeDiagnostics {
             publishDiagnostics = publishDiagnostics.filter { !$0.message.contains("In included file") }
