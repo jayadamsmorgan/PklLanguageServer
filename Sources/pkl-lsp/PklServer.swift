@@ -12,6 +12,17 @@ public struct PklErrorHandler: ErrorHandler {
     }
 }
 
+public struct ServerFlags {
+
+    public init(disableDiagnostics: Bool, disableIncludeDiagnostics: Bool) {
+        self.disableDiagnostics = disableDiagnostics
+        self.disableIncludeDiagnostics = disableIncludeDiagnostics
+    }
+
+    public let disableDiagnostics: Bool
+    public let disableIncludeDiagnostics: Bool
+}
+
 public actor PklServer {
     public static let pklLSVersion: String = "0.0.1-alpha"
 
@@ -20,11 +31,11 @@ public actor PklServer {
     private let dispatcher: EventDispatcher
     var exitSemaphore: AsyncSemaphore
 
-    public init(_ dataChannel: DataChannel, logger: Logger) {
+    public init(_ dataChannel: DataChannel, logger: Logger, serverFlags: ServerFlags) {
         self.logger = logger
         connection = JSONRPCClientConnection(dataChannel)
         let treeSitterParser = TreeSitterParser(logger: logger)
-        let documentProvider = DocumentProvider(connection: connection, logger: logger, treeSitterParser: treeSitterParser)
+        let documentProvider = DocumentProvider(connection: connection, logger: logger, treeSitterParser: treeSitterParser, serverFlags: serverFlags)
         treeSitterParser.setDocumentProvider(documentProvider)
         let requestHandler = PklRequestHandler(connection: connection, logger: logger, documentProvider: documentProvider)
 
@@ -38,10 +49,10 @@ public actor PklServer {
     }
 
     public func run() async {
-        logger.debug("Starting Pkl LSP Server...")
+        logger.info("Starting Pkl LSP Server...")
         await dispatcher.run()
         logger.debug("Dispatcher completed.")
         await exitSemaphore.wait()
-        logger.debug("Pkl LSP Server exited.")
+        logger.info("Pkl LSP Server exited.")
     }
 }

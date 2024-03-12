@@ -33,6 +33,12 @@ struct PklLSPServer: AsyncParsableCommand {
     @Flag(name: .shortAndLong, help: "Print language server version")
     var version: Bool = false
 
+    @Flag(name: .long, help: "Disable document diagnostics")
+    var disableDiagnostics: Bool = false
+
+    @Flag(name: .long, help: "Disable diagnostics in included modules")
+    var disableIncludeDiagnostics: Bool = false
+
     var stdio: Bool {
         !(pipe != nil || socket != nil)
     }
@@ -77,7 +83,11 @@ struct PklLSPServer: AsyncParsableCommand {
     }
 
     func run(logger: Logger, channel: DataChannel) async {
-        let server = PklServer(channel, logger: logger)
+        let serverFlags: ServerFlags = .init(
+            disableDiagnostics: disableDiagnostics,
+            disableIncludeDiagnostics: disableIncludeDiagnostics
+        )
+        let server = PklServer(channel, logger: logger, serverFlags: serverFlags)
         await server.run()
     }
 

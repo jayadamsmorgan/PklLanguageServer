@@ -23,6 +23,7 @@ public actor DocumentProvider {
     let connection: JSONRPCClientConnection
     var rootUri: String?
     var workspaceFolders: [WorkspaceFolder]
+    private let serverFlags: ServerFlags
 
     private let treeSitterParser: TreeSitterParser
 
@@ -32,7 +33,7 @@ public actor DocumentProvider {
     private let semanticTokensHandler: SemanticTokensHandler
     private let definitionHandler: DefinitionHandler
 
-    public init(connection: JSONRPCClientConnection, logger: Logger, treeSitterParser: TreeSitterParser) {
+    public init(connection: JSONRPCClientConnection, logger: Logger, treeSitterParser: TreeSitterParser, serverFlags: ServerFlags) {
         self.logger = logger
         documents = [:]
         self.connection = connection
@@ -44,6 +45,18 @@ public actor DocumentProvider {
         completionHandler = CompletionHandler(logger: logger)
         semanticTokensHandler = SemanticTokensHandler(logger: logger)
         definitionHandler = DefinitionHandler(logger: logger)
+
+        self.serverFlags = serverFlags
+        parseServerFlags()
+    }
+
+    private nonisolated func parseServerFlags() {
+        if serverFlags.disableDiagnostics {
+            logger.info("Diagnostics are disabled.")
+        }
+        if serverFlags.disableIncludeDiagnostics {
+            logger.info("Diagnostics in included modules are disabled.")
+        }
     }
 
     private func getServerCapabilities() -> ServerCapabilities {
@@ -149,15 +162,21 @@ public actor DocumentProvider {
     }
 
     public func provideDiagnostics(document: Document) async throws {
+        guard !serverFlags.disableDiagnostics else {
+            return
+        }
         guard let diagnostics = treeSitterParser.astParsedTrees[document]?.diagnosticErrors() else {
             logger.error("LSP Diagnostics: AST for \(document.uri) is not available.")
             try await connection.sendNotification(ServerNotification.textDocumentPublishDiagnostics(.init(uri: document.uri, diagnostics: [])))
             return
         }
-        let publishDiagnostics: [Diagnostic] = diagnostics.map { diagnostic in
+        var publishDiagnostics: [Diagnostic] = diagnostics.map { diagnostic in
             let range = diagnostic.range.getLSPRange()
             let diagnosticRange = LSPRange(start: Position((range.start.line, range.start.character / 2)), end: Position((range.end.line, range.end.character / 2))) 
             return Diagnostic(range: diagnosticRange, severity: diagnostic.severity, message: diagnostic.error)
+        }
+        if serverFlags.disableIncludeDiagnostics {
+            publishDiagnostics = publishDiagnostics.filter {!$0.message.contains("In included file")}
         }
         try await connection.sendNotification(ServerNotification.textDocumentPublishDiagnostics(.init(uri: document.uri, diagnostics: publishDiagnostics)))
     }
