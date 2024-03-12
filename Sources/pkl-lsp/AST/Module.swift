@@ -22,12 +22,13 @@ struct PklModule: ASTNode {
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
+        var errors: [ASTDiagnosticError] = []
         for content in contents {
-            if let errors = content.diagnosticErrors() {
-                return errors
+            if let contentErrors = content.diagnosticErrors() {
+                errors.append(contentsOf: contentErrors)
             }
         }
-        return nil
+        return errors.count > 0 ? errors : nil
     }
 }
 
@@ -59,8 +60,12 @@ struct PklModuleAmending: ASTNode {
             return nil
         }
         // change range of errors to be in the context of the amending module
+        moduleErrors = moduleErrors.filter({$0.severity == .error})
         moduleErrors = moduleErrors.map { error in
-            ASTDiagnosticError("In included file: \(path.value ?? ""): \(error.error)", error.severity, range)
+            if error.error.contains("In included file") {
+                return error
+            }
+            return ASTDiagnosticError("In included file: \(path.value ?? ""): \(error.error)", error.severity, range)
         }
         return moduleErrors
     }
