@@ -62,14 +62,6 @@ public actor DocumentProvider {
         s.definitionProvider = .optionA(true)
         s.documentSymbolProvider = .optionA(true)
         s.semanticTokensProvider = .optionB(SemanticTokensRegistrationOptions(documentSelector: [documentSelector], legend: tokenLegend, range: .optionA(false), full: .optionA(true)))
-        // s.diagnosticProvider = .optionA(DiagnosticOptions(identifier: "test", interFileDependencies: false, workspaceDiagnostics: false))
-        s.diagnosticProvider = .optionB(DiagnosticRegistrationOptions.init(
-            documentSelector: [documentSelector],
-            identifier: "pkl",
-            interFileDependencies: false,
-            workspaceDiagnostics: false,
-            id: "diagnosticIDTest"
-        ))
         s.renameProvider = .optionA(true)
         return s
     }
