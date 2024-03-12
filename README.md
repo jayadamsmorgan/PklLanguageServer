@@ -30,7 +30,7 @@ And don't forget to check [Code of Conduct](CODE_OF_CONDUCT.md).
 | --------------------- | :----: |
 | Completion            |   🟠   |
 | Definition            |   🟠   |
-| Diagnostics           |  TBA   |
+| Diagnostics           |  WIP   |
 | Document Symbols      |   🟠   |
 | Renaming              |   🟠   |
 | Semantic Highlighting |  WIP   |
