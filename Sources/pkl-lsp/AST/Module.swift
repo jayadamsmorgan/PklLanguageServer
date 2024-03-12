@@ -60,7 +60,7 @@ struct PklModuleAmending: ASTNode {
             return nil
         }
         // change range of errors to be in the context of the amending module
-        moduleErrors = moduleErrors.filter({$0.severity == .error})
+        moduleErrors = moduleErrors.filter { $0.severity == .error }
         moduleErrors = moduleErrors.map { error in
             if error.error.contains("In included file") {
                 return error

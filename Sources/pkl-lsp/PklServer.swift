@@ -13,7 +13,6 @@ public struct PklErrorHandler: ErrorHandler {
 }
 
 public struct ServerFlags {
-
     public init(disableDiagnostics: Bool, disableIncludeDiagnostics: Bool) {
         self.disableDiagnostics = disableDiagnostics
         self.disableIncludeDiagnostics = disableIncludeDiagnostics
