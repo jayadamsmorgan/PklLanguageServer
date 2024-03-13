@@ -115,7 +115,7 @@ public class TreeSitterParser {
                 "TS Node: \(treeSitterSymbol)," +
                     " depth: \(depth)," +
                     " range: \(node.pointRange)," +
-                    " text: \(text))"
+                    " text: \(text)"
             )
             listTreeSitterNodes(rootNode: node, depth: depth + 1, document: document)
         })
@@ -132,7 +132,7 @@ public class TreeSitterParser {
                     " depth: \(depth)," +
                     " range: \(childNode.range.positionRange)," +
                     " importDepth: \(childNode.importDepth)," +
-                    " text: \(text))"
+                    " text: \(text)"
             )
             listASTNodes(rootNode: childNode, depth: depth + 1)
         }
