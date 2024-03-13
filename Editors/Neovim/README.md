@@ -4,10 +4,6 @@
 
 This language server also works great along side with Apple's [pkl-neovim][uri-pkl-neovim] plugin which provides tree-sitter highlighting and indentation.
 
-**Note:**
-As of today, highlighting is broken on Apple's repo when using latest tree-sitter.
-I have sent a PR to fix it and for now you can use [my fork][uri-pkl-neovim-fork] instead until PR is accepted.
-
 ## Installation
 
 1. Install [PklLanguageServer][uri-pkl-ls]
@@ -52,5 +48,4 @@ lspconfig["pklls"].setup({
 
 [uri-pkl-ls]: https://github.com/jayadamsmorgan/PklLanguageServer
 [uri-pkl-neovim]: https://github.com/apple/pkl-neovim
-[uri-pkl-neovim-fork]: https://github.com/jayadamsmorgan/pkl-neovim
 [uri-lspconfig]: https://github.com/neovim/nvim-lspconfig
