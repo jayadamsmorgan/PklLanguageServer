@@ -32,22 +32,29 @@ struct PklModule: ASTNode {
     }
 }
 
-struct PklModuleAmending: ASTNode {
+struct PklModuleImport: ASTNode {
     var uniqueID: UUID = .init()
 
-    let path: PklStringLiteral
+    var path: PklStringLiteral
     let document: Document
 
     var range: ASTRange
     let importDepth: Int
 
-    var module: PklModule
+    var module: PklModule?
 
     var children: [any ASTNode]? {
-        [path, module]
+        var children: [any ASTNode] = []
+        children.append(path)
+        if let module {
+            children.append(module)
+        }
+        return children
     }
 
-    init(module: PklModule, range: ASTRange, path: PklStringLiteral, importDepth: Int, document: Document) {
+    init(module: PklModule?, range: ASTRange, path: PklStringLiteral,
+         importDepth: Int, document: Document)
+    {
         self.module = module
         self.range = range
         self.importDepth = importDepth
@@ -56,14 +63,73 @@ struct PklModuleAmending: ASTNode {
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
+        guard let module else {
+            return [ASTDiagnosticError("Module cannot be found", .error, range)]
+        }
         guard var moduleErrors = module.diagnosticErrors() else {
             return nil
         }
-        // change range of errors to be in the context of the amending module
         moduleErrors = moduleErrors.filter { $0.severity == .error }
         moduleErrors = moduleErrors.map { error in
-            if error.message.contains("In included file") {
-                return error
+            if error.message.starts(with: "In included file") {
+                return ASTDiagnosticError(error.message, error.severity, range)
+            }
+            let importedPosition = Position((error.range.positionRange.lowerBound.line + 1, error.range.positionRange.lowerBound.character / 2 + 1))
+            return ASTDiagnosticError("In included file: \(path.value ?? ""): \(importedPosition): \(error.message)", error.severity, range)
+        }
+        return moduleErrors
+    }
+}
+
+struct PklModuleAmendingOrExtending: ASTNode {
+    var uniqueID: UUID = .init()
+
+    let path: PklStringLiteral
+    let document: Document
+
+    var extends: Bool
+    var amends: Bool
+
+    var range: ASTRange
+    let importDepth: Int
+
+    var module: PklModule?
+
+    var children: [any ASTNode]? {
+        var children: [any ASTNode] = []
+        children.append(path)
+        if let module {
+            children.append(module)
+        }
+        return children
+    }
+
+    init(module: PklModule?, range: ASTRange, path: PklStringLiteral,
+         importDepth: Int, document: Document, extends: Bool, amends: Bool)
+    {
+        self.module = module
+        self.range = range
+        self.importDepth = importDepth
+        self.document = document
+        self.path = path
+        self.extends = extends
+        self.amends = amends
+    }
+
+    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+        if extends, amends {
+            return [ASTDiagnosticError("Provide either extends or amends", .error, range)]
+        }
+        guard let module else {
+            return [ASTDiagnosticError("Module cannot be found", .error, range)]
+        }
+        guard var moduleErrors = module.diagnosticErrors() else {
+            return nil
+        }
+        moduleErrors = moduleErrors.filter { $0.severity == .error }
+        moduleErrors = moduleErrors.map { error in
+            if error.message.starts(with: "In included file") {
+                return ASTDiagnosticError(error.message, error.severity, range)
             }
             let importedPosition = Position((error.range.positionRange.lowerBound.line + 1, error.range.positionRange.lowerBound.character / 2 + 1))
             return ASTDiagnosticError("In included file: \(path.value ?? ""): \(importedPosition): \(error.message)", error.severity, range)

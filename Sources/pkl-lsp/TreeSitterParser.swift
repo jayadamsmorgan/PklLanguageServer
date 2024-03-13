@@ -502,7 +502,7 @@ public class TreeSitterParser {
                     continue
                 }
                 if childNode.symbol == PklTreeSitterSymbols.sym_extendsOrAmendsClause.rawValue {
-                    return await tsNodeToASTNode(node: childNode, in: document, importDepth: importDepth) as? PklModuleAmending
+                    return await tsNodeToASTNode(node: childNode, in: document, importDepth: importDepth) as? PklModuleAmendingOrExtending
                 }
             }
 
@@ -533,25 +533,27 @@ public class TreeSitterParser {
                 logger.error("Failed to parse path in extends or amends clause.")
                 return nil
             }
+            path.type = .importString
             guard var pathValue = path.value else {
                 logger.error("Failed to parse path in extends or amends clause.")
                 return nil
             }
             pathValue.removeAll(where: { $0 == "\"" })
+            logger.debug("Extends: \(extends), Amends: \(amends), Path: \(pathValue)")
+            let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
             guard let importDocument = await includeModule(relPath: pathValue, currentDocument: document) else {
                 logger.error("Failed to include module \(pathValue) in \(document.uri).")
-                return nil
+                return PklModuleAmendingOrExtending(module: nil, range: range, path: path,
+                                                    importDepth: importDepth, document: document, extends: extends, amends: amends)
             }
-            path.type = .importString
             await parseDocumentTreeSitter(newDocument: importDocument, importDepth: importDepth + 1)
-            if amends {
-                guard let module = astParsedTrees[importDocument] as? PklModule else {
-                    logger.error("Amends clause: Failed to parse module \(importDocument.uri) to AST.")
-                    return nil
-                }
-                let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
-                return PklModuleAmending(module: module, range: range, path: path, importDepth: importDepth, document: document)
+            guard let module = astParsedTrees[importDocument] as? PklModule else {
+                logger.error("Amends clause: Failed to parse module \(importDocument.uri) to AST.")
+                return PklModuleAmendingOrExtending(module: nil, range: range, path: path,
+                                                    importDepth: importDepth, document: document, extends: extends, amends: amends)
             }
+            return PklModuleAmendingOrExtending(module: module, range: range, path: path,
+                                                importDepth: importDepth, document: document, extends: extends, amends: amends)
 
         case .sym_importClause:
             logger.debug("Not implemented")
@@ -1023,8 +1025,43 @@ public class TreeSitterParser {
             logger.debug("Not implemented")
         case .sym_readGlobExpr:
             logger.debug("Not implemented")
-        case .sym_importExpr:
-            logger.debug("Not implemented")
+
+        case .sym_importExpr: // IMPORT EXPRESSION
+            logger.debug("Starting building import expression...")
+            var path: PklStringLiteral?
+            for childPosition in 0 ..< node.childCount {
+                guard let childNode = node.child(at: childPosition) else {
+                    continue
+                }
+                if childNode.symbol == PklTreeSitterSymbols.sym_stringConstant.rawValue {
+                    path = await tsNodeToASTNode(node: childNode, in: document, importDepth: importDepth) as? PklStringLiteral
+                    continue
+                }
+            }
+            logger.debug("Import expression built succesfully.")
+            let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
+            guard var path else {
+                logger.error("Failed to parse path in import expression.")
+                return nil
+            }
+            path.type = .importString
+            guard var pathValue = path.value else {
+                logger.error("Failed to parse path in import expression.")
+                return nil
+            }
+            pathValue.removeAll(where: { $0 == "\"" })
+            logger.debug("Import path: \(pathValue)")
+            guard let importDocument = await includeModule(relPath: pathValue, currentDocument: document) else {
+                logger.error("Failed to include module \(pathValue) in \(document.uri).")
+                return PklModuleImport(module: nil, range: range, path: path, importDepth: importDepth, document: document)
+            }
+            await parseDocumentTreeSitter(newDocument: importDocument, importDepth: importDepth + 1)
+            guard let module = astParsedTrees[importDocument] as? PklModule else {
+                logger.error("Failed to parse module \(importDocument.uri) to AST.")
+                return PklModuleImport(module: nil, range: range, path: path, importDepth: importDepth, document: document)
+            }
+            return PklModuleImport(module: module, range: range, path: path, importDepth: importDepth, document: document)
+
         case .sym_importGlobExpr:
             logger.debug("Not implemented")
         case .sym_functionLiteral:
