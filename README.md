@@ -63,6 +63,13 @@ Now you can run the server with:
 pkl-lsp-server
 ```
 
+**Note:** Current version at `master` has diagnostics in active development and there are a lot of unhandled errors happening.
+To disable document diagnostics run the server with:
+
+```
+pkl-lsp-server --disable-diagnostics
+```
+
 Check help for more options:
 
 ```
