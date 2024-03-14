@@ -139,7 +139,23 @@ public class TreeSitterParser {
     }
 
     public func includeModule(relPath: String, currentDocument: Document) async -> Document? {
-        logger.debug("Document: \(currentDocument.uri)")
+        // #if EMBED_STDLIB
+        if relPath.starts(with: "pkl:") { // STDLIB
+            guard let name = relPath.split(separator: ":").last else {
+                logger.debug("Module include: Unable to find stdlib \(relPath)")
+                return nil
+            }
+            let key = "\(name).pkl"
+            guard let text = Resources.stdlib[key] else {
+                logger.debug("Module include: No stdlib available with name \(key)")
+                return nil
+            }
+            // Not sure what uri should I put in there :(
+            let document = Document(uri: currentDocument.uri, version: nil, text: text)
+            return document
+        }
+        // #endif
+        // Relative local path
         var fileURL = URL(fileURLWithPath: currentDocument.uri)
         fileURL.deleteLastPathComponent()
         fileURL.appendPathComponent(relPath)

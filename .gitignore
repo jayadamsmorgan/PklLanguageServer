@@ -1,5 +1,7 @@
 pkl-lsp-server.log
 
+Sources/pkl-lsp/Resources.swift
+
 .DS_Store
 /.build
 /Packages
