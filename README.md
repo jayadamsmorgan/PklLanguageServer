@@ -46,7 +46,7 @@ And don't forget to check [Code of Conduct](CODE_OF_CONDUCT.md).
 Clone repository and build the project:
 
 ```
-git clone https://github.com/jayadamsmorgan/PklLanguageServer
+git clone https://github.com/jayadamsmorgan/PklLanguageServer --recurse-submodules
 cd PklLanguageServer
 ./generate_resources.sh
 swift build -c release
