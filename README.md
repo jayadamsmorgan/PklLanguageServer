@@ -48,6 +48,7 @@ Clone repository and build the project:
 ```
 git clone https://github.com/jayadamsmorgan/PklLanguageServer
 cd PklLanguageServer
+./generate_resources.sh
 swift build -c release
 ```
 
