@@ -13,29 +13,31 @@ struct PklClassProperty: ASTNode {
     var isEqualsPresent: Bool = false
     var value: (any ASTNode)?
     var isHidden: Bool
+    var isLocal: Bool
 
     var children: [any ASTNode]? {
         var children: [any ASTNode] = []
-        if identifier != nil {
-            children.append(identifier!)
+        if let identifier {
+            children.append(identifier)
         }
-        if typeAnnotation != nil {
-            children.append(typeAnnotation!)
+        if let typeAnnotation {
+            children.append(typeAnnotation)
         }
-        if value != nil {
-            children.append(value!)
+        if let value {
+            children.append(value)
         }
         return children
     }
 
     init(identifier: PklIdentifier? = nil, typeAnnotation: PklTypeAnnotation? = nil, isEqualsPresent: Bool = false, value: (any ASTNode)?,
-         isHidden: Bool = false, range: ASTRange, importDepth: Int, document: Document)
+         isHidden: Bool = false, isLocal: Bool = false, range: ASTRange, importDepth: Int, document: Document)
     {
         self.identifier = identifier
         self.typeAnnotation = typeAnnotation
         self.isEqualsPresent = isEqualsPresent
         self.value = value
         self.isHidden = isHidden
+        self.isLocal = isLocal
         self.range = range
         self.importDepth = importDepth
         self.document = document
@@ -92,11 +94,11 @@ struct PklClass: ASTNode {
 
     var children: [any ASTNode]? {
         var children: [any ASTNode] = []
-        if properties != nil {
-            children.append(contentsOf: properties!)
+        if let properties {
+            children.append(contentsOf: properties)
         }
-        if functions != nil {
-            children.append(contentsOf: functions!)
+        if let functions {
+            children.append(contentsOf: functions)
         }
         return children
     }
@@ -153,11 +155,11 @@ struct PklClassDeclaration: ASTNode {
 
     var children: [any ASTNode]? {
         var children: [any ASTNode] = []
-        if classNode != nil {
-            children.append(classNode!)
+        if let classNode {
+            children.append(classNode)
         }
-        if classIdentifier != nil {
-            children.append(classIdentifier!)
+        if let classIdentifier {
+            children.append(classIdentifier)
         }
         return children
     }

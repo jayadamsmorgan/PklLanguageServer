@@ -32,6 +32,81 @@ struct PklModule: ASTNode {
     }
 }
 
+struct PklModuleHeader: ASTNode {
+    var uniqueID: UUID = .init()
+
+    var range: ASTRange
+    let importDepth: Int
+    let document: Document
+
+    var moduleClause: PklModuleClause?
+    var extendsOrAmends: PklModuleAmendingOrExtending?
+
+    var children: [any ASTNode]? {
+        var children: [any ASTNode] = []
+        if let moduleClause {
+            children.append(moduleClause)
+        }
+        if let extendsOrAmends {
+            children.append(extendsOrAmends)
+        }
+        return children
+    }
+
+    init(moduleClause: PklModuleClause? = nil, extendsOrAmends: PklModuleAmendingOrExtending? = nil,
+        range: ASTRange, importDepth: Int, document: Document) {
+        self.moduleClause = moduleClause
+        self.extendsOrAmends = extendsOrAmends
+        self.range = range
+        self.importDepth = importDepth
+        self.document = document
+    }
+
+    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+        var errors: [ASTDiagnosticError] = []
+        if let moduleClauseErrors = moduleClause?.diagnosticErrors() {
+            errors.append(contentsOf: moduleClauseErrors)
+        }
+        if let extendsOrAmendsErrors = extendsOrAmends?.diagnosticErrors() {
+            errors.append(contentsOf: extendsOrAmendsErrors)
+        }
+        return errors.count > 0 ? errors : nil
+    }
+
+}
+
+struct PklModuleClause: ASTNode {
+    var uniqueID: UUID = .init()
+
+    var range: ASTRange
+    let importDepth: Int
+    let document: Document
+
+    var name: PklIdentifier?
+
+    var children: [any ASTNode]? {
+        if let name {
+            return [name]
+        }
+        return nil
+    }
+
+    init(name: PklIdentifier?, range: ASTRange, importDepth: Int, document: Document) {
+        self.name = name
+        self.range = range
+        self.importDepth = importDepth
+        self.document = document
+    }
+
+    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+        if name == nil {
+            return [ASTDiagnosticError("Missing module path", .error, range)]
+        }
+        return nil
+    }
+
+}
+
 struct PklModuleImport: ASTNode {
     var uniqueID: UUID = .init()
 
