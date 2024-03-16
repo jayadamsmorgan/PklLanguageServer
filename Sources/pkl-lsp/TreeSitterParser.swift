@@ -9,25 +9,32 @@ public class TreeSitterParser {
 
     let parser = Parser()
     var parsedTrees: [Document: MutableTree]
-    var astParsedTrees: [Document: any ASTNode]
+    var astParsedTrees: ThreadSafeDictionary<Document, any ASTNode>
 
     private var documentProvider: DocumentProvider?
+
+    var importedModules: [PklModuleImport] = []
+    var modulesQueue = ParseQueue()
+
+    let maxImportDepth: Int
 
     public func setDocumentProvider(_ documentProvider: DocumentProvider) {
         self.documentProvider = documentProvider
     }
 
-    public init(logger: Logger) {
+    public init(logger: Logger, maxImportDepth: Int) {
         self.logger = logger
         let language = Language(language: tree_sitter_pkl())
         parsedTrees = [:]
-        astParsedTrees = [:]
+        astParsedTrees = .init()
+        self.maxImportDepth = maxImportDepth
         do {
             try parser.setLanguage(language)
         } catch {
             logger.debug("Failed to set language: \(error)")
             return
         }
+        importQueue()
     }
 
     private func parseDocumentTreeSitterWithChanges(
@@ -68,7 +75,7 @@ public class TreeSitterParser {
         if logger.logLevel == .debug || logger.logLevel == .trace {
             listASTNodes(rootNode: astParsing)
         }
-        astParsedTrees[newDocument] = astParsing
+        astParsedTrees.updateValue(astParsing, forKey: newDocument)
     }
 
     public func parseDocumentTreeSitter(oldDocument: Document, newDocument: Document, changes: [TextDocumentContentChangeEvent]) async {
@@ -95,7 +102,7 @@ public class TreeSitterParser {
                 if logger.logLevel == .debug || logger.logLevel == .trace {
                     listASTNodes(rootNode: astParsing)
                 }
-                astParsedTrees[newDocument] = astParsing
+                astParsedTrees.updateValue(astParsing, forKey: newDocument)
                 return
             }
             logger.debug("Failed to tree-sitter parse source with changes, trying to parse whole document...")
@@ -138,8 +145,52 @@ public class TreeSitterParser {
         }
     }
 
+    private func importQueue() {
+        Task {
+            while true {
+                let element = self.modulesQueue.dequeue()
+                if element.importDepth > maxImportDepth || maxImportDepth == 0 {
+                    self.logger.error("Import Queue: Import depth is too high.")
+                    continue
+                }
+                var newParsedModule = self.astParsedTrees.value(forKey: element.documentToBeImported) as? PklModule
+                if let newParsedModule {
+                    let importingModule = self.astParsedTrees.waitForValue(forKey: element.importingDocument) as? PklModule
+                    guard var importingModule else {
+                        self.logger.error("Import Queue: Unable to find importing module.")
+                        continue
+                    }
+                    var moduleImport = element.moduleImport
+                    moduleImport.module = newParsedModule
+                    importingModule.contents.append(moduleImport)
+                    self.astParsedTrees.updateValue(importingModule, forKey: element.importingDocument)
+                    self.logger.debug("Import Queue: Module imported from cache.")
+                    try await self.documentProvider?.provideDiagnostics(document: documentProvider?.openedDocument ?? element.importingDocument)
+                    continue
+                }
+                await self.parseDocumentTreeSitter(newDocument: element.documentToBeImported, importDepth: element.importDepth + 1)
+                newParsedModule = self.astParsedTrees.value(forKey: element.documentToBeImported) as? PklModule
+                guard let newParsedModule else {
+                    logger.error("Import Queue: Unable to parse module.")
+                    continue
+                }
+                var importingModule: PklModule?
+                importingModule = self.astParsedTrees.value(forKey: element.importingDocument) as? PklModule
+                guard var importingModule else {
+                    logger.error("Import Queue: Unable to find importing module.")
+                    continue
+                }
+                var moduleImport = element.moduleImport
+                moduleImport.module = newParsedModule
+                importingModule.contents.append(moduleImport)
+                self.astParsedTrees.updateValue(importingModule, forKey: element.importingDocument)
+                try await self.documentProvider?.provideDiagnostics(document: documentProvider?.openedDocument ?? element.importingDocument)
+                self.logger.debug("Import Queue: Module imported.")
+            }
+        }
+    }
+
     public func includeModule(relPath: String, currentDocument: Document) async -> Document? {
-        // #if EMBED_STDLIB
         if relPath.starts(with: "pkl:") { // STDLIB
             guard let name = relPath.split(separator: ":").last else {
                 logger.debug("Module include: Unable to find stdlib \(relPath)")
@@ -150,11 +201,9 @@ public class TreeSitterParser {
                 logger.debug("Module include: No stdlib available with name \(key)")
                 return nil
             }
-            // Not sure what uri should I put in there :(
             let document = Document(uri: currentDocument.uri, version: nil, text: text)
             return document
         }
-        // #endif
         // Relative local path
         var fileURL = URL(fileURLWithPath: currentDocument.uri)
         fileURL.deleteLastPathComponent()
@@ -514,7 +563,7 @@ public class TreeSitterParser {
         case .sym_moduleHeader:
             logger.debug("Starting building module header...")
             var moduleClause: PklModuleClause?
-            var extendsOrAmends: PklModuleAmendingOrExtending?
+            var extendsOrAmends: PklModuleImport?
             for childPosition in 0 ..< node.childCount {
                 guard let childNode = node.child(at: childPosition) else {
                     continue
@@ -523,7 +572,7 @@ public class TreeSitterParser {
                     moduleClause = await tsNodeToASTNode(node: childNode, in: document, importDepth: importDepth) as? PklModuleClause
                 }
                 if childNode.symbol == PklTreeSitterSymbols.sym_extendsOrAmendsClause.rawValue {
-                    extendsOrAmends = await tsNodeToASTNode(node: childNode, in: document, importDepth: importDepth) as? PklModuleAmendingOrExtending
+                    extendsOrAmends = await tsNodeToASTNode(node: childNode, in: document, importDepth: importDepth) as? PklModuleImport
                 }
             }
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
@@ -543,7 +592,6 @@ public class TreeSitterParser {
             }
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
             return PklModuleClause(name: name, range: range, importDepth: importDepth, document: document)
-
 
         case .sym_extendsOrAmendsClause:
             logger.debug("Building extends or amends clause...")
@@ -576,23 +624,60 @@ public class TreeSitterParser {
             }
             pathValue.removeAll(where: { $0 == "\"" })
             logger.debug("Extends: \(extends), Amends: \(amends), Path: \(pathValue)")
+            let type: PklModuleImportType = amends ? .amending : extends ? .extending : .error
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
+            let module = PklModuleImport(module: nil, range: range, path: path,
+                                         importDepth: importDepth, document: document, type: type)
             guard let importDocument = await includeModule(relPath: pathValue, currentDocument: document) else {
                 logger.error("Failed to include module \(pathValue) in \(document.uri).")
-                return PklModuleAmendingOrExtending(module: nil, range: range, path: path,
-                                                    importDepth: importDepth, document: document, extends: extends, amends: amends)
+                importedModules.append(module)
+                return module
             }
-            await parseDocumentTreeSitter(newDocument: importDocument, importDepth: importDepth + 1)
-            guard let module = astParsedTrees[importDocument] as? PklModule else {
-                logger.error("Amends clause: Failed to parse module \(importDocument.uri) to AST.")
-                return PklModuleAmendingOrExtending(module: nil, range: range, path: path,
-                                                    importDepth: importDepth, document: document, extends: extends, amends: amends)
-            }
-            return PklModuleAmendingOrExtending(module: module, range: range, path: path,
-                                                importDepth: importDepth, document: document, extends: extends, amends: amends)
+            let parseQueueElement = ParseQueueElement(importDepth: importDepth, importingDocument: document, documentToBeImported: importDocument,
+                                                      importType: type, moduleImport: module)
+            modulesQueue.enqueue(parseQueueElement)
+            return nil
 
-        case .sym_importClause:
-            logger.debug("Not implemented")
+        case .sym_importClause: // IMPORT CLAUSE
+            logger.debug("Starting building import clause...")
+            if importDepth > 3 {
+                logger.error("Import depth is too high.")
+                return nil
+            }
+            var path: PklStringLiteral?
+            for childPosition in 0 ..< node.childCount {
+                guard let childNode = node.child(at: childPosition) else {
+                    continue
+                }
+                if childNode.symbol == PklTreeSitterSymbols.sym_stringConstant.rawValue {
+                    path = await tsNodeToASTNode(node: childNode, in: document, importDepth: importDepth) as? PklStringLiteral
+                }
+            }
+            let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
+            let type: PklModuleImportType = .normal
+            guard var path else {
+                logger.error("Failed to parse path in import clause.")
+                return nil
+            }
+            path.type = .importString
+            guard var pathValue = path.value else {
+                logger.error("Failed to parse path in import clause.")
+                return nil
+            }
+            pathValue.removeAll(where: { $0 == "\"" })
+            logger.debug("Path: \(pathValue)")
+            let moduleImport = PklModuleImport(module: nil, range: range, path: path,
+                                               importDepth: importDepth, document: document, type: type)
+            guard let importDocument = await includeModule(relPath: pathValue, currentDocument: document) else {
+                logger.error("Failed to include module \(pathValue) in \(document.uri).")
+                importedModules.append(moduleImport)
+                return moduleImport
+            }
+            let parseQueueElement = ParseQueueElement(importDepth: importDepth, importingDocument: document,
+                                                      documentToBeImported: importDocument, importType: type, moduleImport: moduleImport)
+            modulesQueue.enqueue(parseQueueElement)
+            return nil
+
         case .sym_importGlobClause:
             logger.debug("Not implemented")
         case .sym__moduleMember:
@@ -1089,21 +1174,20 @@ public class TreeSitterParser {
             }
             path.type = .importString
             guard var pathValue = path.value else {
-                logger.error("Failed to parse path in import expression.")
+                logger.error("Failed to parse path in import clause.")
                 return nil
             }
             pathValue.removeAll(where: { $0 == "\"" })
-            logger.debug("Import path: \(pathValue)")
+            logger.debug("Path: \(pathValue)")
+            let moduleImport = PklModuleImport(module: nil, range: range, path: path, importDepth: importDepth, document: document, type: .normal)
             guard let importDocument = await includeModule(relPath: pathValue, currentDocument: document) else {
                 logger.error("Failed to include module \(pathValue) in \(document.uri).")
-                return PklModuleImport(module: nil, range: range, path: path, importDepth: importDepth, document: document)
+                importedModules.append(moduleImport)
+                return moduleImport
             }
-            await parseDocumentTreeSitter(newDocument: importDocument, importDepth: importDepth + 1)
-            guard let module = astParsedTrees[importDocument] as? PklModule else {
-                logger.error("Failed to parse module \(importDocument.uri) to AST.")
-                return PklModuleImport(module: nil, range: range, path: path, importDepth: importDepth, document: document)
-            }
-            return PklModuleImport(module: module, range: range, path: path, importDepth: importDepth, document: document)
+            let parseQueueElement = ParseQueueElement(importDepth: importDepth, importingDocument: document, documentToBeImported: importDocument, importType: .normal, moduleImport: moduleImport)
+            modulesQueue.enqueue(parseQueueElement)
+            return nil
 
         case .sym_importGlobExpr:
             logger.debug("Not implemented")

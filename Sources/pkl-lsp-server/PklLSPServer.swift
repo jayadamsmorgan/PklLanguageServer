@@ -39,6 +39,9 @@ struct PklLSPServer: AsyncParsableCommand {
     @Flag(name: .long, help: "Disable diagnostics in included modules")
     var disableIncludeDiagnostics: Bool = false
 
+    @Option(name: .long, help: "Maximum number of dependencies parsed")
+    var importDepth: Int = 3
+
     var stdio: Bool {
         !(pipe != nil || socket != nil)
     }
@@ -80,12 +83,16 @@ struct PklLSPServer: AsyncParsableCommand {
         guard numTransports == 1 else {
             throw ValidationError("Exactly one transport method must be defined (stdio (default), pipe (--pipe), socket (--socket))")
         }
+        if importDepth < 0 {
+            throw ValidationError("Import depth must be at least 0")
+        }
     }
 
     func run(logger: Logger, channel: DataChannel) async {
         let serverFlags: ServerFlags = .init(
             disableDiagnostics: disableDiagnostics,
-            disableIncludeDiagnostics: disableIncludeDiagnostics
+            disableIncludeDiagnostics: disableIncludeDiagnostics,
+            maxImportDepth: importDepth
         )
         let server = PklServer(channel, logger: logger, serverFlags: serverFlags)
         await server.run()

@@ -13,13 +13,16 @@ public struct PklErrorHandler: ErrorHandler {
 }
 
 public struct ServerFlags {
-    public init(disableDiagnostics: Bool, disableIncludeDiagnostics: Bool) {
+    public init(disableDiagnostics: Bool, disableIncludeDiagnostics: Bool, maxImportDepth: Int) {
         self.disableDiagnostics = disableDiagnostics
         self.disableIncludeDiagnostics = disableIncludeDiagnostics
+        self.maxImportDepth = maxImportDepth
     }
 
     public let disableDiagnostics: Bool
     public let disableIncludeDiagnostics: Bool
+
+    public let maxImportDepth: Int
 }
 
 public actor PklServer {
@@ -33,7 +36,7 @@ public actor PklServer {
     public init(_ dataChannel: DataChannel, logger: Logger, serverFlags: ServerFlags) {
         self.logger = logger
         connection = JSONRPCClientConnection(dataChannel)
-        let treeSitterParser = TreeSitterParser(logger: logger)
+        let treeSitterParser = TreeSitterParser(logger: logger, maxImportDepth: serverFlags.maxImportDepth)
         let documentProvider = DocumentProvider(connection: connection, logger: logger, treeSitterParser: treeSitterParser, serverFlags: serverFlags)
         treeSitterParser.setDocumentProvider(documentProvider)
         let requestHandler = PklRequestHandler(connection: connection, logger: logger, documentProvider: documentProvider)

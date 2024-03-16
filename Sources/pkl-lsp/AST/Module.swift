@@ -40,7 +40,7 @@ struct PklModuleHeader: ASTNode {
     let document: Document
 
     var moduleClause: PklModuleClause?
-    var extendsOrAmends: PklModuleAmendingOrExtending?
+    var extendsOrAmends: PklModuleImport?
 
     var children: [any ASTNode]? {
         var children: [any ASTNode] = []
@@ -53,8 +53,9 @@ struct PklModuleHeader: ASTNode {
         return children
     }
 
-    init(moduleClause: PklModuleClause? = nil, extendsOrAmends: PklModuleAmendingOrExtending? = nil,
-        range: ASTRange, importDepth: Int, document: Document) {
+    init(moduleClause: PklModuleClause? = nil, extendsOrAmends: PklModuleImport? = nil,
+         range: ASTRange, importDepth: Int, document: Document)
+    {
         self.moduleClause = moduleClause
         self.extendsOrAmends = extendsOrAmends
         self.range = range
@@ -72,7 +73,6 @@ struct PklModuleHeader: ASTNode {
         }
         return errors.count > 0 ? errors : nil
     }
-
 }
 
 struct PklModuleClause: ASTNode {
@@ -104,71 +104,27 @@ struct PklModuleClause: ASTNode {
         }
         return nil
     }
+}
 
+enum PklModuleImportType {
+    case amending
+    case extending
+    case normal
+    case error
 }
 
 struct PklModuleImport: ASTNode {
     var uniqueID: UUID = .init()
 
-    var path: PklStringLiteral
-    let document: Document
-
-    var range: ASTRange
-    let importDepth: Int
-
-    var module: PklModule?
-
-    var children: [any ASTNode]? {
-        var children: [any ASTNode] = []
-        children.append(path)
-        if let module {
-            children.append(module)
-        }
-        return children
-    }
-
-    init(module: PklModule?, range: ASTRange, path: PklStringLiteral,
-         importDepth: Int, document: Document)
-    {
-        self.module = module
-        self.range = range
-        self.importDepth = importDepth
-        self.document = document
-        self.path = path
-    }
-
-    public func diagnosticErrors() -> [ASTDiagnosticError]? {
-        guard let module else {
-            return [ASTDiagnosticError("Module cannot be found", .error, range)]
-        }
-        guard var moduleErrors = module.diagnosticErrors() else {
-            return nil
-        }
-        moduleErrors = moduleErrors.filter { $0.severity == .error }
-        moduleErrors = moduleErrors.map { error in
-            if error.message.starts(with: "In included file") {
-                return ASTDiagnosticError(error.message, error.severity, range)
-            }
-            let importedPosition = Position((error.range.positionRange.lowerBound.line + 1, error.range.positionRange.lowerBound.character / 2 + 1))
-            return ASTDiagnosticError("In included file: \(path.value ?? ""): \(importedPosition): \(error.message)", error.severity, range)
-        }
-        return moduleErrors
-    }
-}
-
-struct PklModuleAmendingOrExtending: ASTNode {
-    var uniqueID: UUID = .init()
-
     let path: PklStringLiteral
     let document: Document
 
-    var extends: Bool
-    var amends: Bool
-
     var range: ASTRange
     let importDepth: Int
 
     var module: PklModule?
+
+    var type: PklModuleImportType?
 
     var children: [any ASTNode]? {
         var children: [any ASTNode] = []
@@ -180,19 +136,18 @@ struct PklModuleAmendingOrExtending: ASTNode {
     }
 
     init(module: PklModule?, range: ASTRange, path: PklStringLiteral,
-         importDepth: Int, document: Document, extends: Bool, amends: Bool)
+         importDepth: Int, document: Document, type: PklModuleImportType)
     {
         self.module = module
         self.range = range
         self.importDepth = importDepth
         self.document = document
         self.path = path
-        self.extends = extends
-        self.amends = amends
+        self.type = type
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
-        if extends, amends {
+        if type == .error {
             return [ASTDiagnosticError("Provide either extends or amends", .error, range)]
         }
         guard let module else {

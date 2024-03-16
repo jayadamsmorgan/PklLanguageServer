@@ -25,6 +25,8 @@ public actor DocumentProvider {
     var workspaceFolders: [WorkspaceFolder]
     private let serverFlags: ServerFlags
 
+    public var openedDocument: Document?
+
     private let treeSitterParser: TreeSitterParser
 
     private let renameHandler: RenameHandler
@@ -57,6 +59,7 @@ public actor DocumentProvider {
         if serverFlags.disableIncludeDiagnostics {
             logger.info("Diagnostics in included modules are disabled.")
         }
+        logger.info("MaxImportDepth: \(serverFlags.maxImportDepth)")
     }
 
     private func getServerCapabilities() -> ServerCapabilities {
@@ -101,7 +104,7 @@ public actor DocumentProvider {
             logger.error("LSP Completion: Document \(params.textDocument.uri) is not registered.")
             return nil
         }
-        let astTree = treeSitterParser.astParsedTrees[document]
+        let astTree = treeSitterParser.astParsedTrees.value(forKey: document)
         guard let module = astTree else {
             logger.error("LSP Completion: Document \(params.textDocument.uri) is not available.")
             return nil
@@ -114,7 +117,7 @@ public actor DocumentProvider {
             logger.error("LSP Rename: Document \(params.textDocument.uri) is not registered.")
             return nil
         }
-        let astTree = treeSitterParser.astParsedTrees[document]
+        let astTree = treeSitterParser.astParsedTrees.value(forKey: document)
         guard let module = astTree else {
             logger.error("LSP Rename: AST for \(params.textDocument.uri) is not available.")
             return nil
@@ -127,7 +130,7 @@ public actor DocumentProvider {
             logger.error("LSP Document Symbols: Document \(params.textDocument.uri) is not registered.")
             return nil
         }
-        let astTree = treeSitterParser.astParsedTrees[document]
+        let astTree = treeSitterParser.astParsedTrees.value(forKey: document)
         guard let module = astTree else {
             logger.error("LSP Document Symbols: AST for \(params.textDocument.uri) is not available.")
             return nil
@@ -140,7 +143,7 @@ public actor DocumentProvider {
             logger.error("LSP Semantic Tokens: Document \(params.textDocument.uri) is not registered.")
             return nil
         }
-        let astTree = treeSitterParser.astParsedTrees[document]
+        let astTree = treeSitterParser.astParsedTrees.value(forKey: document)
         guard let module = astTree else {
             logger.error("LSP Semantic Tokens: AST for \(params.textDocument.uri) is not available.")
             return nil
@@ -153,7 +156,7 @@ public actor DocumentProvider {
             logger.error("LSP Definition: Document \(params.textDocument.uri) is not registered.")
             return nil
         }
-        let astTree = treeSitterParser.astParsedTrees[document]
+        let astTree = treeSitterParser.astParsedTrees.value(forKey: document)
         guard let module = astTree else {
             logger.error("LSP Definition: AST for \(params.textDocument.uri) is not available.")
             return nil
@@ -165,7 +168,7 @@ public actor DocumentProvider {
         guard !serverFlags.disableDiagnostics else {
             return
         }
-        guard let diagnostics = treeSitterParser.astParsedTrees[document]?.diagnosticErrors() else {
+        guard let diagnostics = treeSitterParser.astParsedTrees.value(forKey: document)?.diagnosticErrors() else {
             logger.error("LSP Diagnostics: AST for \(document.uri) is not available.")
             try await connection.sendNotification(ServerNotification.textDocumentPublishDiagnostics(.init(uri: document.uri, diagnostics: [])))
             return
@@ -273,6 +276,7 @@ public actor DocumentProvider {
         do {
             let newDocument = try document.withAppliedChanges(changes, nextVersion: nextVersion)
             documents[documentUri] = newDocument
+            openedDocument = newDocument
             await treeSitterParser.parseDocumentTreeSitter(newDocument: newDocument)
             do {
                 try await provideDiagnostics(document: newDocument)
@@ -293,6 +297,7 @@ public actor DocumentProvider {
 
         let document = Document(textDocument: params.textDocument)
         documents[documentUri] = document
+        openedDocument = document
         await treeSitterParser.parseDocumentTreeSitter(newDocument: document)
         do {
             try await provideDiagnostics(document: document)
