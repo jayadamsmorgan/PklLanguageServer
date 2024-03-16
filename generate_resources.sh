@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the input directory and output Swift file
-INPUT_DIR="pkl/stdlib"
+STDLIB_PATH="pkl/stdlib"
 OUTPUT_FILE="Sources/pkl-lsp/Resources.swift"
 
 # Start the Resources struct and hashMap
@@ -10,8 +10,9 @@ echo "struct Resources {" >> $OUTPUT_FILE
 echo "    static let stdlib: [String: String] = [" >> $OUTPUT_FILE
 
 # Process each .pkl file
-find "$INPUT_DIR" -name "*.pkl" | while read file; do
+find "$STDLIB_PATH" -name "*.pkl" | while read file; do
     filename=$(basename -- "$file")
+    echo "Processing $filename..."
     echo "        \"${filename}\": \"\"\"" >> $OUTPUT_FILE
 
     # Append file contents, escaping backslashes and double quotes
@@ -37,3 +38,4 @@ tail -n 2 "$OUTPUT_FILE" >> "$TMP_FILE"
 
 # Replace original file with corrected one
 mv "$TMP_FILE" "$OUTPUT_FILE"
+echo "Done!"
