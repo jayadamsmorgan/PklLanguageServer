@@ -150,7 +150,8 @@ public class TreeSitterParser {
             while true {
                 let element = self.modulesQueue.dequeue()
                 if element.importDepth > maxImportDepth || maxImportDepth == 0 {
-                    self.logger.error("Import Queue: Import depth is too high.")
+                    self.logger.info("Import Queue: Import depth is too high. Skipping import for \(element.documentToBeImported).")
+                    try await self.documentProvider?.provideDiagnostics(document: documentProvider?.openedDocument ?? element.importingDocument)
                     continue
                 }
                 var newParsedModule = self.astParsedTrees.value(forKey: element.documentToBeImported) as? PklModule
@@ -450,38 +451,103 @@ public class TreeSitterParser {
             logger.debug("Not implemented")
         case .anon_sym_BANG_BANG:
             logger.debug("Not implemented")
+
         case .anon_sym_DASH:
-            logger.debug("Not implemented")
+            logger.debug("Starting building binary operator...")
+            let type: PklBinaryOperatorType = .subtraction
+            logger.debug("Binary operator built succesfully.")
+            let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
+            return PklBinaryOperator(type: type, range: range, importDepth: importDepth, document: document)
+
         case .anon_sym_BANG:
             logger.debug("Not implemented")
+
         case .anon_sym_STAR_STAR:
-            logger.debug("Not implemented")
+            logger.debug("Starting building binary operator...")
+            let type: PklBinaryOperatorType = .exponentiation
+            logger.debug("Binary operator built succesfully.")
+            let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
+            return PklBinaryOperator(type: type, range: range, importDepth: importDepth, document: document)
+
         case .anon_sym_QMARK_QMARK:
             logger.debug("Not implemented")
+
         case .anon_sym_SLASH:
-            logger.debug("Not implemented")
+            logger.debug("Starting building binary operator...")
+            let type: PklBinaryOperatorType = .division
+            logger.debug("Binary operator built succesfully.")
+            let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
+            return PklBinaryOperator(type: type, range: range, importDepth: importDepth, document: document)
+
         case .anon_sym_TILDE_SLASH:
             logger.debug("Not implemented")
+
         case .anon_sym_PERCENT:
-            logger.debug("Not implemented")
+            logger.debug("Starting building binary operator...")
+            let type: PklBinaryOperatorType = .modulus
+            logger.debug("Binary operator built succesfully.")
+            let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
+            return PklBinaryOperator(type: type, range: range, importDepth: importDepth, document: document)
+
         case .anon_sym_PLUS:
-            logger.debug("Not implemented")
+            logger.debug("Starting building binary operator...")
+            let type: PklBinaryOperatorType = .addition
+            logger.debug("Binary operator built succesfully.")
+            let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
+            return PklBinaryOperator(type: type, range: range, importDepth: importDepth, document: document)
+
         case .anon_sym_LT_EQ:
-            logger.debug("Not implemented")
+            logger.debug("Starting building binary operator...")
+            let type: PklBinaryOperatorType = .lessOrEquals
+            logger.debug("Binary operator built succesfully.")
+            let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
+            return PklBinaryOperator(type: type, range: range, importDepth: importDepth, document: document)
+
         case .anon_sym_GT_EQ:
-            logger.debug("Not implemented")
+            logger.debug("Starting building binary operator...")
+            let type: PklBinaryOperatorType = .greaterOrEquals
+            logger.debug("Binary operator built succesfully.")
+            let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
+            return PklBinaryOperator(type: type, range: range, importDepth: importDepth, document: document)
+
         case .anon_sym_EQ_EQ:
-            logger.debug("Not implemented")
+            logger.debug("Starting building binary operator...")
+            let type: PklBinaryOperatorType = .equals
+            logger.debug("Binary operator built succesfully.")
+            let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
+            return PklBinaryOperator(type: type, range: range, importDepth: importDepth, document: document)
+
         case .anon_sym_BANG_EQ:
-            logger.debug("Not implemented")
+            logger.debug("Starting building binary operator...")
+            let type: PklBinaryOperatorType = .notEquals
+            logger.debug("Binary operator built succesfully.")
+            let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
+            return PklBinaryOperator(type: type, range: range, importDepth: importDepth, document: document)
+
         case .anon_sym_AMP_AMP:
-            logger.debug("Not implemented")
+            logger.debug("Starting building binary operator...")
+            let type: PklBinaryOperatorType = .and
+            logger.debug("Binary operator built succesfully.")
+            let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
+            return PklBinaryOperator(type: type, range: range, importDepth: importDepth, document: document)
+
         case .anon_sym_PIPE_PIPE:
-            logger.debug("Not implemented")
+            logger.debug("Starting building binary operator...")
+            let type: PklBinaryOperatorType = .or
+            logger.debug("Binary operator built succesfully.")
+            let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
+            return PklBinaryOperator(type: type, range: range, importDepth: importDepth, document: document)
+
         case .anon_sym_PIPE_GT:
             logger.debug("Not implemented")
+
         case .anon_sym_is:
-            logger.debug("Not implemented")
+            logger.debug("Starting building binary operator...")
+            let type: PklBinaryOperatorType = .is
+            logger.debug("Binary operator built succesfully.")
+            let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
+            return PklBinaryOperator(type: type, range: range, importDepth: importDepth, document: document)
+
         case .anon_sym_if:
             logger.debug("Not implemented")
         case .anon_sym_else:
@@ -626,17 +692,18 @@ public class TreeSitterParser {
             logger.debug("Extends: \(extends), Amends: \(amends), Path: \(pathValue)")
             let type: PklModuleImportType = amends ? .amending : extends ? .extending : .error
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
-            let module = PklModuleImport(module: nil, range: range, path: path,
-                                         importDepth: importDepth, document: document, type: type)
+            var module = PklModuleImport(module: nil, range: range, path: path,
+                                         importDepth: importDepth, document: document, type: type, exists: false)
             guard let importDocument = await includeModule(relPath: pathValue, currentDocument: document) else {
                 logger.error("Failed to include module \(pathValue) in \(document.uri).")
                 importedModules.append(module)
                 return module
             }
+            module.exists = true
             let parseQueueElement = ParseQueueElement(importDepth: importDepth, importingDocument: document, documentToBeImported: importDocument,
                                                       importType: type, moduleImport: module)
             modulesQueue.enqueue(parseQueueElement)
-            return nil
+            return module
 
         case .sym_importClause: // IMPORT CLAUSE
             logger.debug("Starting building import clause...")
@@ -666,17 +733,18 @@ public class TreeSitterParser {
             }
             pathValue.removeAll(where: { $0 == "\"" })
             logger.debug("Path: \(pathValue)")
-            let moduleImport = PklModuleImport(module: nil, range: range, path: path,
-                                               importDepth: importDepth, document: document, type: type)
+            var moduleImport = PklModuleImport(module: nil, range: range, path: path,
+                                               importDepth: importDepth, document: document, type: type, exists: false)
             guard let importDocument = await includeModule(relPath: pathValue, currentDocument: document) else {
                 logger.error("Failed to include module \(pathValue) in \(document.uri).")
                 importedModules.append(moduleImport)
                 return moduleImport
             }
+            moduleImport.exists = true
             let parseQueueElement = ParseQueueElement(importDepth: importDepth, importingDocument: document,
                                                       documentToBeImported: importDocument, importType: type, moduleImport: moduleImport)
             modulesQueue.enqueue(parseQueueElement)
-            return nil
+            return moduleImport
 
         case .sym_importGlobClause:
             logger.debug("Not implemented")
@@ -1179,15 +1247,16 @@ public class TreeSitterParser {
             }
             pathValue.removeAll(where: { $0 == "\"" })
             logger.debug("Path: \(pathValue)")
-            let moduleImport = PklModuleImport(module: nil, range: range, path: path, importDepth: importDepth, document: document, type: .normal)
+            var moduleImport = PklModuleImport(module: nil, range: range, path: path, importDepth: importDepth, document: document, type: .normal, exists: false)
             guard let importDocument = await includeModule(relPath: pathValue, currentDocument: document) else {
                 logger.error("Failed to include module \(pathValue) in \(document.uri).")
                 importedModules.append(moduleImport)
                 return moduleImport
             }
+            moduleImport.exists = true
             let parseQueueElement = ParseQueueElement(importDepth: importDepth, importingDocument: document, documentToBeImported: importDocument, importType: .normal, moduleImport: moduleImport)
             modulesQueue.enqueue(parseQueueElement)
-            return nil
+            return moduleImport
 
         case .sym_importGlobExpr:
             logger.debug("Not implemented")
