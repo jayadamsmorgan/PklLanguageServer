@@ -1,6 +1,6 @@
 import Foundation
 
-struct ParseQueueElement: Hashable {
+struct ParseImportQueueElement: Hashable {
     let importDepth: Int
     let importingDocument: Document
     let documentToBeImported: Document
@@ -8,26 +8,26 @@ struct ParseQueueElement: Hashable {
     let moduleImport: PklModuleImport
 }
 
-class ParseQueue {
-    private var queue: [ParseQueueElement] = []
+class BlockingQueue<T: Hashable> {
+    private var queue: [T] = []
     private let lock = NSLock()
     private let semaphore = DispatchSemaphore(value: 0)
 
-    func enqueue(_ element: ParseQueueElement) {
+    func enqueue(_ element: T) {
         lock.lock()
         queue.append(element)
         lock.unlock()
         semaphore.signal()
     }
 
-    func dequeue() -> ParseQueueElement {
+    func dequeue() -> T {
         semaphore.wait()
         lock.lock()
         defer { lock.unlock() }
         return queue.removeFirst()
     }
 
-    func contains(_ element: ParseQueueElement) -> Bool {
+    func contains(_ element: T) -> Bool {
         lock.lock()
         defer { lock.unlock() }
         return queue.contains(element)

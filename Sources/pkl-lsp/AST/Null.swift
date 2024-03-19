@@ -1,7 +1,7 @@
 import Foundation
 import LanguageServerProtocol
 
-struct PklNullLiteral: ASTNode {
+class PklNullLiteral: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange

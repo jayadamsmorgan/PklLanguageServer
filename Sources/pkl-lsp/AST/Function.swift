@@ -1,7 +1,7 @@
 import Foundation
 import LanguageServerProtocol
 
-struct PklFunctionParameter: ASTNode {
+class PklFunctionParameter: ASTNode {
     var uniqueID: UUID = .init()
 
     var range: ASTRange
@@ -49,7 +49,7 @@ struct PklFunctionParameter: ASTNode {
     }
 }
 
-struct PklFunctionParameterList: ASTNode {
+class PklFunctionParameterList: ASTNode {
     var uniqueID: UUID = .init()
 
     var range: ASTRange
@@ -108,7 +108,7 @@ struct PklFunctionParameterList: ASTNode {
     }
 }
 
-struct PklFunctionDeclaration: ASTNode {
+class PklFunctionDeclaration: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
@@ -161,7 +161,7 @@ struct PklFunctionDeclaration: ASTNode {
     }
 }
 
-struct PklClassFunctionBody: ASTNode {
+class PklClassFunctionBody: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
@@ -221,7 +221,7 @@ struct PklClassFunctionBody: ASTNode {
     }
 }
 
-struct PklMethodParameter: ASTNode {
+class PklMethodParameter: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
@@ -255,7 +255,7 @@ struct PklMethodParameter: ASTNode {
     }
 }
 
-struct PklMethodParameterList: ASTNode {
+class PklMethodParameterList: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
@@ -312,7 +312,7 @@ struct PklMethodParameterList: ASTNode {
     }
 }
 
-struct PklMethodCallExpression: ASTNode {
+class PklMethodCallExpression: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
@@ -358,7 +358,7 @@ struct PklMethodCallExpression: ASTNode {
     }
 }
 
-struct PklNestedMethodCallExpression: ASTNode {
+class PklNestedMethodCallExpression: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange

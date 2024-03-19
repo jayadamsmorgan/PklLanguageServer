@@ -8,7 +8,7 @@ enum PklStringType {
     case multiLine
 }
 
-struct PklStringLiteral: ASTNode {
+class PklStringLiteral: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange

@@ -19,7 +19,7 @@ enum PklBinaryOperatorType: String, CaseIterable {
     case and
 }
 
-struct PklBinaryOperator: ASTNode {
+class PklBinaryOperator: ASTNode {
     var uniqueID: UUID = .init()
 
     var range: ASTRange
@@ -44,7 +44,7 @@ struct PklBinaryOperator: ASTNode {
     }
 }
 
-struct PklBinaryExpression: ASTNode {
+class PklBinaryExpression: ASTNode {
     var uniqueID: UUID = .init()
 
     var range: ASTRange

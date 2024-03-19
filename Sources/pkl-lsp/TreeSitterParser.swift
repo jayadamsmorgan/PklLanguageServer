@@ -14,8 +14,9 @@ public class TreeSitterParser {
     private var documentProvider: DocumentProvider?
 
     private var importedModules: [PklModuleImport] = []
-    private var modulesQueue = ParseQueue()
+    private var modulesQueue = BlockingQueue<ParseImportQueueElement>()
 
+    private var variables: [Document: [PklVariable]] = [:]
     private var objectReferences: [Document: [any ASTNode]] = [:]
 
     let maxImportDepth: Int
@@ -78,6 +79,29 @@ public class TreeSitterParser {
             listASTNodes(rootNode: astParsing)
         }
         astParsedTrees.updateValue(astParsing, forKey: newDocument)
+        guard let variables = variables[newDocument] else {
+            logger.debug("No variables found for document \(newDocument.uri)")
+            return
+        }
+        guard let references = objectReferences[newDocument] else {
+            logger.debug("No references found for document \(newDocument.uri)")
+            return
+        }
+        for variable in variables {
+            variable.reference = references.first(where: { ref in
+                if let ref = ref as? PklClassProperty {
+                    if ref.identifier?.value == variable.identifier?.value {
+                        return true
+                    }
+                }
+                if let ref = ref as? PklObjectProperty {
+                    if ref.identifier?.value == variable.identifier?.value {
+                        return true
+                    }
+                }
+                return false
+            })
+        }
     }
 
     public func parseDocumentTreeSitter(oldDocument: Document, newDocument: Document, changes: [TextDocumentContentChangeEvent]) async {
@@ -159,11 +183,11 @@ public class TreeSitterParser {
                 var newParsedModule = self.astParsedTrees.value(forKey: element.documentToBeImported) as? PklModule
                 if let newParsedModule {
                     let importingModule = self.astParsedTrees.waitForValue(forKey: element.importingDocument) as? PklModule
-                    guard var importingModule else {
+                    guard let importingModule else {
                         self.logger.error("Import Queue: Unable to find importing module.")
                         continue
                     }
-                    var moduleImport = element.moduleImport
+                    let moduleImport = element.moduleImport
                     moduleImport.module = newParsedModule
                     importingModule.contents.append(moduleImport)
                     self.astParsedTrees.updateValue(importingModule, forKey: element.importingDocument)
@@ -179,11 +203,11 @@ public class TreeSitterParser {
                 }
                 var importingModule: PklModule?
                 importingModule = self.astParsedTrees.value(forKey: element.importingDocument) as? PklModule
-                guard var importingModule else {
+                guard let importingModule else {
                     logger.error("Import Queue: Unable to find importing module.")
                     continue
                 }
-                var moduleImport = element.moduleImport
+                let moduleImport = element.moduleImport
                 moduleImport.module = newParsedModule
                 importingModule.contents.append(moduleImport)
                 self.astParsedTrees.updateValue(importingModule, forKey: element.importingDocument)
@@ -686,7 +710,7 @@ public class TreeSitterParser {
                     logger.debug("Path found: \(path?.value ?? "nil")")
                 }
             }
-            guard var path else {
+            guard let path else {
                 logger.error("Failed to parse path in extends or amends clause.")
                 return nil
             }
@@ -699,7 +723,7 @@ public class TreeSitterParser {
             logger.debug("Extends: \(extends), Amends: \(amends), Path: \(pathValue)")
             let type: PklModuleImportType = amends ? .amending : extends ? .extending : .error
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
-            var module = PklModuleImport(module: nil, range: range, path: path,
+            let module = PklModuleImport(module: nil, range: range, path: path,
                                          importDepth: importDepth, document: document, type: type, exists: false)
             guard let importDocument = await includeModule(relPath: pathValue, currentDocument: document) else {
                 logger.error("Failed to include module \(pathValue) in \(document.uri).")
@@ -707,7 +731,7 @@ public class TreeSitterParser {
                 return module
             }
             module.exists = true
-            let parseQueueElement = ParseQueueElement(importDepth: importDepth, importingDocument: document, documentToBeImported: importDocument,
+            let parseQueueElement = ParseImportQueueElement(importDepth: importDepth, importingDocument: document, documentToBeImported: importDocument,
                                                       importType: type, moduleImport: module)
             modulesQueue.enqueue(parseQueueElement)
             logger.debug("Extends or amends clause built successfully.")
@@ -730,7 +754,7 @@ public class TreeSitterParser {
             }
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
             let type: PklModuleImportType = .normal
-            guard var path else {
+            guard let path else {
                 logger.error("Failed to parse path in import clause.")
                 return nil
             }
@@ -741,7 +765,7 @@ public class TreeSitterParser {
             }
             pathValue.removeAll(where: { $0 == "\"" })
             logger.debug("Path: \(pathValue)")
-            var moduleImport = PklModuleImport(module: nil, range: range, path: path,
+            let moduleImport = PklModuleImport(module: nil, range: range, path: path,
                                                importDepth: importDepth, document: document, type: type, exists: false)
             guard let importDocument = await includeModule(relPath: pathValue, currentDocument: document) else {
                 logger.error("Failed to include module \(pathValue) in \(document.uri).")
@@ -749,7 +773,7 @@ public class TreeSitterParser {
                 return moduleImport
             }
             moduleImport.exists = true
-            let parseQueueElement = ParseQueueElement(importDepth: importDepth, importingDocument: document,
+            let parseQueueElement = ParseImportQueueElement(importDepth: importDepth, importingDocument: document,
                                                       documentToBeImported: importDocument, importType: type, moduleImport: moduleImport)
             modulesQueue.enqueue(parseQueueElement)
             return moduleImport
@@ -1194,47 +1218,11 @@ public class TreeSitterParser {
                 logger.error("Error building variable expression: Identifier is nil.")
                 return PklVariable(identifier: nil, reference: nil, range: range, importDepth: importDepth, document: document)
             }
-            var reference: (any ASTNode)?
-            let references = objectReferences[document] ?? []
-            for ref in references {
-                if let ref = ref as? PklClassProperty {
-                    if ref.identifier?.value == identifier.value {
-                        reference = ref
-                        break
-                    }
-                }
-                if let ref = ref as? PklObjectProperty {
-                    if ref.identifier?.value == identifier.value {
-                        reference = ref
-                        break
-                    }
-                }
-                if let ref = ref as? PklClassDeclaration {
-                    if ref.classIdentifier?.value == identifier.value {
-                        reference = ref
-                        break
-                    }
-                }
-                if let ref = ref as? PklObjectEntry {
-                    if ref.strIdentifier?.value == identifier.value {
-                        reference = ref
-                        break
-                    }
-                }
-                if let ref = ref as? PklFunctionDeclaration {
-                    if ref.body?.identifier?.value == identifier.value {
-                        reference = ref
-                        break
-                    }
-                }
-                if let ref = ref as? PklFunctionParameter {
-                    if ref.identifier?.value == identifier.value {
-                        reference = ref
-                        break
-                    }
-                }
-            }
-            return PklVariable(identifier: identifier, reference: reference, range: range, importDepth: importDepth, document: document)
+            let variable = PklVariable(identifier: identifier, reference: nil, range: range, importDepth: importDepth, document: document)
+            var vars = variables[document] ?? []
+            vars.append(variable)
+            variables[document] = vars
+            return variable
 
         case .sym_stringConstant: // STRING CONSTANT
             logger.debug("Starting building string constant...")
@@ -1289,7 +1277,7 @@ public class TreeSitterParser {
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
             guard nestedMethodCalls == 0 else {
                 logger.debug("Starting building nested method call expression...")
-                var nestedMethodCallExpr = PklNestedMethodCallExpression(methodCalls: [], tail: [], range: range, importDepth: importDepth, document: document)
+                let nestedMethodCallExpr = PklNestedMethodCallExpression(methodCalls: [], tail: [], range: range, importDepth: importDepth, document: document)
                 for childPosition in 0 ..< node.childCount {
                     guard let childNode = node.child(at: childPosition) else {
                         continue
@@ -1304,6 +1292,7 @@ public class TreeSitterParser {
                         }
                     }
                 }
+                logger.debug("Nested method call expression built successfully.")
                 return nestedMethodCallExpr
             }
             logger.debug("Starting building standard method call expression...")
@@ -1382,7 +1371,7 @@ public class TreeSitterParser {
             }
             logger.debug("Import expression built successfully.")
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
-            guard var path else {
+            guard let path else {
                 logger.error("Failed to parse path in import expression.")
                 return nil
             }
@@ -1393,14 +1382,15 @@ public class TreeSitterParser {
             }
             pathValue.removeAll(where: { $0 == "\"" })
             logger.debug("Path: \(pathValue)")
-            var moduleImport = PklModuleImport(module: nil, range: range, path: path, importDepth: importDepth, document: document, type: .normal, exists: false)
+            let moduleImport = PklModuleImport(module: nil, range: range, path: path, importDepth: importDepth, document: document, type: .normal, exists: false)
             guard let importDocument = await includeModule(relPath: pathValue, currentDocument: document) else {
                 logger.error("Failed to include module \(pathValue) in \(document.uri).")
                 importedModules.append(moduleImport)
                 return moduleImport
             }
             moduleImport.exists = true
-            let parseQueueElement = ParseQueueElement(importDepth: importDepth, importingDocument: document, documentToBeImported: importDocument, importType: .normal, moduleImport: moduleImport)
+            let parseQueueElement = ParseImportQueueElement(importDepth: importDepth, importingDocument: document,
+                documentToBeImported: importDocument, importType: .normal, moduleImport: moduleImport)
             modulesQueue.enqueue(parseQueueElement)
             return moduleImport
 

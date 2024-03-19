@@ -6,7 +6,7 @@ enum PklIdentifierType {
     case qualifiedIdentifier
 }
 
-struct PklIdentifier: ASTNode {
+class PklIdentifier: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange

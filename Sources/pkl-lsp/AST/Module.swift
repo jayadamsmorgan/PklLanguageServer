@@ -1,7 +1,7 @@
 import Foundation
 import LanguageServerProtocol
 
-struct PklModule: ASTNode {
+class PklModule: ASTNode {
     var uniqueID: UUID = .init()
 
     var range: ASTRange
@@ -32,7 +32,7 @@ struct PklModule: ASTNode {
     }
 }
 
-struct PklModuleHeader: ASTNode {
+class PklModuleHeader: ASTNode {
     var uniqueID: UUID = .init()
 
     var range: ASTRange
@@ -75,7 +75,7 @@ struct PklModuleHeader: ASTNode {
     }
 }
 
-struct PklModuleClause: ASTNode {
+class PklModuleClause: ASTNode {
     var uniqueID: UUID = .init()
 
     var range: ASTRange
@@ -113,7 +113,7 @@ enum PklModuleImportType {
     case error
 }
 
-struct PklModuleImport: ASTNode {
+class PklModuleImport: ASTNode {
     var uniqueID: UUID = .init()
 
     let path: PklStringLiteral

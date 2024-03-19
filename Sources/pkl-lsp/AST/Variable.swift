@@ -1,6 +1,6 @@
 import Foundation
 
-struct PklVariable: ASTNode {
+class PklVariable: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
@@ -8,7 +8,7 @@ struct PklVariable: ASTNode {
     var document: Document
 
     let identifier: PklIdentifier?
-    let reference: (any ASTNode)?
+    var reference: (any ASTNode)?
 
     var children: [any ASTNode]? {
         var children: [any ASTNode] = []

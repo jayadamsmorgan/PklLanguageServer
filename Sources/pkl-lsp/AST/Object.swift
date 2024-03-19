@@ -1,7 +1,7 @@
 import Foundation
 import LanguageServerProtocol
 
-struct PklObjectBody: ASTNode {
+class PklObjectBody: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
@@ -65,7 +65,7 @@ struct PklObjectBody: ASTNode {
     }
 }
 
-struct PklObjectProperty: ASTNode {
+class PklObjectProperty: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
@@ -134,7 +134,7 @@ struct PklObjectProperty: ASTNode {
     }
 }
 
-struct PklObjectEntry: ASTNode {
+class PklObjectEntry: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange

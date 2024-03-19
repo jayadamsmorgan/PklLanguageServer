@@ -1,7 +1,7 @@
 import Foundation
 import LanguageServerProtocol
 
-struct PklValue: ASTNode {
+class PklValue: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
