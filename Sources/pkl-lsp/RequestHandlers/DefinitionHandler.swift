@@ -52,6 +52,14 @@ public class DefinitionHandler {
             return .optionA(Location(uri: document.uri, range: range))
         }
         logger.debug("DefinitionHandler: Parent node: \(String(describing: parent))")
+        if let parent = parent as? PklVariable {
+            logger.debug("DefinitionHandler: Searching for definition of variable \(parent.identifier?.value ?? "nil")")
+            guard let reference = parent.reference else {
+                logger.debug("DefinitionHandler: Reference is nil.")
+                return nil
+            }
+            return .optionA(Location(uri: reference.document.uri, range: reference.range.getLSPRange()))
+        }
 
         let range = context.range.getLSPRange()
         return .optionA(Location(uri: document.uri, range: range))

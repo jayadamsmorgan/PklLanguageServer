@@ -79,12 +79,16 @@ public class TreeSitterParser {
             listASTNodes(rootNode: astParsing)
         }
         astParsedTrees.updateValue(astParsing, forKey: newDocument)
-        guard let variables = variables[newDocument] else {
-            logger.debug("No variables found for document \(newDocument.uri)")
+        await variableReferences(document: newDocument)
+    }
+
+    private func variableReferences(document: Document) async {
+        guard let variables = variables[document] else {
+            logger.debug("No variables found for document \(document.uri)")
             return
         }
-        guard let references = objectReferences[newDocument] else {
-            logger.debug("No references found for document \(newDocument.uri)")
+        guard let references = objectReferences[document] else {
+            logger.debug("No references found for document \(document.uri)")
             return
         }
         for variable in variables {
@@ -732,7 +736,7 @@ public class TreeSitterParser {
             }
             module.exists = true
             let parseQueueElement = ParseImportQueueElement(importDepth: importDepth, importingDocument: document, documentToBeImported: importDocument,
-                                                      importType: type, moduleImport: module)
+                                                            importType: type, moduleImport: module)
             modulesQueue.enqueue(parseQueueElement)
             logger.debug("Extends or amends clause built successfully.")
             return module
@@ -774,7 +778,7 @@ public class TreeSitterParser {
             }
             moduleImport.exists = true
             let parseQueueElement = ParseImportQueueElement(importDepth: importDepth, importingDocument: document,
-                                                      documentToBeImported: importDocument, importType: type, moduleImport: moduleImport)
+                                                            documentToBeImported: importDocument, importType: type, moduleImport: moduleImport)
             modulesQueue.enqueue(parseQueueElement)
             return moduleImport
 
@@ -1390,7 +1394,7 @@ public class TreeSitterParser {
             }
             moduleImport.exists = true
             let parseQueueElement = ParseImportQueueElement(importDepth: importDepth, importingDocument: document,
-                documentToBeImported: importDocument, importType: .normal, moduleImport: moduleImport)
+                                                            documentToBeImported: importDocument, importType: .normal, moduleImport: moduleImport)
             modulesQueue.enqueue(parseQueueElement)
             return moduleImport
 
