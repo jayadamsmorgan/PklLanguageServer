@@ -118,6 +118,7 @@ class PklModuleImport: ASTNode {
 
     let path: PklStringLiteral
     let document: Document
+    var documentToImport: Document?
 
     var range: ASTRange
     let importDepth: Int
@@ -125,8 +126,6 @@ class PklModuleImport: ASTNode {
     var module: PklModule?
 
     var type: PklModuleImportType?
-
-    var exists: Bool
 
     var children: [any ASTNode]? {
         var children: [any ASTNode] = []
@@ -138,22 +137,22 @@ class PklModuleImport: ASTNode {
     }
 
     init(module: PklModule?, range: ASTRange, path: PklStringLiteral,
-         importDepth: Int, document: Document, type: PklModuleImportType, exists: Bool)
+         importDepth: Int, document: Document, documentToImport: Document? = nil, type: PklModuleImportType)
     {
         self.module = module
         self.range = range
         self.importDepth = importDepth
         self.document = document
+        self.documentToImport = documentToImport
         self.path = path
         self.type = type
-        self.exists = exists
     }
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
         if type == .error {
             return [ASTDiagnosticError("Provide either extends or amends", .error, range)]
         }
-        if !exists {
+        if documentToImport == nil {
             return [ASTDiagnosticError("Module cannot be found", .error, range)]
         }
         guard var moduleErrors = module?.diagnosticErrors() else {
