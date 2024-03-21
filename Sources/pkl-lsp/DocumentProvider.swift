@@ -271,25 +271,12 @@ public actor DocumentProvider {
 
         // This doesn't work yet, because there is still an error in calculating the change offsets
         // Potentially this should be used instead of the current implementation below
-        // let newDocument = await treeSitterParser.parseWithChanges(document: document, params: params)
-        // guard let newDocument = newDocument else {
-        //     logger.error("Error parsing document: \(uri)")
-        //     return
-        // }
-        // documents[documentUri] = newDocument
-
+        let newDocument = await treeSitterParser.parseWithChanges(document: document, params: params)
+        documents[documentUri] = newDocument
         do {
-            let newDocument = try document.withAppliedChanges(params.contentChanges, nextVersion: params.textDocument.version)
-            documents[documentUri] = newDocument
-            await treeSitterParser.parse(document: newDocument)
-
-            do {
-                try await provideDiagnostics(document: newDocument)
-            } catch {
-                logger.error("Error providing diagnostics: \(error)")
-            }
+            try await provideDiagnostics(document: newDocument)
         } catch {
-            logger.error("Error applying changes: \(error)")
+            logger.error("Error providing diagnostics: \(error)")
         }
     }
 

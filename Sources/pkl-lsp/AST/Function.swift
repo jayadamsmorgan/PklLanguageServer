@@ -406,3 +406,21 @@ class PklNestedMethodCallExpression: ASTNode {
         return errors.count > 0 ? errors : nil
     }
 }
+
+// class PklPropertyCallExpression: ASTNode {
+//     let uniqueID: UUID = .init()
+//
+//     var range: ASTRange
+//     let document: Document
+//     let importDepth: Int
+//
+//     var variableFrom: PklVariable?
+//     var variableCalls: [PklVariable]
+//
+//     var children: [ASTNode]? {
+//
+//     }
+//
+//     init()
+//
+// }

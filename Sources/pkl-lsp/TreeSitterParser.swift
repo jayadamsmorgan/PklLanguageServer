@@ -54,21 +54,42 @@ public class TreeSitterParser {
         logger.debug("Document \(document.uri) parsed.")
     }
 
-    public func parseWithChanges(document: Document, params: DidChangeTextDocumentParams) async -> Document? {
+    private func parseFullyWithChanges(document: Document, params: DidChangeTextDocumentParams) async -> Document {
+        do {
+            let newDocument = try document.withAppliedChanges(params.contentChanges, nextVersion: params.textDocument.version)
+            await parse(document: newDocument)
+            return newDocument
+        } catch {
+            logger.error("Failed to apply changes to document \(document.uri).")
+            return document
+        }
+    }
+
+    public func parseWithChanges(document: Document, params: DidChangeTextDocumentParams) async -> Document {
         logger.debug("Parsing document \(document.uri) with changes.")
         guard let tree = tsParsedTrees[document] else {
             logger.debug("No previous tree found for document \(document.uri), parsing from scratch.")
-            await parse(document: document)
-            return document
+            return await parseFullyWithChanges(document: document, params: params)
         }
-        var newDocument = document
+        var edits: Document.TSInputEditsForDocument?
         do {
-            newDocument = try document.withAppliedChanges(params.contentChanges, nextVersion: params.textDocument.version)
+            edits = try Document.getTSInputEditsApplyingChanges(for: document, with: params.contentChanges, nextVersion: params.textDocument.version, logger: logger)
+        } catch is NilDocumentChangeRange {
+            logger.error("Nil range found in document \(document.uri).")
+            logger.error("Failed to get TS Input Edits from document \(document.uri).")
+            return await parseFullyWithChanges(document: document, params: params)
         } catch {
-            logger.error("Failed to apply changes to document \(document.uri): \(error)")
+            logger.error("Failed to get TS Input Edits from document \(document.uri): \(error).")
             return document
         }
-        tree.edit(InputEdit.from(oldString: document.text, newString: newDocument.text))
+        guard let edits else {
+            logger.error("Failed to apply changes to document \(document.uri).")
+            return document
+        }
+        let newDocument = edits.document
+        for edit in edits.inputEdits {
+            tree.edit(edit)
+        }
         if logger.logLevel == .trace {
             if let rootNode = tree.rootNode {
                 listTreeSitterNodes(rootNode: rootNode, document: newDocument)
@@ -138,13 +159,13 @@ public class TreeSitterParser {
                 logger.error("Document \(document.uri) is trying to import itself.")
                 return
             }
-            guard module.importDepth < maxImportDepth else {
-                logger.error("Import depth exceeded for document \(document.uri)")
-                return
-            }
             if let astRoot = astParsedTrees[documentToImport] {
                 logger.debug("Imported module \(documentToImport.uri) from cache.")
                 module.module = astRoot as? PklModule
+                return
+            }
+            guard module.importDepth < maxImportDepth else {
+                logger.error("Import depth exceeded for document \(document.uri)")
                 return
             }
             let tree = parser.parse(documentToImport.text)
