@@ -89,7 +89,7 @@ public extension Document {
         let document: Document
     }
 
-    static func getTSInputEditsApplyingChanges(for document: Document, with changes: [TextDocumentContentChangeEvent], nextVersion: Int? = nil, logger: Logger)
+    static func getTSInputEditsApplyingChanges(for document: Document, with changes: [TextDocumentContentChangeEvent], nextVersion: Int? = nil)
         throws -> TSInputEditsForDocument
     {
         var text = document.text
@@ -102,21 +102,14 @@ public extension Document {
                 throw InvalidDocumentChangeRange(range: range)
             }
             text.replaceSubrange(range, with: change.text)
-            logger.debug("Change: \(change)")
             let startByte = range.lowerBound.utf16Offset(in: text)
-            logger.debug("startByte: \(startByte)")
             let oldEndByte = range.upperBound.utf16Offset(in: text)
-            logger.debug("oldEndByte: \(oldEndByte)")
             let newEndByte = startByte + (change.text.count * 2)
-            logger.debug("newEndByte: \(newEndByte)")
             let startPoint = change.range?.start.getPoint() ?? Point.zero
-            logger.debug("startPoint: \(startPoint)")
             let oldEndPoint = change.range?.end.getPoint() ?? Point.zero
-            logger.debug("oldEndPoint: \(oldEndPoint)")
             let split = change.text.split(separator: "\n")
             let newEndPoint = Point(row: Int(startPoint.row) + split.count,
                                     column: (split.last?.count ?? 0))
-            logger.debug("newEndPoint: \(newEndPoint)")
 
             let inputEdit = InputEdit(
                 startByte: startByte,
