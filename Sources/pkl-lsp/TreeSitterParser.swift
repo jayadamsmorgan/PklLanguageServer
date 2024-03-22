@@ -150,12 +150,13 @@ public class TreeSitterParser {
             logger.debug("No import modules found for document \(document.uri)")
             return
         }
-        for module in importModules {
+        for moduleIndex in 0..<importModules.count {
+            let module = importModules[importModules.count - moduleIndex - 1]
             guard let documentToImport = module.documentToImport else {
                 logger.error("No document to import found for module \(module)")
                 return
             }
-            if documentToImport == document {
+            if documentToImport.uri == document.uri {
                 logger.error("Document \(document.uri) is trying to import itself.")
                 return
             }
@@ -175,10 +176,6 @@ public class TreeSitterParser {
             }
             tsParsedTrees[documentToImport] = tree
             await parseAST(document: documentToImport, tree: tree, importDepth: module.importDepth + 1)
-            if let astRoot = astParsedTrees[documentToImport] {
-                module.module = astRoot as? PklModule
-                astParsedTrees[documentToImport] = astRoot
-            }
             logger.debug("Imported module \(documentToImport.uri) for document \(document.uri)")
         }
     }
@@ -227,7 +224,8 @@ public class TreeSitterParser {
                 logger.debug("Module include: No stdlib available with name \(key)")
                 return nil
             }
-            let document = Document(uri: currentDocument.uri, version: nil, text: text)
+            let document = Document(uri: "stdlib:\(key)", version: nil, text: text)
+            logger.debug("Module include: stdlib \(key) found.")
             return document
         }
         // Relative local path
