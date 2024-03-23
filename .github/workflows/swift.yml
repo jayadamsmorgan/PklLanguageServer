@@ -43,7 +43,7 @@ jobs:
 
       - name: Run Tests
         run: |
-          set -o pipefail && xcodebuild [flags] | xcbeautify --renderer github-actions
+          set -o pipefail && swift test | xcbeautify --renderer github-actions
 
       - name: Run Benchmarks
         run: swift package benchmark
