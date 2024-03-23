@@ -26,7 +26,7 @@ jobs:
           cd xcbeautify
           git checkout 2.0.1
           swift build -c release
-          cp .build/release/xcbeautify /usr/bin/xcbeautify
+          sudo cp .build/release/xcbeautify /usr/bin/xcbeautify
 
       - name: Build Project
         run: |
