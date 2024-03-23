@@ -73,7 +73,7 @@ public extension Document {
 
     static func applyChange(_ change: TextDocumentContentChangeEvent, on text: inout String) throws {
         if let range = change.range {
-            guard let range = findRange(range, in: change.text) else {
+            guard let range = findRange(range, in: text) else {
                 throw InvalidDocumentChangeRange(range: range)
             }
 
@@ -92,6 +92,7 @@ public extension Document {
     static func getTSInputEditsApplyingChanges(for document: Document, with changes: [TextDocumentContentChangeEvent], nextVersion: Int? = nil)
         throws -> TSInputEditsForDocument
     {
+        // Range length is actually deprecated since LSP 3.15, so we don't need to handle it as we can just use the range to replace the text
         var text = document.text
         var inputEdits: [InputEdit] = []
         for change in changes {
@@ -101,15 +102,17 @@ public extension Document {
             guard let range = findRange(range, in: document.text) else {
                 throw InvalidDocumentChangeRange(range: range)
             }
-            text.replaceSubrange(range, with: change.text)
-            let startByte = range.lowerBound.utf16Offset(in: text)
-            let oldEndByte = range.upperBound.utf16Offset(in: text)
+            let startByte = range.lowerBound.utf16Offset(in: text) * 2
+            let oldEndByte = range.upperBound.utf16Offset(in: text) * 2
             let newEndByte = startByte + (change.text.count * 2)
             let startPoint = change.range?.start.getPoint() ?? Point.zero
             let oldEndPoint = change.range?.end.getPoint() ?? Point.zero
             let split = change.text.split(separator: "\n")
-            let newEndPoint = Point(row: Int(startPoint.row) + split.count,
-                                    column: (split.last?.count ?? 0))
+            let splitCount = split.count > 0 ? split.count - 1 : 0
+            let lastCount = split.last?.count ?? 0
+            let newEndPoint = Point(row: Int(startPoint.row) + splitCount,
+                                    column: Int(startPoint.column) + lastCount)
+            text.replaceSubrange(range, with: change.text)
 
             let inputEdit = InputEdit(
                 startByte: startByte,

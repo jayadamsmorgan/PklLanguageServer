@@ -75,29 +75,33 @@ public class TreeSitterParser {
         do {
             edits = try Document.getTSInputEditsApplyingChanges(for: document, with: params.contentChanges, nextVersion: params.textDocument.version)
         } catch is NilDocumentChangeRange {
-            logger.error("Nil range found in document \(document.uri).")
-            logger.error("Failed to get TS Input Edits from document \(document.uri).")
+            logger.debug("Nil range found in document \(document.uri).")
             return await parseFullyWithChanges(document: document, params: params)
         } catch {
             logger.error("Failed to get TS Input Edits from document \(document.uri): \(error).")
             return document
         }
         guard let edits else {
-            logger.error("Failed to apply changes to document \(document.uri).")
+            logger.error("Failed to apply changes to document \(document.uri): Nil edits.")
             return document
         }
         let newDocument = edits.document
+        logger.debug("Changes applied to document \(document.uri).")
         for edit in edits.inputEdits {
             tree.edit(edit)
         }
+        guard let newTree = parser.parse(tree: tree, string: newDocument.text) else {
+            logger.error("Failed to parse document \(newDocument.uri) with changes. New tree is nil.")
+            return document
+        }
         if logger.logLevel == .trace {
-            if let rootNode = tree.rootNode {
+            if let rootNode = newTree.rootNode {
                 listTreeSitterNodes(rootNode: rootNode, document: newDocument)
             }
         }
         tsParsedTrees[document] = nil
-        tsParsedTrees[newDocument] = tree
-        await parseAST(document: newDocument, tree: tree)
+        tsParsedTrees[newDocument] = newTree
+        await parseAST(document: newDocument, tree: newTree)
         logger.debug("Document \(document.uri) parsed with changes.")
         return newDocument
     }
