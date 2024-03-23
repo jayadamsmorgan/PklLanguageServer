@@ -13,7 +13,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-13]
     steps:
       - uses: actions/checkout@v3
         with:
@@ -24,11 +24,6 @@ jobs:
         uses: swift-actions/setup-swift@v2
         with:
           swift-version: "5.9.0"
-
-      - name: Setup Swift (macOS only)
-        if: matrix.os == 'macos-latest'
-        run: |
-          sudo xcode-select -s "/Applications/Xcode_15.0.app"
 
       - name: Install libjemalloc-dev (Ubuntu only)
         if: matrix.os == 'ubuntu-latest'
