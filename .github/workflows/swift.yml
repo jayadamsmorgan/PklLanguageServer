@@ -25,6 +25,11 @@ jobs:
         with:
           swift-version: "5.9.0"
 
+      - name: Setup Swift (macOS only)
+        if: matrix.os == 'macos-latest'
+        run: |
+          sudo xcode-select -s "/Applications/Xcode_15.0.1.app"
+
       - name: Install libjemalloc-dev (Ubuntu only)
         if: matrix.os == 'ubuntu-latest'
         run: |
