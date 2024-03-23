@@ -20,6 +20,12 @@ jobs:
         with:
           swift-version: "5.9.0"
 
+      - name: Install libjemalloc-dev (Ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt update
+          sudo apt install libjemalloc-dev -y
+
       - name: Install Dependencies
         run: |
           git clone https://github.com/cpisciotta/xcbeautify
