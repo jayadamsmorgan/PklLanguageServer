@@ -31,6 +31,11 @@ jobs:
           sudo apt update
           sudo apt install libjemalloc-dev -y
 
+      - name: Install libjemalloc-dev (macOS only)
+        if: matrix.os == 'macos-13'
+        run: |
+          brew install jemalloc
+
       - name: Install Dependencies
         run: |
           git clone https://github.com/cpisciotta/xcbeautify
