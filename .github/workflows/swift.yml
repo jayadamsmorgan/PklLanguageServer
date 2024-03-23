@@ -15,7 +15,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+      - uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "5.1.0"
 
       - name: Install Dependencies
         run: |
