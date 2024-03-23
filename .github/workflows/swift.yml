@@ -1,0 +1,59 @@
+name: Build and Test Workflow
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-13]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: "true"
+
+      - name: Setup Swift (Ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "5.9.0"
+
+      - name: Install libjemalloc-dev (Ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt update
+          sudo apt install libjemalloc-dev -y
+
+      - name: Install libjemalloc-dev (macOS only)
+        if: matrix.os == 'macos-13'
+        run: |
+          brew install jemalloc
+
+      - name: Install Dependencies
+        run: |
+          git clone https://github.com/cpisciotta/xcbeautify
+          cd xcbeautify
+          git checkout 2.0.1
+          swift build -c release
+          if [[ ${{ runner.os }} == "Linux" ]]; then
+            sudo cp .build/release/xcbeautify /usr/bin/xcbeautify
+          else
+            sudo cp .build/release/xcbeautify /usr/local/bin/xcbeautify
+          fi
+
+      - name: Build Project
+        run: |
+          ./generate_resources.sh
+          swift build -v
+
+      - name: Run Tests
+        run: |
+          set -o pipefail && swift test | xcbeautify --renderer github-actions
+
+      - name: Run Benchmarks
+        run: swift package benchmark
