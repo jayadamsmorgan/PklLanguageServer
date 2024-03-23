@@ -6,8 +6,8 @@ OUTPUT_FILE="Sources/pkl-lsp/Resources.swift"
 
 # Start the Resources struct and hashMap
 echo "// This file is auto-generated. Do not edit directly.\n" > $OUTPUT_FILE
-echo "struct Resources {" >> $OUTPUT_FILE
-echo "    static let stdlib: [String: String] = [" >> $OUTPUT_FILE
+echo "public enum Resources {" >> $OUTPUT_FILE
+echo "    public static let stdlib: [String: String] = [" >> $OUTPUT_FILE
 
 # Process each .pkl file
 find "$STDLIB_PATH" -name "*.pkl" | while read file; do

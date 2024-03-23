@@ -26,6 +26,9 @@ let package = Package(
         .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter", from: "0.8.0"),
         // Pkl Tree Sitter
         .package(url: "https://github.com/apple/tree-sitter-pkl", revision: "main"),
+
+        // Benchmarking
+        .package(url: "https://github.com/ordo-one/package-benchmark", .upToNextMajor(from: "1.22.4")),
     ],
 
     targets: [
@@ -61,5 +64,31 @@ let package = Package(
                 .enableExperimentalFeature("SwiftConcurrency"),
             ]
         ),
+        .testTarget(
+            name: "PklLSPTests",
+            dependencies: [
+                "pkl-lsp",
+            ],
+            swiftSettings: [
+                .enableExperimentalFeature("SwiftConcurrency"),
+            ]
+        ),
     ]
 )
+
+// Benchmark of PklLSPBenchmark
+package.targets += [
+    .executableTarget(
+        name: "PklLSPBenchmark",
+        dependencies: [
+            .product(name: "Benchmark", package: "package-benchmark"),
+            "pkl-lsp",
+            .product(name: "SwiftTreeSitterLayer", package: "SwiftTreeSitter"),
+            .product(name: "TreeSitterPkl", package: "tree-sitter-pkl"),
+        ],
+        path: "Benchmarks/PklLSPBenchmark",
+        plugins: [
+            .plugin(name: "BenchmarkPlugin", package: "package-benchmark")
+        ]
+    ),
+]
