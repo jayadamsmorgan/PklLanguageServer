@@ -34,7 +34,11 @@ jobs:
           cd xcbeautify
           git checkout 2.0.1
           swift build -c release
-          sudo cp .build/release/xcbeautify /usr/bin/xcbeautify
+          if [[ ${{ runner.os }} == "Linux" ]]; then
+            sudo cp .build/release/xcbeautify /usr/bin/xcbeautify
+          else
+            sudo cp .build/release/xcbeautify /usr/local/bin/xcbeautify
+          fi
 
       - name: Build Project
         run: |
