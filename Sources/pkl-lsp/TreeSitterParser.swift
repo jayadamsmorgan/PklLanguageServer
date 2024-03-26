@@ -74,12 +74,9 @@ public class TreeSitterParser {
         var edits: Document.TSInputEditsForDocument?
         do {
             edits = try Document.getTSInputEditsApplyingChanges(for: document, with: params.contentChanges, nextVersion: params.textDocument.version)
-        } catch is NilDocumentChangeRange {
-            logger.debug("Nil range found in document \(document.uri).")
-            return await parseFullyWithChanges(document: document, params: params)
         } catch {
-            logger.error("Failed to get TS Input Edits from document \(document.uri): \(error).")
-            return document
+            logger.error("Failed to get TS Input Edits from document \(document.uri): \(error). Trying to parse document from scratch.")
+            return await parseFullyWithChanges(document: document, params: params)
         }
         guard let edits else {
             logger.error("Failed to apply changes to document \(document.uri): Nil edits.")

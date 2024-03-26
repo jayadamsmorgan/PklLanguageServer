@@ -21,13 +21,17 @@ public struct Document: Hashable {
     }
 }
 
-struct InvalidDocumentChangeRange: Error {
-    public let range: LSPRange
+public enum DocumentError: Error {
+    case InvalidDocumentChangeRange(LSPRange)
+    case InvalidByteRange(Range<UInt32>)
+    case NilDocumentChangeRange
+    case NilRangeStartIndex
+    case NilRangeEndIndex
+    case FindPositionError(String)
 }
 
-struct NilDocumentChangeRange: Error {}
-
 public extension Document {
+
     func withAppliedChanges(_ changes: [TextDocumentContentChangeEvent], nextVersion: Int?) throws -> Document {
         var text = text
         for change in changes {
@@ -36,8 +40,27 @@ public extension Document {
         return Document(uri: uri, version: nextVersion, text: text)
     }
 
-    private static func findPosition(_ position: Position, in text: String, startIndex: String.Index, startPos: Position) -> String.Index? {
+    static func applyChange(_ change: TextDocumentContentChangeEvent, on text: inout String) throws {
+        if let range = change.range {
+            guard let range = try findRange(range, in: text) else {
+                throw DocumentError.InvalidDocumentChangeRange(range)
+            }
+            text.replaceSubrange(range, with: change.text)
+        } else {
+            text = change.text
+        }
+    }
+
+    private static func findPosition(_ position: Position, in text: String,
+        startIndex: String.Index, startPos: Position) throws -> String.Index? {
+        guard startIndex.utf16Offset(in: text) - startPos.character >= 0 else {
+            throw DocumentError.FindPositionError("Starting position is greater than start index: \(startPos) > \(startIndex).")
+        }
         let lineStart = text.index(startIndex, offsetBy: -startPos.character)
+
+        guard lineStart.utf16Offset(in: text) >= 0, lineStart.utf16Offset(in: text) < text.count else {
+            throw DocumentError.FindPositionError("Line start is out of text bounds: \(lineStart).")
+        }
 
         var it = text[lineStart...]
         for _ in startPos.line ..< position.line {
@@ -49,39 +72,35 @@ public extension Document {
         return text.index(it.startIndex, offsetBy: position.character)
     }
 
-    func getTextInByteRange(_ range: Range<UInt32>) -> String {
-        let start = text.index(text.startIndex, offsetBy: Int(range.lowerBound / 2))
-        let end = text.index(text.startIndex, offsetBy: Int(range.upperBound / 2))
-        return String(text[start ..< end])
+    static func findPosition(_ position: Position, in text: String) throws -> String.Index? {
+        try findPosition(position, in: text, startIndex: text.startIndex, startPos: Position.zero)
     }
 
-    static func findPosition(_ position: Position, in text: String) -> String.Index? {
-        findPosition(position, in: text, startIndex: text.startIndex, startPos: Position.zero)
-    }
-
-    static func findRange(_ range: LSPRange, in text: String) -> Range<String.Index>? {
-        guard let startIndex = findPosition(range.start, in: text) else {
-            return nil
+    static func findRange(_ range: LSPRange, in text: String) throws -> Range<String.Index>? {
+        guard let startIndex = try findPosition(range.start, in: text) else {
+            throw DocumentError.NilRangeStartIndex
         }
 
-        guard let endIndex = findPosition(range.end, in: text, startIndex: startIndex, startPos: range.start) else {
-            return nil
+        guard let endIndex = try findPosition(range.end, in: text, startIndex: startIndex, startPos: range.start) else {
+            throw DocumentError.NilRangeEndIndex
         }
 
         return startIndex ..< endIndex
     }
 
-    static func applyChange(_ change: TextDocumentContentChangeEvent, on text: inout String) throws {
-        if let range = change.range {
-            guard let range = findRange(range, in: text) else {
-                throw InvalidDocumentChangeRange(range: range)
-            }
-
-            text.replaceSubrange(range, with: change.text)
-
-        } else {
-            text = change.text
+    func getTextInByteRange(_ range: Range<UInt32>) -> String {
+        guard range.lowerBound % 2 == 0, range.upperBound % 2 == 0 else {
+            return ""
         }
+        guard range.lowerBound >= 0, range.upperBound >= range.lowerBound else {
+            return ""
+        }
+        guard text.count * 2 >= range.upperBound else {
+            return ""
+        }
+        let start = text.index(text.startIndex, offsetBy: Int(range.lowerBound / 2))
+        let end = text.index(text.startIndex, offsetBy: Int(range.upperBound / 2))
+        return String(text[start ..< end])
     }
 
     struct TSInputEditsForDocument {
@@ -97,10 +116,10 @@ public extension Document {
         var inputEdits: [InputEdit] = []
         for change in changes {
             guard let range = change.range else {
-                throw NilDocumentChangeRange()
+                throw DocumentError.NilDocumentChangeRange
             }
-            guard let range = findRange(range, in: document.text) else {
-                throw InvalidDocumentChangeRange(range: range)
+            guard let range = try findRange(range, in: document.text) else {
+                throw DocumentError.InvalidDocumentChangeRange(range)
             }
             let startByte = range.lowerBound.utf16Offset(in: text) * 2
             let oldEndByte = range.upperBound.utf16Offset(in: text) * 2

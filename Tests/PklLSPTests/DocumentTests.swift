@@ -13,10 +13,9 @@ class DocumentTests: XCTestCase {
                             let c = 3
                             """)
 
-    public func testApplyingChanges() async throws {
-        // Range length is deprecated since LSP 3.15, so we don't need to handle it as we can just use the range to replace the text
+    public func testApplyingChangesWhenChangesPresentAndValid() async throws {
         var document = document
-        var changes = [
+        let changes = [
             TextDocumentContentChangeEvent(
                 range: LSPRange(start: Position(line: 0, character: 4), end: Position(line: 0, character: 5)),
                 rangeLength: nil,
@@ -33,7 +32,28 @@ class DocumentTests: XCTestCase {
         let b = 1
         let  = 3
         """)
-        changes = [
+    }
+
+    public func testApplyingChangesWhenChangesPresentAndInvalid() async throws {
+        let document = document
+        let changes = [
+            TextDocumentContentChangeEvent(
+                range: LSPRange(start: Position(line: 5, character: 4), end: Position(line: 3, character: 3)),
+                rangeLength: nil,
+                text: ""
+            )
+        ]
+        XCTAssertThrowsError(try document.withAppliedChanges(changes, nextVersion: nil), "", { error in
+            guard error is DocumentError else {
+                XCTFail("Unexpected error at withAppliedChanges: \(error)")
+                return
+            }
+        })
+    }
+
+    public func testApplyingChangesWhenChangesNil() async throws {
+        var document = document
+        var changes = [
             TextDocumentContentChangeEvent(
                 range: nil,
                 rangeLength: nil,
@@ -62,30 +82,38 @@ class DocumentTests: XCTestCase {
         XCTAssertEqual(document.text, "")
     }
 
-    public func testGetTSInputEditsApplyingChanges() async throws {
-        var document = document
-        var changes = [
+    public func testFindPositionWhenPositionValid() async throws {
+        let index = try Document.findPosition(Position((2, 4)), in: document.text)
+        XCTAssertEqual(index?.utf16Offset(in: document.text), 24)
+    }
+
+    public func testFindPositionWhenPositionInvalid() async throws {
+        let index = try Document.findPosition(Position((4, 5)), in: document.text)
+        XCTAssertEqual(index, nil)
+    }
+
+    public func testGetTSInputEditsApplyingChangesWhenChangesPresentAndValid() async throws {
+        let document = document
+        let changes = [
             TextDocumentContentChangeEvent(
-                range: LSPRange(start: Position(line: 0, character: 4), end: Position(line: 0, character: 5)),
+                range: .init(start: .init((0, 4)), end: .init((0, 5))),
                 rangeLength: nil,
                 text: "b"
             ),
             TextDocumentContentChangeEvent(
-                range: LSPRange(start: Position(line: 1, character: 4), end: Position(line: 2, character: 5)),
+                range: .init(start: .init((1, 4)), end: .init((2, 5))),
                 rangeLength: nil,
                 text: ""
-            ),
+            )
         ]
-        var edits = try Document.getTSInputEditsApplyingChanges(for: document, with: changes)
-        document = edits.document
-        var inputEdits = edits.inputEdits
-        XCTAssertEqual(document.text, """
+        let edits = try Document.getTSInputEditsApplyingChanges(for: document, with: changes, nextVersion: 1)
+        XCTAssertEqual(edits.document.text, """
         let b = 1
         let  = 3
         """)
-        XCTAssertEqual(inputEdits.count, 2)
+        XCTAssertEqual(edits.inputEdits.count, 2)
         XCTAssertEqual(
-            inputEdits[0],
+            edits.inputEdits[0],
             InputEdit(
                 startByte: 8,
                 oldEndByte: 10,
@@ -96,7 +124,7 @@ class DocumentTests: XCTestCase {
             )
         )
         XCTAssertEqual(
-            inputEdits[1],
+            edits.inputEdits[1],
             InputEdit(
                 startByte: 28,
                 oldEndByte: 50,
@@ -106,15 +134,36 @@ class DocumentTests: XCTestCase {
                 newEndPoint: Point(row: 1, column: 4)
             )
         )
-        changes = [
+    }
+
+    public func testGetTSInputEditsApplyingChangesWhenChangesPresentAndInvalid() async throws {
+        let document = document
+        let changes = [
+            TextDocumentContentChangeEvent(
+                range: .init(start: .init((5, 4)), end: .init((3, 3))),
+                rangeLength: nil,
+                text: ""
+            )
+        ]
+        XCTAssertThrowsError(try Document.getTSInputEditsApplyingChanges(for: document, with: changes), "", { error in
+            guard error is DocumentError else {
+                XCTFail("Unexpected error at getTSInputEditsApplyingChanges: \(error)")
+                return
+            }
+        })
+    }
+
+    public func testGetTSInputEditsApplyingChangesWhenChangeRangeNil() async throws {
+        let document = document
+        let changes = [
             TextDocumentContentChangeEvent(
                 range: nil,
                 rangeLength: nil,
                 text: "let b = 2"
-            ),
+            )
         ]
         XCTAssertThrowsError(try Document.getTSInputEditsApplyingChanges(for: document, with: changes), "", { error in
-            guard error is NilDocumentChangeRange else {
+            guard error is DocumentError else {
                 XCTFail("Unexpected error at getTSInputEditsApplyingChanges: \(error)")
                 return
             }
