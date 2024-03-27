@@ -13,14 +13,18 @@ public struct PklErrorHandler: ErrorHandler {
 }
 
 public struct ServerFlags {
-    public init(disableDiagnostics: Bool, disableIncludeDiagnostics: Bool, maxImportDepth: Int) {
-        self.disableDiagnostics = disableDiagnostics
-        self.disableIncludeDiagnostics = disableIncludeDiagnostics
+    public init(
+        enableExperimentalFeatures: Bool,
+        disabledFeatures: [FeatureType],
+        maxImportDepth: Int
+    ) {
+        self.enableExperimentalFeatures = enableExperimentalFeatures
+        self.disabledFeatures = disabledFeatures
         self.maxImportDepth = maxImportDepth
     }
 
-    public let disableDiagnostics: Bool
-    public let disableIncludeDiagnostics: Bool
+    public let enableExperimentalFeatures: Bool
+    public let disabledFeatures: [FeatureType]
 
     public let maxImportDepth: Int
 }

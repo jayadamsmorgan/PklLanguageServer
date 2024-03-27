@@ -28,15 +28,15 @@ And don't forget to check [Code of Conduct](CODE_OF_CONDUCT.md).
 
 | Feature               | Status |
 | --------------------- | :----: |
-| Completion            |   🟠   |
-| Definition            |   🟠   |
-| Diagnostics           |  WIP   |
-| Document Symbols      |   🟠   |
+| Completion            |   🟢   |
+| Definition            |   🟢   |
+| Diagnostics           |   🟠   |
+| Document Symbols      |   🟢   |
 | Renaming              |   🟠   |
 | Semantic Highlighting |  WIP   |
 
 - **🟢** -- Feature is working
-- **🟠** -- Feature is working, however due to early development stage may be incomplete or not working as intended
+- **🟠** -- Feature is working, however due to early development stage may be incomplete or not working as intended (disabled by default, can be enabled with `--enable-experimental-features`)
 - **🔴** -- Not planned
 - **TBA** -- Work on the feature is not yet in progress, but it's being looked into
 - **WIP** -- Development work on the feature is actively progressing
@@ -62,13 +62,6 @@ Now you can run the server with:
 
 ```
 pkl-lsp-server
-```
-
-**Note:** Current version at `master` has diagnostics in active development and there are a lot of unhandled errors happening.
-To disable document diagnostics run the server with:
-
-```
-pkl-lsp-server --disable-diagnostics
 ```
 
 Check help for more options:

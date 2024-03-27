@@ -33,17 +33,17 @@ struct PklLSPServer: AsyncParsableCommand {
     @Flag(name: .shortAndLong, help: "Print language server version")
     var version: Bool = false
 
-    @Flag(name: .long, help: "Disable document diagnostics")
-    var disableDiagnostics: Bool = false
+    @Flag(name: .shortAndLong, help: "Enable experimental features which are still in development (semanticTokens, rename, diagnostics)")
+    var enableExperimentalFeatures: Bool = false
 
-    @Flag(name: .long, help: "Disable diagnostics in included modules")
-    var disableIncludeDiagnostics: Bool = false
+    @Option(name: .long, help: "Maximum number of dependencies parsed in depth")
+    var importDepth: Int = 1
 
-    @Option(name: .long, help: "Maximum number of dependencies parsed")
-    var importDepth: Int = 3
+    @Option(name: .shortAndLong, help: "Disable feature")
+    var disableFeature: [FeatureType] = []
 
     var stdio: Bool {
-        !(pipe != nil || socket != nil)
+        pipe == nil && socket == nil
     }
 
     func puppyLevel(_ level: Logger.Level) -> LogLevel {
@@ -79,8 +79,7 @@ struct PklLSPServer: AsyncParsableCommand {
     }
 
     func validate() throws {
-        let numTransports = stdio.intValue + (pipe != nil).intValue + (socket != nil).intValue
-        guard numTransports == 1 else {
+        if pipe != nil, socket != nil {
             throw ValidationError("Exactly one transport method must be defined (stdio (default), pipe (--pipe), socket (--socket))")
         }
         if importDepth < 0 {
@@ -90,8 +89,8 @@ struct PklLSPServer: AsyncParsableCommand {
 
     func run(logger: Logger, channel: DataChannel) async {
         let serverFlags: ServerFlags = .init(
-            disableDiagnostics: disableDiagnostics,
-            disableIncludeDiagnostics: disableIncludeDiagnostics,
+            enableExperimentalFeatures: enableExperimentalFeatures,
+            disabledFeatures: disableFeature,
             maxImportDepth: importDepth
         )
         let server = PklServer(channel, logger: logger, serverFlags: serverFlags)

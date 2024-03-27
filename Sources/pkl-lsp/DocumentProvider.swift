@@ -51,32 +51,65 @@ public actor DocumentProvider {
     }
 
     private nonisolated func parseServerFlags() {
-        if serverFlags.disableDiagnostics {
-            logger.info("Diagnostics are disabled.")
+        // Import depth
+        logger.info("Server flags: Maximum amount of dependencies parsed in depth: \(serverFlags.maxImportDepth)")
+
+        if serverFlags.enableExperimentalFeatures {
+            logger.info("Server flags: Enabling experimental features.")
+            for feature in features {
+                if feature.isExperimental, !serverFlags.disabledFeatures.contains(feature.type) {
+                    logger.info("Server flags: Feature \(feature.type.rawValue) enabled.")
+                    feature.isEnabled = true
+                }
+            }
         }
-        if serverFlags.disableIncludeDiagnostics {
-            logger.info("Diagnostics in included modules are disabled.")
+
+        if serverFlags.disabledFeatures.count > 0 {
+            for featureType in serverFlags.disabledFeatures {
+                guard let feature = features.first(where: { $0.type == featureType }) else {
+                    continue
+                }
+                logger.info("Server flags: Feature \(featureType.rawValue) disabled.")
+                feature.isEnabled = false
+            }
         }
-        logger.info("MaxImportDepth: \(serverFlags.maxImportDepth)")
     }
 
     private func getServerCapabilities() -> ServerCapabilities {
         var s = ServerCapabilities()
-        let documentSelector = DocumentFilter(pattern: "**/*.pkl")
-        let tokenLegend = SemanticTokensLegend(tokenTypes: TokenType.allCases.map(\.description), tokenModifiers: ["private", "public"])
-        s.completionProvider = .init(
-            workDoneProgress: false,
-            triggerCharacters: ["."],
-            allCommitCharacters: [],
-            resolveProvider: false,
-            completionItem: CompletionOptions.CompletionItem(labelDetailsSupport: true)
-        )
-        s.textDocumentSync = .optionA(TextDocumentSyncOptions(openClose: false, change: TextDocumentSyncKind.full, willSave: false, willSaveWaitUntil: false, save: nil))
         s.textDocumentSync = .optionB(TextDocumentSyncKind.full)
-        s.definitionProvider = .optionA(true)
-        s.documentSymbolProvider = .optionA(true)
-        s.semanticTokensProvider = .optionB(SemanticTokensRegistrationOptions(documentSelector: [documentSelector], legend: tokenLegend, range: .optionA(false), full: .optionA(true)))
-        s.renameProvider = .optionA(true)
+        if completionFeature.isEnabled {
+            s.completionProvider = .init(
+                workDoneProgress: false,
+                triggerCharacters: ["."],
+                allCommitCharacters: [],
+                resolveProvider: false,
+                completionItem: CompletionOptions.CompletionItem(labelDetailsSupport: true)
+            )
+        }
+        if definitionFeature.isEnabled {
+            s.definitionProvider = .optionA(true)
+        }
+        if documentSymbolsFeature.isEnabled {
+            s.documentSymbolProvider = .optionA(true)
+        }
+        if semanticTokensFeature.isEnabled {
+            let documentSelector = DocumentFilter(pattern: "**/*.pkl")
+            let tokenLegend = SemanticTokensLegend(
+                tokenTypes: TokenType.allCases.map(\.description),
+                tokenModifiers: ["private", "public"]
+            )
+            s.semanticTokensProvider =
+                .optionB(SemanticTokensRegistrationOptions(
+                    documentSelector: [documentSelector],
+                    legend: tokenLegend,
+                    range: .optionA(false),
+                    full: .optionA(true)
+                ))
+        }
+        if renameFeature.isEnabled {
+            s.renameProvider = .optionA(true)
+        }
         return s
     }
 
@@ -98,6 +131,9 @@ public actor DocumentProvider {
     }
 
     public func provideCompletion(params: CompletionParams) async -> CompletionResponse {
+        guard completionFeature.isEnabled else {
+            return nil
+        }
         guard let document = documents[params.textDocument.uri] else {
             logger.error("LSP Completion: Document \(params.textDocument.uri) is not registered.")
             return nil
@@ -111,6 +147,9 @@ public actor DocumentProvider {
     }
 
     public func provideRenaming(params: RenameParams) async -> RenameResponse {
+        guard renameFeature.isEnabled else {
+            return nil
+        }
         guard let document = documents[params.textDocument.uri] else {
             logger.error("LSP Rename: Document \(params.textDocument.uri) is not registered.")
             return nil
@@ -124,6 +163,9 @@ public actor DocumentProvider {
     }
 
     public func provideDocumentSymbols(params: DocumentSymbolParams) async -> DocumentSymbolResponse {
+        guard documentSymbolsFeature.isEnabled else {
+            return nil
+        }
         guard let document = documents[params.textDocument.uri] else {
             logger.error("LSP Document Symbols: Document \(params.textDocument.uri) is not registered.")
             return nil
@@ -137,6 +179,9 @@ public actor DocumentProvider {
     }
 
     public func provideSemanticTokens(params: SemanticTokensParams) async -> SemanticTokensResponse {
+        guard semanticTokensFeature.isEnabled else {
+            return nil
+        }
         guard let document = documents[params.textDocument.uri] else {
             logger.error("LSP Semantic Tokens: Document \(params.textDocument.uri) is not registered.")
             return nil
@@ -150,6 +195,9 @@ public actor DocumentProvider {
     }
 
     public func provideDefinition(params: TextDocumentPositionParams) async -> DefinitionResponse {
+        guard definitionFeature.isEnabled else {
+            return nil
+        }
         guard let document = documents[params.textDocument.uri] else {
             logger.error("LSP Definition: Document \(params.textDocument.uri) is not registered.")
             return nil
@@ -163,7 +211,7 @@ public actor DocumentProvider {
     }
 
     public func provideDiagnostics(document: Document) async throws {
-        guard !serverFlags.disableDiagnostics else {
+        guard completionFeature.isEnabled else {
             return
         }
         guard let diagnostics = treeSitterParser.astParsedTrees[document]?.diagnosticErrors() else {
@@ -171,13 +219,10 @@ public actor DocumentProvider {
             try await connection.sendNotification(ServerNotification.textDocumentPublishDiagnostics(.init(uri: document.uri, diagnostics: [])))
             return
         }
-        var publishDiagnostics: [Diagnostic] = diagnostics.map { diagnostic in
+        let publishDiagnostics: [Diagnostic] = diagnostics.map { diagnostic in
             let range = diagnostic.range.getLSPRange()
             let diagnosticRange = LSPRange(start: Position((range.start.line, range.start.character / 2)), end: Position((range.end.line, range.end.character / 2)))
             return Diagnostic(range: diagnosticRange, severity: diagnostic.severity, message: diagnostic.message)
-        }
-        if serverFlags.disableIncludeDiagnostics {
-            publishDiagnostics = publishDiagnostics.filter { !$0.message.contains("In included file") }
         }
         try await connection.sendNotification(ServerNotification.textDocumentPublishDiagnostics(.init(uri: document.uri, diagnostics: publishDiagnostics)))
     }
