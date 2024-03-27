@@ -43,6 +43,18 @@ And don't forget to check [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Installing and running from source
 
+Install [libjemalloc][libjemalloc]:
+
+(Alternatively, you can comment out benchmarking target in `Package.swift` and skip this step)
+
+```
+# macOS (Homebrew)
+brew install jemalloc
+
+# Linux
+sudo apt install libjemalloc-dev
+```
+
 Clone repository and build the project:
 
 ```
@@ -96,6 +108,7 @@ This project could not have been possible without his great work and huge help. 
 [discord]: https://discord.gg/GTe5JvcT
 [community discord]: https://discord.gg/3PufS9Jn
 [discord badge]: https://img.shields.io/badge/Discord-purple?logo=Discord&label=Chat&color=%235A64EC
+[libjemalloc]: https://github.com/jemalloc/jemalloc
 [lsplib]: https://github.com/ChimeHQ/LanguageServerProtocol
 [tslib]: https://github.com/ChimeHQ/SwiftTreeSitter
 [matts blog]: https://www.massicotte.org/
