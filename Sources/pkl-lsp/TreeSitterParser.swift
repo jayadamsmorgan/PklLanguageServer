@@ -116,7 +116,7 @@ public class TreeSitterParser {
             }
         }
         astParsedTrees[document] = astRoot
-        // await parseVariableReferences(document: document)
+        await parseVariableReferences(document: document)
         await parseImportModules(document: document)
     }
 

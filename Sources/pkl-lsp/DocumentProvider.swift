@@ -314,10 +314,13 @@ public actor DocumentProvider {
             return
         }
 
-        // This doesn't work yet, because there is still an error in calculating the change offsets
-        // Potentially this should be used instead of the current implementation below
         let newDocument = await treeSitterParser.parseWithChanges(document: document, params: params)
         documents[documentUri] = newDocument
+
+        guard diagnosticsFeature.isEnabled else {
+            return
+        }
+
         do {
             try await provideDiagnostics(document: newDocument)
         } catch {
@@ -335,6 +338,11 @@ public actor DocumentProvider {
         let document = Document(textDocument: params.textDocument)
         documents[documentUri] = document
         await treeSitterParser.parse(document: document)
+
+        guard diagnosticsFeature.isEnabled else {
+            return
+        }
+
         do {
             try await provideDiagnostics(document: document)
         } catch {
