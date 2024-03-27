@@ -5,7 +5,7 @@ class PklNullLiteral: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
-    let importDepth: Int
+    var importDepth: Int
     let document: Document
 
     var children: [any ASTNode]? = nil

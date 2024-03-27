@@ -31,7 +31,6 @@ public enum DocumentError: Error {
 }
 
 public extension Document {
-
     func withAppliedChanges(_ changes: [TextDocumentContentChangeEvent], nextVersion: Int?) throws -> Document {
         var text = text
         for change in changes {
@@ -52,7 +51,8 @@ public extension Document {
     }
 
     private static func findPosition(_ position: Position, in text: String,
-        startIndex: String.Index, startPos: Position) throws -> String.Index? {
+                                     startIndex: String.Index, startPos: Position) throws -> String.Index?
+    {
         guard startIndex.utf16Offset(in: text) - startPos.character >= 0 else {
             throw DocumentError.FindPositionError("Starting position is greater than start index: \(startPos) > \(startIndex).")
         }

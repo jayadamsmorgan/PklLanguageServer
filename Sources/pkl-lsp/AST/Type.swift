@@ -12,7 +12,7 @@ class PklType: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
-    let importDepth: Int
+    var importDepth: Int
     let document: Document
 
     var identifier: String?
@@ -38,7 +38,7 @@ class PklTypeAnnotation: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
-    let importDepth: Int
+    var importDepth: Int
     let document: Document
 
     var type: PklType?

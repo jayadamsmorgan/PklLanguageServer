@@ -5,7 +5,7 @@ class PklModule: ASTNode {
     var uniqueID: UUID = .init()
 
     var range: ASTRange
-    let importDepth: Int
+    var importDepth: Int
     let document: Document
 
     var contents: [any ASTNode]
@@ -36,7 +36,7 @@ class PklModuleHeader: ASTNode {
     var uniqueID: UUID = .init()
 
     var range: ASTRange
-    let importDepth: Int
+    var importDepth: Int
     let document: Document
 
     var moduleClause: PklModuleClause?
@@ -79,7 +79,7 @@ class PklModuleClause: ASTNode {
     var uniqueID: UUID = .init()
 
     var range: ASTRange
-    let importDepth: Int
+    var importDepth: Int
     let document: Document
 
     var name: PklIdentifier?
@@ -121,7 +121,7 @@ class PklModuleImport: ASTNode {
     var documentToImport: Document?
 
     var range: ASTRange
-    let importDepth: Int
+    var importDepth: Int
 
     var module: PklModule?
 

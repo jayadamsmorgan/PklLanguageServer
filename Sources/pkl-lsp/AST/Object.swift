@@ -5,7 +5,7 @@ class PklObjectBody: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
-    let importDepth: Int
+    var importDepth: Int
     let document: Document
 
     var isLeftBracePresent: Bool = false
@@ -69,7 +69,7 @@ class PklObjectProperty: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
-    let importDepth: Int
+    var importDepth: Int
     let document: Document
 
     var identifier: PklIdentifier?
@@ -138,7 +138,7 @@ class PklObjectEntry: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
-    let importDepth: Int
+    var importDepth: Int
     let document: Document
 
     var strIdentifier: PklStringLiteral?

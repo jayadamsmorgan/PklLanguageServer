@@ -5,7 +5,7 @@ class PklClassProperty: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
-    let importDepth: Int
+    var importDepth: Int
     let document: Document
 
     var identifier: PklIdentifier?
@@ -83,7 +83,7 @@ class PklClass: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
-    let importDepth: Int
+    var importDepth: Int
     let document: Document
 
     var properties: [PklClassProperty]?
@@ -146,7 +146,7 @@ class PklClassDeclaration: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
-    let importDepth: Int
+    var importDepth: Int
     let document: Document
 
     var classNode: PklClass?

@@ -17,7 +17,7 @@ class PklNumberLiteral: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
-    let importDepth: Int
+    var importDepth: Int
     let document: Document
 
     var value: String?

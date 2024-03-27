@@ -87,19 +87,37 @@ public enum ASTHelper {
         return nodes
     }
 
+    static func enumerate(node: inout any ASTNode, block: (inout any ASTNode) -> Void) {
+        block(&node)
+        if let children = node.children {
+            for var child in children {
+                enumerate(node: &child, block: block)
+            }
+        }
+    }
+
+    static func enumerate(node: inout any ASTNode, block: (inout any ASTNode) async -> Void) async {
+        await block(&node)
+        if let children = node.children {
+            for var child in children {
+                await enumerate(node: &child, block: block)
+            }
+        }
+    }
+
     static func enumerate(node: any ASTNode, block: (any ASTNode) -> Void) {
+        block(node)
         if let children = node.children {
             for child in children {
-                block(node)
                 enumerate(node: child, block: block)
             }
         }
     }
 
     static func enumerate(node: any ASTNode, block: (any ASTNode) async -> Void) async {
+        await block(node)
         if let children = node.children {
             for child in children {
-                await block(node)
                 await enumerate(node: child, block: block)
             }
         }

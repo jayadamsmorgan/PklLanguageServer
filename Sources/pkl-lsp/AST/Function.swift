@@ -5,7 +5,7 @@ class PklFunctionParameter: ASTNode {
     var uniqueID: UUID = .init()
 
     var range: ASTRange
-    let importDepth: Int
+    var importDepth: Int
     let document: Document
 
     var identifier: PklIdentifier?
@@ -53,7 +53,7 @@ class PklFunctionParameterList: ASTNode {
     var uniqueID: UUID = .init()
 
     var range: ASTRange
-    let importDepth: Int
+    var importDepth: Int
     let document: Document
 
     var parameters: [PklFunctionParameter]?
@@ -112,7 +112,7 @@ class PklFunctionDeclaration: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
-    let importDepth: Int
+    var importDepth: Int
     let document: Document
 
     var body: PklClassFunctionBody?
@@ -165,7 +165,7 @@ class PklClassFunctionBody: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
-    let importDepth: Int
+    var importDepth: Int
     let document: Document
 
     var isFunctionKeywordPresent: Bool = false
@@ -225,7 +225,7 @@ class PklMethodParameter: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
-    let importDepth: Int
+    var importDepth: Int
     let document: Document
 
     var value: (any ASTNode)?
@@ -259,7 +259,7 @@ class PklMethodParameterList: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
-    let importDepth: Int
+    var importDepth: Int
     let document: Document
 
     var parameters: [PklMethodParameter]?
@@ -316,7 +316,7 @@ class PklMethodCallExpression: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
-    let importDepth: Int
+    var importDepth: Int
     let document: Document
 
     var identifier: PklIdentifier?
@@ -362,7 +362,7 @@ class PklNestedMethodCallExpression: ASTNode {
     let uniqueID: UUID = .init()
 
     var range: ASTRange
-    let importDepth: Int
+    var importDepth: Int
     let document: Document
 
     var methodCalls: [PklMethodCallExpression]
@@ -412,7 +412,7 @@ class PklNestedMethodCallExpression: ASTNode {
 //
 //     var range: ASTRange
 //     let document: Document
-//     let importDepth: Int
+//     var importDepth: Int
 //
 //     var variableFrom: PklVariable?
 //     var variableCalls: [PklVariable]

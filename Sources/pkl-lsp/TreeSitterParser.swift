@@ -116,7 +116,7 @@ public class TreeSitterParser {
             }
         }
         astParsedTrees[document] = astRoot
-        await parseVariableReferences(document: document)
+        //await parseVariableReferences(document: document)
         await parseImportModules(document: document)
     }
 
@@ -151,7 +151,7 @@ public class TreeSitterParser {
             logger.debug("No import modules found for document \(document.uri)")
             return
         }
-        for moduleIndex in 0..<importModules.count {
+        for moduleIndex in 0 ..< importModules.count {
             let module = importModules[importModules.count - moduleIndex - 1]
             guard let documentToImport = module.documentToImport else {
                 logger.error("No document to import found for module \(module)")
@@ -161,7 +161,14 @@ public class TreeSitterParser {
                 logger.error("Document \(document.uri) is trying to import itself.")
                 return
             }
-            if let astRoot = astParsedTrees[documentToImport] {
+            if var astRoot = astParsedTrees[documentToImport] {
+                logger.debug("Found parsed module \(documentToImport.uri) from cache.")
+                if astRoot.importDepth != module.importDepth + 1 {
+                    logger.debug("Module has different importDepth, changing...")
+                    ASTHelper.enumerate(node: &astRoot, block: { node in
+                        node.importDepth = module.importDepth + 1
+                    })
+                }
                 logger.debug("Imported module \(documentToImport.uri) from cache.")
                 module.module = astRoot as? PklModule
                 return

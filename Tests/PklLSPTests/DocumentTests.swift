@@ -1,11 +1,10 @@
 import Foundation
 import LanguageServerProtocol
-import SwiftTreeSitter
 @testable import pkl_lsp
+import SwiftTreeSitter
 import XCTest
 
 class DocumentTests: XCTestCase {
-
     let document = Document(uri: "file:///test.pkl", version: 0,
                             text: """
                             let a = 1
@@ -41,14 +40,14 @@ class DocumentTests: XCTestCase {
                 range: LSPRange(start: Position(line: 5, character: 4), end: Position(line: 3, character: 3)),
                 rangeLength: nil,
                 text: ""
-            )
+            ),
         ]
-        XCTAssertThrowsError(try document.withAppliedChanges(changes, nextVersion: nil), "", { error in
+        XCTAssertThrowsError(try document.withAppliedChanges(changes, nextVersion: nil), "") { error in
             guard error is DocumentError else {
                 XCTFail("Unexpected error at withAppliedChanges: \(error)")
                 return
             }
-        })
+        }
     }
 
     public func testApplyingChangesWhenChangesNil() async throws {
@@ -75,7 +74,7 @@ class DocumentTests: XCTestCase {
 
         changes = [
             TextDocumentContentChangeEvent(
-                range: nil, rangeLength: nil, text: "" 
+                range: nil, rangeLength: nil, text: ""
             ),
         ]
         document = try document.withAppliedChanges(changes, nextVersion: 4)
@@ -104,7 +103,7 @@ class DocumentTests: XCTestCase {
                 range: .init(start: .init((1, 4)), end: .init((2, 5))),
                 rangeLength: nil,
                 text: ""
-            )
+            ),
         ]
         let edits = try Document.getTSInputEditsApplyingChanges(for: document, with: changes, nextVersion: 1)
         XCTAssertEqual(edits.document.text, """
@@ -143,14 +142,14 @@ class DocumentTests: XCTestCase {
                 range: .init(start: .init((5, 4)), end: .init((3, 3))),
                 rangeLength: nil,
                 text: ""
-            )
+            ),
         ]
-        XCTAssertThrowsError(try Document.getTSInputEditsApplyingChanges(for: document, with: changes), "", { error in
+        XCTAssertThrowsError(try Document.getTSInputEditsApplyingChanges(for: document, with: changes), "") { error in
             guard error is DocumentError else {
                 XCTFail("Unexpected error at getTSInputEditsApplyingChanges: \(error)")
                 return
             }
-        })
+        }
     }
 
     public func testGetTSInputEditsApplyingChangesWhenChangeRangeNil() async throws {
@@ -160,13 +159,13 @@ class DocumentTests: XCTestCase {
                 range: nil,
                 rangeLength: nil,
                 text: "let b = 2"
-            )
+            ),
         ]
-        XCTAssertThrowsError(try Document.getTSInputEditsApplyingChanges(for: document, with: changes), "", { error in
+        XCTAssertThrowsError(try Document.getTSInputEditsApplyingChanges(for: document, with: changes), "") { error in
             guard error is DocumentError else {
                 XCTFail("Unexpected error at getTSInputEditsApplyingChanges: \(error)")
                 return
             }
-        })
+        }
     }
 }

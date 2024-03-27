@@ -84,7 +84,7 @@ let package = Package(
             ],
             path: "Benchmarks/PklLSPBenchmark",
             plugins: [
-                .plugin(name: "BenchmarkPlugin", package: "package-benchmark")
+                .plugin(name: "BenchmarkPlugin", package: "package-benchmark"),
             ]
         ),
     ]
