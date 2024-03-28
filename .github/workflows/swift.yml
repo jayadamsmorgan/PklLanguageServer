@@ -48,7 +48,7 @@ jobs:
 
       - name: Build Project
         run: |
-          ./generate_resources.sh
+          ./generate_resources
           swift build -v
 
       - name: Run Tests

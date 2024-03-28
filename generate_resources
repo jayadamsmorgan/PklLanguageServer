@@ -1,0 +1,59 @@
+#!/usr/bin/env swift
+
+import Foundation
+
+let fileManager = FileManager.default
+let stdlibPath = "pkl/stdlib"
+
+if !fileManager.fileExists(atPath: stdlibPath) {
+    print(
+    """
+
+    Error: stdlib not found.
+
+    Init and update git submodules:
+
+            git submodule init
+            git submodule update
+
+    """)
+    exit(EXIT_FAILURE)
+}
+
+var str =
+"""
+// This file is auto-generated. Do not edit directly.
+public enum Resources {
+    public static let stdlib: [String: String] = [
+
+"""
+
+let enumerator = fileManager.enumerator(atPath: stdlibPath)
+while let element = enumerator?.nextObject() as? String {
+    if element.hasSuffix(".pkl") {
+        let value = try String(contentsOfFile: "\(stdlibPath)/\(element)")
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"\"\"", with: "\\\"\\\"\\\"")
+            .replacingOccurrences(of: "\n", with: "\n        ")
+        str +=
+        """
+                "\(element)":
+                \"\"\"
+                \(value)
+                \"\"\",\n\n
+        """
+    }
+}
+
+str.removeLast(1)
+
+str +=
+"""
+
+    ]
+}
+"""
+
+try str.write(toFile: "Sources/pkl-lsp/Resources.swift", atomically: true, encoding: .utf8)
+
+
