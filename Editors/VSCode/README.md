@@ -16,7 +16,7 @@ This language server extension works great along side with Apple's [pkl-vscode][
 git clone https://github.com/jayadamsmorgan/PklLanguageServer
 cd PklLanguageServer/Editors/VSCode
 npm install
-vsce package
+npx vsce package
 ```
 
 3. Install this extension:
