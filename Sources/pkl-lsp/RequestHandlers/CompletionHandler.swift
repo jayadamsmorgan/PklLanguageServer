@@ -9,7 +9,7 @@ public class CompletionHandler {
         self.logger = logger
     }
 
-    public func provide(document _: Document, module: any ASTNode, params _: CompletionParams) async -> CompletionResponse {
+    public func provide(document _: Document, module: ASTNode, params _: CompletionParams) async -> CompletionResponse {
         var completions: [CompletionItem] = []
 
         ASTHelper.enumerate(node: module) { node in

@@ -2,26 +2,16 @@ import Foundation
 import LanguageServerProtocol
 
 class PklModule: ASTNode {
-    var uniqueID: UUID = .init()
+    var contents: [ASTNode]
 
-    var range: ASTRange
-    var importDepth: Int
-    let document: Document
+    override var children: [ASTNode]? { get { contents } set { contents = newValue ?? [] } }
 
-    var contents: [any ASTNode]
-
-    var children: [any ASTNode]? {
-        contents
-    }
-
-    init(contents: [any ASTNode], range: ASTRange, importDepth: Int, document: Document) {
+    init(contents: [ASTNode], range: ASTRange, importDepth: Int, document: Document) {
         self.contents = contents
-        self.range = range
-        self.importDepth = importDepth
-        self.document = document
+        super.init(range: range, importDepth: importDepth, document: document)
     }
 
-    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+    override public func diagnosticErrors() -> [ASTDiagnosticError]? {
         var errors: [ASTDiagnosticError] = []
         for content in contents {
             if let contentErrors = content.diagnosticErrors() {
@@ -33,24 +23,31 @@ class PklModule: ASTNode {
 }
 
 class PklModuleHeader: ASTNode {
-    var uniqueID: UUID = .init()
-
-    var range: ASTRange
-    var importDepth: Int
-    let document: Document
-
     var moduleClause: PklModuleClause?
     var extendsOrAmends: PklModuleImport?
 
-    var children: [any ASTNode]? {
-        var children: [any ASTNode] = []
-        if let moduleClause {
-            children.append(moduleClause)
+    override var children: [ASTNode]? {
+        get {
+            var children: [ASTNode] = []
+            if let moduleClause {
+                children.append(moduleClause)
+            }
+            if let extendsOrAmends {
+                children.append(extendsOrAmends)
+            }
+            return children
         }
-        if let extendsOrAmends {
-            children.append(extendsOrAmends)
+        set {
+            if let newValue {
+                for child in newValue {
+                    if let moduleClause = child as? PklModuleClause {
+                        self.moduleClause = moduleClause
+                    } else if let extendsOrAmends = child as? PklModuleImport {
+                        self.extendsOrAmends = extendsOrAmends
+                    }
+                }
+            }
         }
-        return children
     }
 
     init(moduleClause: PklModuleClause? = nil, extendsOrAmends: PklModuleImport? = nil,
@@ -58,12 +55,10 @@ class PklModuleHeader: ASTNode {
     {
         self.moduleClause = moduleClause
         self.extendsOrAmends = extendsOrAmends
-        self.range = range
-        self.importDepth = importDepth
-        self.document = document
+        super.init(range: range, importDepth: importDepth, document: document)
     }
 
-    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+    override public func diagnosticErrors() -> [ASTDiagnosticError]? {
         var errors: [ASTDiagnosticError] = []
         if let moduleClauseErrors = moduleClause?.diagnosticErrors() {
             errors.append(contentsOf: moduleClauseErrors)
@@ -76,29 +71,32 @@ class PklModuleHeader: ASTNode {
 }
 
 class PklModuleClause: ASTNode {
-    var uniqueID: UUID = .init()
-
-    var range: ASTRange
-    var importDepth: Int
-    let document: Document
-
     var name: PklIdentifier?
 
-    var children: [any ASTNode]? {
-        if let name {
-            return [name]
+    override var children: [ASTNode]? {
+        get {
+            if let name {
+                return [name]
+            }
+            return nil
         }
-        return nil
+        set {
+            if let newValue {
+                for child in newValue {
+                    if let name = child as? PklIdentifier {
+                        self.name = name
+                    }
+                }
+            }
+        }
     }
 
     init(name: PklIdentifier?, range: ASTRange, importDepth: Int, document: Document) {
         self.name = name
-        self.range = range
-        self.importDepth = importDepth
-        self.document = document
+        super.init(range: range, importDepth: importDepth, document: document)
     }
 
-    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+    override public func diagnosticErrors() -> [ASTDiagnosticError]? {
         if name == nil {
             return [ASTDiagnosticError("Missing module path", .error, range)]
         }
@@ -114,41 +112,46 @@ enum PklModuleImportType {
 }
 
 class PklModuleImport: ASTNode {
-    var uniqueID: UUID = .init()
-
-    let path: PklStringLiteral
-    let document: Document
+    var path: PklStringLiteral
     var documentToImport: Document?
-
-    var range: ASTRange
-    var importDepth: Int
 
     var module: PklModule?
 
     var type: PklModuleImportType?
 
-    var children: [any ASTNode]? {
-        var children: [any ASTNode] = []
-        children.append(path)
-        if let module {
-            children.append(module)
+    override var children: [ASTNode]? {
+        get {
+            var children: [ASTNode] = []
+            children.append(path)
+            if let module {
+                children.append(module)
+            }
+            return children
         }
-        return children
+        set {
+            if let newValue {
+                for child in newValue {
+                    if let path = child as? PklStringLiteral {
+                        self.path = path
+                    } else if let module = child as? PklModule {
+                        self.module = module
+                    }
+                }
+            }
+        }
     }
 
     init(module: PklModule?, range: ASTRange, path: PklStringLiteral,
          importDepth: Int, document: Document, documentToImport: Document? = nil, type: PklModuleImportType)
     {
         self.module = module
-        self.range = range
-        self.importDepth = importDepth
-        self.document = document
         self.documentToImport = documentToImport
         self.path = path
         self.type = type
+        super.init(range: range, importDepth: importDepth, document: document)
     }
 
-    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+    override public func diagnosticErrors() -> [ASTDiagnosticError]? {
         if type == .error {
             return [ASTDiagnosticError("Provide either extends or amends", .error, range)]
         }

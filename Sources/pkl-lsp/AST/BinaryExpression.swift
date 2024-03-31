@@ -2,85 +2,83 @@ import Foundation
 import LanguageServerProtocol
 
 enum PklBinaryOperatorType: String, CaseIterable {
-    case addition
-    case subtraction
-    case equals
-    case notEquals
-    case greater
-    case greaterOrEquals
-    case less
-    case lessOrEquals
-    case muliplication
-    case division
-    case modulus
-    case exponentiation
-    case `is`
-    case or
-    case and
+    case POW
+    case MULT
+    case DIV
+    case INT_DIV
+    case MOD
+    case PLUS
+    case MINUS
+    case LT
+    case GT
+    case LTE
+    case GTE
+    case IS
+    case AS
+    case EQ_EQ
+    case NOT_EQ
+    case AND
+    case OR
+    case PIPE
+    case NULL_COALESCE
 }
 
 class PklBinaryOperator: ASTNode {
-    var uniqueID: UUID = .init()
-
-    var range: ASTRange
-    var importDepth: Int
-    var document: Document
-
     var type: PklBinaryOperatorType
 
-    var children: [any ASTNode]? {
-        nil
-    }
-
     init(type: PklBinaryOperatorType, range: ASTRange, importDepth: Int, document: Document) {
-        self.range = range
-        self.importDepth = importDepth
-        self.document = document
         self.type = type
+        super.init(range: range, importDepth: importDepth, document: document)
     }
 
-    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+    override public func diagnosticErrors() -> [ASTDiagnosticError]? {
         nil
     }
 }
 
 class PklBinaryExpression: ASTNode {
-    var uniqueID: UUID = .init()
-
-    var range: ASTRange
-    var importDepth: Int
-    var document: Document
-
     var binaryOperator: PklBinaryOperator?
-    var leftSide: (any ASTNode)?
-    var rightSide: (any ASTNode)?
+    var leftSide: ASTNode?
+    var rightSide: ASTNode?
 
-    var children: [any ASTNode]? {
-        var children: [any ASTNode] = []
-        if let binaryOperator {
-            children.append(binaryOperator)
+    override var children: [ASTNode]? {
+        get {
+            var children: [ASTNode] = []
+            if let binaryOperator {
+                children.append(binaryOperator)
+            }
+            if let leftSide {
+                children.append(leftSide)
+            }
+            if let rightSide {
+                children.append(rightSide)
+            }
+            return children
+        } set {
+            if let newValue {
+                for child in newValue {
+                    if let binaryOperator = child as? PklBinaryOperator {
+                        self.binaryOperator = binaryOperator
+                    } else if leftSide == nil {
+                        leftSide = child
+                    } else if rightSide == nil {
+                        rightSide = child
+                    }
+                }
+            }
         }
-        if let leftSide {
-            children.append(leftSide)
-        }
-        if let rightSide {
-            children.append(rightSide)
-        }
-        return children
     }
 
-    init(binaryOperator: PklBinaryOperator, leftSide: (any ASTNode)?, rightSide: (any ASTNode)?,
+    init(binaryOperator: PklBinaryOperator, leftSide: ASTNode?, rightSide: ASTNode?,
          range: ASTRange, importDepth: Int, document: Document)
     {
-        self.range = range
-        self.importDepth = importDepth
-        self.document = document
         self.leftSide = leftSide
         self.rightSide = rightSide
         self.binaryOperator = binaryOperator
+        super.init(range: range, importDepth: importDepth, document: document)
     }
 
-    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+    override public func diagnosticErrors() -> [ASTDiagnosticError]? {
         var errors: [ASTDiagnosticError] = []
         if binaryOperator == nil {
             errors.append(ASTDiagnosticError("Provide binary operator", .error, range))

@@ -9,7 +9,7 @@ public class DefinitionHandler {
         self.logger = logger
     }
 
-    public func provide(document: Document, module: any ASTNode, params: TextDocumentPositionParams) async -> DefinitionResponse {
+    public func provide(document: Document, module: ASTNode, params: TextDocumentPositionParams) async -> DefinitionResponse {
         let positionContext = ASTHelper.getPositionContext(module: module, position: params.position)
 
         guard let context = positionContext else {
@@ -41,15 +41,9 @@ public class DefinitionHandler {
             }
         }
 
-        let allNodes = ASTHelper.allNodes(node: module)
-        let parentNode = allNodes.first(where: { node in
-            node.children?.contains(where: { child in
-                child.uniqueID == context.uniqueID
-            }) ?? false
-        })
-        guard let parent = parentNode else {
-            let range = context.range.getLSPRange()
-            return .optionA(Location(uri: document.uri, range: range))
+        guard let parent = context.parent else {
+            logger.debug("DefinitionHandler: Parent node is nil.")
+            return nil
         }
         logger.debug("DefinitionHandler: Parent node: \(String(describing: parent))")
         if let parent = parent as? PklVariable {

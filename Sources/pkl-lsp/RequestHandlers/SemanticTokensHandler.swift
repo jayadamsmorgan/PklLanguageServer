@@ -9,7 +9,7 @@ public class SemanticTokensHandler {
         self.logger = logger
     }
 
-    public func provide(document _: Document, module _: any ASTNode, params _: SemanticTokensParams) async -> SemanticTokensResponse {
+    public func provide(document _: Document, module _: ASTNode, params _: SemanticTokensParams) async -> SemanticTokensResponse {
         nil
     }
 }

@@ -2,35 +2,40 @@ import Foundation
 import LanguageServerProtocol
 
 class PklFunctionParameter: ASTNode {
-    var uniqueID: UUID = .init()
-
-    var range: ASTRange
-    var importDepth: Int
-    let document: Document
-
     var identifier: PklIdentifier?
     var typeAnnotation: PklTypeAnnotation?
 
-    var children: [any ASTNode]? {
-        var children: [any ASTNode] = []
-        if identifier != nil {
-            children.append(identifier!)
+    override var children: [ASTNode]? {
+        get {
+            var children: [ASTNode] = []
+            if identifier != nil {
+                children.append(identifier!)
+            }
+            if typeAnnotation != nil {
+                children.append(typeAnnotation!)
+            }
+            return children
         }
-        if typeAnnotation != nil {
-            children.append(typeAnnotation!)
+        set {
+            if let newValue {
+                for child in newValue {
+                    if let identifier = child as? PklIdentifier {
+                        self.identifier = identifier
+                    } else if let typeAnnotation = child as? PklTypeAnnotation {
+                        self.typeAnnotation = typeAnnotation
+                    }
+                }
+            }
         }
-        return children
     }
 
     init(identifier: PklIdentifier?, typeAnnotation: PklTypeAnnotation?, range: ASTRange, importDepth: Int, document: Document) {
         self.identifier = identifier
         self.typeAnnotation = typeAnnotation
-        self.range = range
-        self.importDepth = importDepth
-        self.document = document
+        super.init(range: range, importDepth: importDepth, document: document)
     }
 
-    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+    override public func diagnosticErrors() -> [ASTDiagnosticError]? {
         var errors: [ASTDiagnosticError] = []
         if typeAnnotation != nil {
             if let typeErrors = typeAnnotation!.diagnosticErrors() {
@@ -50,23 +55,31 @@ class PklFunctionParameter: ASTNode {
 }
 
 class PklFunctionParameterList: ASTNode {
-    var uniqueID: UUID = .init()
-
-    var range: ASTRange
-    var importDepth: Int
-    let document: Document
-
     var parameters: [PklFunctionParameter]?
     var isLeftParenPresent: Bool = false
     var isRightParenPresent: Bool = false
     var commasAmount: Int = 0
 
-    var children: [any ASTNode]? {
-        var children: [any ASTNode] = []
-        if parameters != nil {
-            children.append(contentsOf: parameters!)
+    override var children: [ASTNode]? {
+        get {
+            var children: [ASTNode] = []
+            if parameters != nil {
+                children.append(contentsOf: parameters!)
+            }
+            return children
         }
-        return children
+        set {
+            if let newValue {
+                for child in newValue {
+                    if let parameter = child as? PklFunctionParameter {
+                        if parameters == nil {
+                            parameters = []
+                        }
+                        parameters!.append(parameter)
+                    }
+                }
+            }
+        }
     }
 
     init(parameters: [PklFunctionParameter]?, isLeftParenPresent: Bool = false, isRightParenPresent: Bool = false,
@@ -76,12 +89,10 @@ class PklFunctionParameterList: ASTNode {
         self.isLeftParenPresent = isLeftParenPresent
         self.isRightParenPresent = isRightParenPresent
         self.commasAmount = commasAmount
-        self.range = range
-        self.importDepth = importDepth
-        self.document = document
+        super.init(range: range, importDepth: importDepth, document: document)
     }
 
-    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+    override public func diagnosticErrors() -> [ASTDiagnosticError]? {
         var errors: [ASTDiagnosticError] = []
         if parameters != nil {
             if parameters != nil {
@@ -109,35 +120,40 @@ class PklFunctionParameterList: ASTNode {
 }
 
 class PklFunctionDeclaration: ASTNode {
-    let uniqueID: UUID = .init()
-
-    var range: ASTRange
-    var importDepth: Int
-    let document: Document
-
     var body: PklClassFunctionBody?
-    var functionValue: (any ASTNode)?
+    var functionValue: ASTNode?
 
-    var children: [any ASTNode]? {
-        var children: [any ASTNode] = []
-        if body != nil {
-            children.append(body!)
+    override var children: [ASTNode]? {
+        get {
+            var children: [ASTNode] = []
+            if body != nil {
+                children.append(body!)
+            }
+            if functionValue != nil {
+                children.append(functionValue!)
+            }
+            return children
         }
-        if functionValue != nil {
-            children.append(functionValue!)
+        set {
+            if let newValue {
+                for child in newValue {
+                    if let body = child as? PklClassFunctionBody {
+                        self.body = body
+                    } else if functionValue == nil {
+                        functionValue = child
+                    }
+                }
+            }
         }
-        return children
     }
 
-    init(body: PklClassFunctionBody?, functionValue: (any ASTNode)?, range: ASTRange, importDepth: Int, document: Document) {
+    init(body: PklClassFunctionBody?, functionValue: ASTNode?, range: ASTRange, importDepth: Int, document: Document) {
         self.body = body
         self.functionValue = functionValue
-        self.range = range
-        self.importDepth = importDepth
-        self.document = document
+        super.init(range: range, importDepth: importDepth, document: document)
     }
 
-    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+    override public func diagnosticErrors() -> [ASTDiagnosticError]? {
         var errors: [ASTDiagnosticError] = []
         if body != nil {
             if let bodyErrors = body?.diagnosticErrors() {
@@ -162,29 +178,38 @@ class PklFunctionDeclaration: ASTNode {
 }
 
 class PklClassFunctionBody: ASTNode {
-    let uniqueID: UUID = .init()
-
-    var range: ASTRange
-    var importDepth: Int
-    let document: Document
-
     var isFunctionKeywordPresent: Bool = false
     var identifier: PklIdentifier?
     var params: PklFunctionParameterList?
     var typeAnnotation: PklTypeAnnotation?
 
-    var children: [any ASTNode]? {
-        var children: [any ASTNode] = []
-        if identifier != nil {
-            children.append(identifier!)
+    override var children: [ASTNode]? {
+        get {
+            var children: [ASTNode] = []
+            if identifier != nil {
+                children.append(identifier!)
+            }
+            if params != nil {
+                children.append(params!)
+            }
+            if typeAnnotation != nil {
+                children.append(typeAnnotation!)
+            }
+            return children
         }
-        if params != nil {
-            children.append(params!)
+        set {
+            if let newValue {
+                for child in newValue {
+                    if let identifier = child as? PklIdentifier {
+                        self.identifier = identifier
+                    } else if let params = child as? PklFunctionParameterList {
+                        self.params = params
+                    } else if let typeAnnotation = child as? PklTypeAnnotation {
+                        self.typeAnnotation = typeAnnotation
+                    }
+                }
+            }
         }
-        if typeAnnotation != nil {
-            children.append(typeAnnotation!)
-        }
-        return children
     }
 
     init(isFunctionKeywordPresent: Bool = false, identifier: PklIdentifier?, params: PklFunctionParameterList?,
@@ -193,12 +218,10 @@ class PklClassFunctionBody: ASTNode {
         self.isFunctionKeywordPresent = isFunctionKeywordPresent
         self.identifier = identifier
         self.params = params
-        self.range = range
-        self.importDepth = importDepth
-        self.document = document
+        super.init(range: range, importDepth: importDepth, document: document)
     }
 
-    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+    override public func diagnosticErrors() -> [ASTDiagnosticError]? {
         var errors: [ASTDiagnosticError] = []
         if !isFunctionKeywordPresent {
             let error = ASTDiagnosticError("Provide function keyword", .error, range)
@@ -222,30 +245,32 @@ class PklClassFunctionBody: ASTNode {
 }
 
 class PklMethodParameter: ASTNode {
-    let uniqueID: UUID = .init()
+    var value: ASTNode?
 
-    var range: ASTRange
-    var importDepth: Int
-    let document: Document
-
-    var value: (any ASTNode)?
-
-    var children: [any ASTNode]? {
-        var children: [any ASTNode] = []
-        if let value {
-            children.append(value)
+    override var children: [ASTNode]? {
+        get {
+            if value != nil {
+                return [value!]
+            }
+            return nil
         }
-        return children
+        set {
+            if let newValue {
+                for child in newValue {
+                    if value == nil {
+                        value = child
+                    }
+                }
+            }
+        }
     }
 
-    init(value: (any ASTNode)?, range: ASTRange, importDepth: Int, document: Document) {
+    init(value: ASTNode?, range: ASTRange, importDepth: Int, document: Document) {
         self.value = value
-        self.range = range
-        self.importDepth = importDepth
-        self.document = document
+        super.init(range: range, importDepth: importDepth, document: document)
     }
 
-    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+    override public func diagnosticErrors() -> [ASTDiagnosticError]? {
         var errors: [ASTDiagnosticError] = []
         if value == nil {
             let error = ASTDiagnosticError("Provide method parameter value", .error, range)
@@ -256,23 +281,31 @@ class PklMethodParameter: ASTNode {
 }
 
 class PklMethodParameterList: ASTNode {
-    let uniqueID: UUID = .init()
-
-    var range: ASTRange
-    var importDepth: Int
-    let document: Document
-
     var parameters: [PklMethodParameter]?
     var isLeftParenPresent: Bool = false
     var isRightParenPresent: Bool = false
     var commasAmount: Int = 0
 
-    var children: [any ASTNode]? {
-        var children: [any ASTNode] = []
-        if parameters != nil {
-            children.append(contentsOf: parameters!)
+    override var children: [ASTNode]? {
+        get {
+            var children: [ASTNode] = []
+            if parameters != nil {
+                children.append(contentsOf: parameters!)
+            }
+            return children
         }
-        return children
+        set {
+            if let newValue {
+                for child in newValue {
+                    if let parameter = child as? PklMethodParameter {
+                        if parameters == nil {
+                            parameters = []
+                        }
+                        parameters!.append(parameter)
+                    }
+                }
+            }
+        }
     }
 
     init(parameters: [PklMethodParameter]?, isLeftParenPresent: Bool = false, isRightParenPresent: Bool = false,
@@ -282,12 +315,10 @@ class PklMethodParameterList: ASTNode {
         self.isLeftParenPresent = isLeftParenPresent
         self.isRightParenPresent = isRightParenPresent
         self.commasAmount = commasAmount
-        self.range = range
-        self.importDepth = importDepth
-        self.document = document
+        super.init(range: range, importDepth: importDepth, document: document)
     }
 
-    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+    override public func diagnosticErrors() -> [ASTDiagnosticError]? {
         var errors: [ASTDiagnosticError] = []
         if parameters != nil {
             for param in parameters! {
@@ -313,37 +344,42 @@ class PklMethodParameterList: ASTNode {
 }
 
 class PklMethodCallExpression: ASTNode {
-    let uniqueID: UUID = .init()
-
-    var range: ASTRange
-    var importDepth: Int
-    let document: Document
-
     var identifier: PklIdentifier?
     var variableCalls: [PklVariable]
     var params: PklMethodParameterList?
 
-    var children: [any ASTNode]? {
-        var children: [any ASTNode] = []
-        if identifier != nil {
-            children.append(identifier!)
+    override var children: [ASTNode]? {
+        get {
+            var children: [ASTNode] = []
+            if identifier != nil {
+                children.append(identifier!)
+            }
+            if params != nil {
+                children.append(params!)
+            }
+            return children
         }
-        if params != nil {
-            children.append(params!)
+        set {
+            if let newValue {
+                for child in newValue {
+                    if let identifier = child as? PklIdentifier {
+                        self.identifier = identifier
+                    } else if let params = child as? PklMethodParameterList {
+                        self.params = params
+                    }
+                }
+            }
         }
-        return children
     }
 
     init(identifier: PklIdentifier?, variableCalls: [PklVariable], params: PklMethodParameterList?, range: ASTRange, importDepth: Int, document: Document) {
         self.identifier = identifier
         self.variableCalls = variableCalls
         self.params = params
-        self.range = range
-        self.importDepth = importDepth
-        self.document = document
+        super.init(range: range, importDepth: importDepth, document: document)
     }
 
-    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+    override public func diagnosticErrors() -> [ASTDiagnosticError]? {
         var errors: [ASTDiagnosticError] = []
         if identifier == nil {
             let error = ASTDiagnosticError("Provide method identifier", .error, range)
@@ -359,32 +395,38 @@ class PklMethodCallExpression: ASTNode {
 }
 
 class PklNestedMethodCallExpression: ASTNode {
-    let uniqueID: UUID = .init()
-
-    var range: ASTRange
-    var importDepth: Int
-    let document: Document
-
     var methodCalls: [PklMethodCallExpression]
-    var tail: [any ASTNode]?
+    var tail: [ASTNode]?
 
-    var children: [any ASTNode]? {
-        var children: [any ASTNode] = methodCalls
-        if let tail {
-            children.append(contentsOf: tail)
+    override var children: [ASTNode]? {
+        get {
+            var children: [ASTNode] = methodCalls
+            if let tail {
+                children.append(contentsOf: tail)
+            }
+            return children
         }
-        return children
+        set {
+            if let newValue {
+                for child in newValue {
+                    if let methodCall = child as? PklMethodCallExpression {
+                        methodCalls.append(methodCall)
+                    } else if tail == nil {
+                        tail = []
+                    }
+                    tail!.append(child)
+                }
+            }
+        }
     }
 
-    init(methodCalls: [PklMethodCallExpression], tail: [any ASTNode]? = nil, range: ASTRange, importDepth: Int, document: Document) {
+    init(methodCalls: [PklMethodCallExpression], tail: [ASTNode]? = nil, range: ASTRange, importDepth: Int, document: Document) {
         self.methodCalls = methodCalls
         self.tail = tail
-        self.range = range
-        self.importDepth = importDepth
-        self.document = document
+        super.init(range: range, importDepth: importDepth, document: document)
     }
 
-    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+    override public func diagnosticErrors() -> [ASTDiagnosticError]? {
         guard methodCalls.count == 0 else {
             let error = ASTDiagnosticError("Zero amount of nested method calls", .error, range)
             return [error]

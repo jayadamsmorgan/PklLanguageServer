@@ -2,27 +2,40 @@ import Foundation
 import LanguageServerProtocol
 
 class PklObjectBody: ASTNode {
-    let uniqueID: UUID = .init()
-
-    var range: ASTRange
-    var importDepth: Int
-    let document: Document
-
     var isLeftBracePresent: Bool = false
     var isRightBracePresent: Bool = false
 
     var objectProperties: [PklObjectProperty]?
     var objectEntries: [PklObjectEntry]?
 
-    var children: [any ASTNode]? {
-        var children: [any ASTNode] = []
-        if let objectProperties {
-            children.append(contentsOf: objectProperties)
+    override var children: [ASTNode]? {
+        get {
+            var children: [ASTNode] = []
+            if let objectProperties {
+                children.append(contentsOf: objectProperties)
+            }
+            if let objectEntries {
+                children.append(contentsOf: objectEntries)
+            }
+            return children
         }
-        if let objectEntries {
-            children.append(contentsOf: objectEntries)
+        set {
+            if let newValue {
+                for child in newValue {
+                    if let objectProperty = child as? PklObjectProperty {
+                        if objectProperties == nil {
+                            objectProperties = []
+                        }
+                        objectProperties?.append(objectProperty)
+                    } else if let objectEntry = child as? PklObjectEntry {
+                        if objectEntries == nil {
+                            objectEntries = []
+                        }
+                        objectEntries?.append(objectEntry)
+                    }
+                }
+            }
         }
-        return children
     }
 
     init(objectProperties: [PklObjectProperty]?, objectEntries: [PklObjectEntry]?,
@@ -32,12 +45,10 @@ class PklObjectBody: ASTNode {
         self.isRightBracePresent = isRightBracePresent
         self.objectEntries = objectEntries
         self.objectProperties = objectProperties
-        self.range = range
-        self.importDepth = importDepth
-        self.document = document
+        super.init(range: range, importDepth: importDepth, document: document)
     }
 
-    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+    override public func diagnosticErrors() -> [ASTDiagnosticError]? {
         var errors: [ASTDiagnosticError] = []
         if !isLeftBracePresent {
             let error = ASTDiagnosticError("Provide left brace", .error, range)
@@ -66,43 +77,52 @@ class PklObjectBody: ASTNode {
 }
 
 class PklObjectProperty: ASTNode {
-    let uniqueID: UUID = .init()
-
-    var range: ASTRange
-    var importDepth: Int
-    let document: Document
-
     var identifier: PklIdentifier?
     var typeAnnotation: PklTypeAnnotation?
-    var value: (any ASTNode)?
+    var value: ASTNode?
 
     var isEqualsPresent: Bool = false
 
-    var children: [any ASTNode]? {
-        var children: [any ASTNode] = []
-        if identifier != nil {
-            children.append(identifier!)
+    override var children: [ASTNode]? {
+        get {
+            var children: [ASTNode] = []
+            if let identifier {
+                children.append(identifier)
+            }
+            if let typeAnnotation {
+                children.append(typeAnnotation)
+            }
+            if let value {
+                children.append(value)
+            }
+            return children
         }
-        if typeAnnotation != nil {
-            children.append(typeAnnotation!)
+        set {
+            if let newValue {
+                for child in newValue {
+                    if let identifier = child as? PklIdentifier {
+                        self.identifier = identifier
+                    } else if let typeAnnotation = child as? PklTypeAnnotation {
+                        self.typeAnnotation = typeAnnotation
+                    } else if value == nil {
+                        value = child
+                    }
+                }
+            }
         }
-        if value != nil {
-            children.append(value!)
-        }
-        return children
     }
 
-    init(identifier: PklIdentifier? = nil, typeAnnotation: PklTypeAnnotation? = nil, isEqualsPresent: Bool, value: (any ASTNode)?, range: ASTRange, importDepth: Int, document: Document) {
+    init(identifier: PklIdentifier? = nil, typeAnnotation: PklTypeAnnotation? = nil, isEqualsPresent: Bool,
+         value: ASTNode?, range: ASTRange, importDepth: Int, document: Document)
+    {
         self.identifier = identifier
         self.typeAnnotation = typeAnnotation
         self.isEqualsPresent = isEqualsPresent
         self.value = value
-        self.range = range
-        self.importDepth = importDepth
-        self.document = document
+        super.init(range: range, importDepth: importDepth, document: document)
     }
 
-    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+    override public func diagnosticErrors() -> [ASTDiagnosticError]? {
         var errors: [ASTDiagnosticError] = []
         if identifier == nil {
             let error = ASTDiagnosticError("Provide property identifier", .error, range)
@@ -135,45 +155,50 @@ class PklObjectProperty: ASTNode {
 }
 
 class PklObjectEntry: ASTNode {
-    let uniqueID: UUID = .init()
-
-    var range: ASTRange
-    var importDepth: Int
-    let document: Document
-
     var strIdentifier: PklStringLiteral?
-    var value: (any ASTNode)?
+    var value: ASTNode?
 
     var isLeftBracketPresent: Bool = false
     var isRightBracketPresent: Bool = false
 
     var isEqualsPresent: Bool = false
 
-    var children: [any ASTNode]? {
-        var children: [any ASTNode] = []
-        if let identifier = strIdentifier {
-            children.append(identifier)
+    override var children: [ASTNode]? {
+        get {
+            var children: [ASTNode] = []
+            if let strIdentifier {
+                children.append(strIdentifier)
+            }
+            if let value {
+                children.append(value)
+            }
+            return children
         }
-        if let value {
-            children.append(value)
+        set {
+            if let newValue {
+                for child in newValue {
+                    if let strIdentifier = child as? PklStringLiteral {
+                        self.strIdentifier = strIdentifier
+                    } else if value == nil {
+                        value = child
+                    }
+                }
+            }
         }
-        return children
     }
 
-    init(strIdentifier: PklStringLiteral? = nil, value: (any ASTNode)? = nil, isEqualsPresent: Bool, isLeftBracketPresent: Bool,
+    init(strIdentifier: PklStringLiteral? = nil, value: ASTNode? = nil, isEqualsPresent: Bool, isLeftBracketPresent: Bool,
          isRightBracketPresent: Bool, range: ASTRange, importDepth: Int, document: Document)
     {
         self.strIdentifier = strIdentifier
         self.value = value
-        self.range = range
         self.isLeftBracketPresent = isLeftBracketPresent
         self.isRightBracketPresent = isRightBracketPresent
         self.isEqualsPresent = isEqualsPresent
-        self.importDepth = importDepth
-        self.document = document
+        super.init(range: range, importDepth: importDepth, document: document)
     }
 
-    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+    override public func diagnosticErrors() -> [ASTDiagnosticError]? {
         var errors: [ASTDiagnosticError] = []
         if strIdentifier == nil {
             let error = ASTDiagnosticError("Provide object entry string identifier", .error, range)

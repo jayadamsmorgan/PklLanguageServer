@@ -9,7 +9,7 @@ public class DocumentSymbolsHandler {
         self.logger = logger
     }
 
-    private func getSymbols(node: any ASTNode) -> [DocumentSymbol] {
+    private func getSymbols(node: ASTNode) -> [DocumentSymbol] {
         guard let children = node.children else {
             return []
         }
@@ -74,7 +74,7 @@ public class DocumentSymbolsHandler {
         return symbols
     }
 
-    public func provide(document _: Document, module: any ASTNode, params: DocumentSymbolParams) async -> DocumentSymbolResponse {
+    public func provide(document _: Document, module: ASTNode, params: DocumentSymbolParams) async -> DocumentSymbolResponse {
         let symbols: [DocumentSymbol] = getSymbols(node: module)
         logger.debug("LSP DocumentSymbols: Found \(symbols.count) symbols in \(params.textDocument.uri).")
         return DocumentSymbolResponse(.optionA(symbols))

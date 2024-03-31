@@ -1,35 +1,38 @@
 import Foundation
 
 class PklVariable: ASTNode {
-    let uniqueID: UUID = .init()
+    var identifier: PklIdentifier?
+    var reference: ASTNode?
 
-    var range: ASTRange
-    var importDepth: Int
-    var document: Document
-
-    let identifier: PklIdentifier?
-    var reference: (any ASTNode)?
-
-    var children: [any ASTNode]? {
-        var children: [any ASTNode] = []
-        if let reference {
-            children.append(reference)
+    override var children: [ASTNode]? {
+        get {
+            var children: [ASTNode] = []
+            if let reference {
+                children.append(reference)
+            }
+            if let identifier {
+                children.append(identifier)
+            }
+            return children
         }
-        if let identifier {
-            children.append(identifier)
+        set {
+            if let newValue {
+                for child in newValue {
+                    if let identifier = child as? PklIdentifier {
+                        self.identifier = identifier
+                    }
+                }
+            }
         }
-        return children
     }
 
-    init(identifier: PklIdentifier?, reference: (any ASTNode)?, range: ASTRange, importDepth: Int, document: Document) {
+    init(identifier: PklIdentifier?, reference: ASTNode?, range: ASTRange, importDepth: Int, document: Document) {
         self.identifier = identifier
         self.reference = reference
-        self.range = range
-        self.importDepth = importDepth
-        self.document = document
+        super.init(range: range, importDepth: importDepth, document: document)
     }
 
-    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+    override public func diagnosticErrors() -> [ASTDiagnosticError]? {
         if reference == nil {
             let error = ASTDiagnosticError("Unknown reference to \(identifier?.value ?? "nil")", .error, range)
             return [error]

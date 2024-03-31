@@ -16,14 +16,26 @@ public extension IdentifiableNode where Self: Hashable {
     }
 }
 
-public protocol ASTNode: IdentifiableNode, Hashable, ASTEvaluation {
-    var range: ASTRange { get set }
+public class ASTNode: ASTEvaluation, IdentifiableNode {
+    public let uniqueID: UUID = .init()
 
-    var children: [any ASTNode]? { get }
+    public var range: ASTRange
+    public var importDepth: Int
+    public var document: Document
 
-    var importDepth: Int { get set }
+    public var parent: ASTNode?
 
-    var document: Document { get }
+    public var children: [ASTNode]? = nil
+
+    public init(range: ASTRange, importDepth: Int, document: Document) {
+        self.range = range
+        self.importDepth = importDepth
+        self.document = document
+    }
+
+    public func diagnosticErrors() -> [ASTDiagnosticError]? {
+        nil
+    }
 }
 
 public protocol ASTEvaluation {

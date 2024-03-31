@@ -3,7 +3,7 @@ import LanguageServerProtocol
 import Logging
 
 public enum ASTHelper {
-    public static func iterate<T: ASTNode>(node: any ASTNode, array: inout [T]) {
+    public static func iterate<T: ASTNode>(node: ASTNode, array: inout [T]) {
         if let children = node.children {
             for child in children {
                 if let child = child as? T {
@@ -14,8 +14,8 @@ public enum ASTHelper {
         }
     }
 
-    public static func allEndNodes(node: any ASTNode, importDepth: Int? = nil) -> [any ASTNode] {
-        var nodes = [any ASTNode]()
+    public static func allEndNodes(node: ASTNode, importDepth: Int? = nil) -> [ASTNode] {
+        var nodes = [ASTNode]()
         guard let children = node.children else {
             return [node]
         }
@@ -31,7 +31,7 @@ public enum ASTHelper {
         return nodes
     }
 
-    public static func allEndNodes<T: ASTNode>(node: any ASTNode, importDepth: Int? = nil) -> [T] {
+    public static func allEndNodes<T: ASTNode>(node: ASTNode, importDepth: Int? = nil) -> [T] {
         var nodes = [T]()
         guard let children = node.children else {
             if let node = node as? T {
@@ -51,8 +51,8 @@ public enum ASTHelper {
         return nodes
     }
 
-    public static func allNodes(node: any ASTNode, importDepth: Int? = nil) -> [any ASTNode] {
-        var nodes = [any ASTNode]()
+    public static func allNodes(node: ASTNode, importDepth: Int? = nil) -> [ASTNode] {
+        var nodes = [ASTNode]()
         nodes.append(node)
         if let children = node.children {
             for child in children {
@@ -68,7 +68,7 @@ public enum ASTHelper {
         return nodes
     }
 
-    public static func allNodes<T: ASTNode>(node: any ASTNode, importDepth: Int? = nil) -> [T] {
+    public static func allNodes<T: ASTNode>(node: ASTNode, importDepth: Int? = nil) -> [T] {
         var nodes = [T]()
         if let node = node as? T {
             nodes.append(node)
@@ -87,7 +87,7 @@ public enum ASTHelper {
         return nodes
     }
 
-    static func enumerate(node: inout any ASTNode, block: (inout any ASTNode) -> Void) {
+    static func enumerate(node: inout ASTNode, block: (inout ASTNode) -> Void) {
         block(&node)
         if let children = node.children {
             for var child in children {
@@ -96,7 +96,7 @@ public enum ASTHelper {
         }
     }
 
-    static func enumerate(node: inout any ASTNode, block: (inout any ASTNode) async -> Void) async {
+    static func enumerate(node: inout ASTNode, block: (inout ASTNode) async -> Void) async {
         await block(&node)
         if let children = node.children {
             for var child in children {
@@ -105,7 +105,7 @@ public enum ASTHelper {
         }
     }
 
-    static func enumerate(node: any ASTNode, block: (any ASTNode) -> Void) {
+    static func enumerate(node: ASTNode, block: (ASTNode) -> Void) {
         block(node)
         if let children = node.children {
             for child in children {
@@ -114,7 +114,7 @@ public enum ASTHelper {
         }
     }
 
-    static func enumerate(node: any ASTNode, block: (any ASTNode) async -> Void) async {
+    static func enumerate(node: ASTNode, block: (ASTNode) async -> Void) async {
         await block(node)
         if let children = node.children {
             for child in children {
@@ -123,7 +123,7 @@ public enum ASTHelper {
         }
     }
 
-    static func getPositionContext(module: any ASTNode, position: Position) -> (any ASTNode)? {
+    static func getPositionContext(module: ASTNode, position: Position) -> (ASTNode)? {
         allEndNodes(node: module, importDepth: 0).first { node in
             if node.range.positionRange.lowerBound.line > position.line {
                 return false

@@ -9,7 +9,7 @@ public class RenameHandler {
         self.logger = logger
     }
 
-    public func provide(document _: Document, module: any ASTNode, params: RenameParams) async -> RenameResponse {
+    public func provide(document _: Document, module: ASTNode, params: RenameParams) async -> RenameResponse {
         var identifiers: [PklIdentifier] = []
         ASTHelper.iterate(node: module, array: &identifiers)
         logger.debug("LSP Rename: Found \(identifiers) identifiers in \(params.textDocument.uri).")
