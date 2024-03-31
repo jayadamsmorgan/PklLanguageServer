@@ -61,7 +61,7 @@ Clone repository and build the project:
 git clone https://github.com/jayadamsmorgan/PklLanguageServer --recurse-submodules
 cd PklLanguageServer
 ./generate_resources
-swift build -c release --target pkl-lsp-server
+swift build -c release
 ```
 
 Install (optional):
