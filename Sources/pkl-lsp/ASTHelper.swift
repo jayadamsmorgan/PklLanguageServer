@@ -123,21 +123,24 @@ public enum ASTHelper {
         }
     }
 
-    static func getPositionContext(module: ASTNode, position: Position) -> (ASTNode)? {
-        allEndNodes(node: module, importDepth: 0).first { node in
-            if node.range.positionRange.lowerBound.line > position.line {
-                return false
+    static func getPositionContext(module: ASTNode, position: Position) -> ASTNode? {
+        var contextNode: ASTNode?
+        var smallestRange: Int = Int.max
+
+        enumerate(node: module) { node in
+            let range = node.range.positionRange
+            if position.line >= range.lowerBound.line &&
+                (position.line > range.lowerBound.line || position.character >= range.lowerBound.character / 2) &&
+                position.line <= range.upperBound.line &&
+                (position.line < range.upperBound.line || position.character <= range.upperBound.character / 2) {
+
+                let rangeSize = (range.upperBound.line - range.lowerBound.line) * 1000 + (range.upperBound.character - range.lowerBound.character)
+                if rangeSize < smallestRange {
+                    smallestRange = rangeSize
+                    contextNode = node
+                }
             }
-            if node.range.positionRange.upperBound.line < position.line {
-                return false
-            }
-            if node.range.positionRange.lowerBound.character / 2 > position.character {
-                return false
-            }
-            if node.range.positionRange.upperBound.character / 2 < position.character {
-                return false
-            }
-            return true
         }
+        return contextNode
     }
 }

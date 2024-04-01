@@ -20,42 +20,44 @@ public class DefinitionHandler {
 
         if let context = context as? PklStringLiteral {
             if context.type == .importString {
-                logger.debug("DefinitionHandler: Trying to find imported module.")
-                var relPath = context.value ?? ""
-                relPath.removeAll(where: { $0 == "\"" })
-                let modulePath = URL(fileURLWithPath: document.uri)
-                    .deletingLastPathComponent()
-                    .appendingPathComponent(relPath)
-                    .standardized
-                do {
-                    guard try modulePath.checkResourceIsReachable() else {
-                        logger.debug("DefinitionHandler: Module at path \(modulePath.absoluteString) is not reachable.")
-                        return nil
-                    }
-                    logger.debug("DefinitionHandler: Module at path \(modulePath.absoluteString) found.")
-                    return .optionA(Location(uri: modulePath.absoluteString, range: LSPRange.zero))
-                } catch {
-                    logger.debug("DefinitionHandler: Unable to check if module exists: \(error)")
-                    return nil
-                }
+                return await provideForModuleImport(path: context)
             }
-        }
-
-        guard let parent = context.parent else {
-            logger.debug("DefinitionHandler: Parent node is nil.")
             return nil
         }
-        logger.debug("DefinitionHandler: Parent node: \(String(describing: parent))")
-        if let parent = parent as? PklVariable {
-            logger.debug("DefinitionHandler: Searching for definition of variable \(parent.identifier?.value ?? "nil")")
-            guard let reference = parent.reference else {
-                logger.debug("DefinitionHandler: Reference is nil.")
+        if let context = context as? PklModuleImport {
+            return await provideForModuleImport(path: context.path)
+        }
+        
+        if let context = context as? PklVariable {
+            logger.debug("DefinitionHandler: Searching for definition of variable \(context.identifier?.value ?? "nil")")
+            guard let reference = context.reference else {
+                logger.debug("DefinitionHandler: Variable reference is nil.")
                 return nil
             }
             return .optionA(Location(uri: reference.document.uri, range: reference.range.getLSPRange()))
         }
 
-        let range = context.range.getLSPRange()
-        return .optionA(Location(uri: document.uri, range: range))
+        return nil
+    }
+
+    private func provideForModuleImport(path: PklStringLiteral) async -> DefinitionResponse {
+            logger.debug("DefinitionHandler: Trying to find imported module.")
+            var relPath = path.value ?? ""
+            relPath.removeAll(where: { $0 == "\"" })
+            let modulePath = URL(fileURLWithPath: path.document.uri)
+                .deletingLastPathComponent()
+                .appendingPathComponent(relPath)
+                .standardized
+            do {
+                guard try modulePath.checkResourceIsReachable() else {
+                    logger.debug("DefinitionHandler: Module at path \(modulePath.absoluteString) is not reachable.")
+                    return nil
+                }
+                logger.debug("DefinitionHandler: Module at path \(modulePath.absoluteString) found.")
+                return .optionA(Location(uri: modulePath.absoluteString, range: LSPRange.zero))
+            } catch {
+                logger.debug("DefinitionHandler: Unable to check if module exists: \(error)")
+                return nil
+            }
     }
 }
