@@ -1,7 +1,7 @@
 import Foundation
 import LanguageServerProtocol
 
-class DocComment: ASTNode {
+public class PklDocComment: ASTNode {
     var text: String
 
     init(text: String, range: ASTRange, importDepth: Int, document: Document) {

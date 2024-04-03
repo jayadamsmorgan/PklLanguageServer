@@ -9,7 +9,7 @@ public class CompletionHandler {
         self.logger = logger
     }
 
-    public func provide(document _: Document, module: ASTNode, params _: CompletionParams) async -> CompletionResponse {
+    public func provide(module: ASTNode, params _: CompletionParams) async -> CompletionResponse {
         var completions: [CompletionItem] = []
 
         ASTHelper.enumerate(node: module) { node in
@@ -17,7 +17,7 @@ public class CompletionHandler {
                 completions.append(CompletionItem(
                     label: classObject.classIdentifier?.value ?? "",
                     kind: .class,
-                    detail: "Pickle object"
+                    detail: node.docComment?.text ?? "Pickle object"
                 ))
                 return
             }
@@ -25,7 +25,7 @@ public class CompletionHandler {
                 completions.append(CompletionItem(
                     label: function.body?.identifier?.value ?? "",
                     kind: .function,
-                    detail: "Pickle function"
+                    detail: node.docComment?.text ?? "Pickle function"
                 ))
                 return
             }
@@ -33,7 +33,7 @@ public class CompletionHandler {
                 completions.append(CompletionItem(
                     label: object.identifier?.value ?? "",
                     kind: .property,
-                    detail: "Pickle object property"
+                    detail: node.docComment?.text ?? "Pickle object property"
                 ))
                 return
             }
@@ -41,7 +41,7 @@ public class CompletionHandler {
                 completions.append(CompletionItem(
                     label: objectEntry.strIdentifier?.value ?? "",
                     kind: .property,
-                    detail: "Pickle object entry"
+                    detail: node.docComment?.text ?? "Pickle object entry"
                 ))
                 return
             }
@@ -49,7 +49,7 @@ public class CompletionHandler {
                 completions.append(CompletionItem(
                     label: classProperty.identifier?.value ?? "",
                     kind: .property,
-                    detail: "Pickle property"
+                    detail: node.docComment?.text ?? "Pickle property"
                 ))
                 return
             }

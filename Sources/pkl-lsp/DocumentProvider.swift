@@ -143,7 +143,7 @@ public actor DocumentProvider {
             logger.error("LSP Completion: Document \(params.textDocument.uri) is not available.")
             return nil
         }
-        return await completionHandler.provide(document: document, module: module, params: params)
+        return await completionHandler.provide(module: module, params: params)
     }
 
     public func provideRenaming(params: RenameParams) async -> RenameResponse {
@@ -207,7 +207,7 @@ public actor DocumentProvider {
             logger.error("LSP Definition: AST for \(params.textDocument.uri) is not available.")
             return nil
         }
-        return await definitionHandler.provide(document: document, module: module, params: params)
+        return await definitionHandler.provide(module: module, params: params)
     }
 
     public func provideDiagnostics(document: Document) async throws {

@@ -110,14 +110,17 @@ public class TreeSitterParser {
             return
         }
         let astRoot = await tsNodeToASTNode(node: rootNode, in: document, importDepth: importDepth, parent: nil)
+        astParsedTrees[document] = astRoot
+        await parseVariableReferences(document: document)
+        await parseImportModules(document: document)
+        if let astRoot {
+            await processAndAttachDocComments(node: astRoot)
+        }
         if logger.logLevel == .trace {
             if let astRoot {
                 listASTNodes(rootNode: astRoot)
             }
         }
-        astParsedTrees[document] = astRoot
-        await parseVariableReferences(document: document)
-        await parseImportModules(document: document)
     }
 
     private func parseVariableReferences(document: Document) async {
@@ -126,7 +129,7 @@ public class TreeSitterParser {
             return
         }
         guard let references = objectReferences[document] else {
-            logger.debug("No references found for document \(document.uri)")
+            logger.debug("No object references found for document \(document.uri)")
             return
         }
         for variable in variables {
@@ -143,6 +146,26 @@ public class TreeSitterParser {
                 }
                 return false
             })
+        }
+    }
+
+    private func processAndAttachDocComments(node: ASTNode) async {
+        guard let children = node.children else {
+            return
+        }
+        var docComment: PklDocComment?
+        for child in children {
+            if let child = child as? PklDocComment {
+                if docComment != nil {
+                    continue
+                }
+                docComment = child
+                continue
+            }
+            if let docComment {
+                child.docComment = docComment
+            }
+            docComment = nil
         }
     }
 
@@ -291,6 +314,34 @@ public class TreeSitterParser {
         }
         logger.debug("Module import for document \(importDocument.uri) built successfully.")
         return module
+    }
+
+    private func buildDocComment(node: Node, in document: Document, importDepth: Int, parent: ASTNode?) async -> PklDocComment? {
+        var text = document.getTextInByteRange(node.byteRange)
+        if let previousSubling = node.previousSibling {
+            if previousSubling.symbol == PklTreeSitterSymbols.sym_docComment.rawValue {
+                // If the previous sibling is a docComment, we don't want to build another one
+                return nil
+            }
+        }
+        logger.debug("Starting building doc comment...")
+        var range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
+        var nextSibling = node.nextSibling
+        while let nextSiblingUnwrapped = nextSibling,
+              nextSiblingUnwrapped.symbol == PklTreeSitterSymbols.sym_lineComment.rawValue,
+              document.getTextInByteRange(nextSiblingUnwrapped.byteRange).starts(with: "///")
+        {
+            // If the next sibling is a docComment, we append it to the text and change range
+            text.append(contentsOf: "\n\(document.getTextInByteRange(nextSiblingUnwrapped.byteRange))")
+            range = ASTRange(
+                pointRange: range.pointRange.lowerBound ..< nextSiblingUnwrapped.pointRange.upperBound,
+                byteRange: range.byteRange.lowerBound ..< nextSiblingUnwrapped.byteRange.upperBound
+            )
+            nextSibling = nextSiblingUnwrapped.nextSibling
+        }
+        let comment = PklDocComment(text: text, range: range, importDepth: importDepth, document: document)
+        comment.parent = parent
+        return comment
     }
 
     private func tsNodeToASTNode(node: Node, in document: Document, importDepth: Int, parent: ASTNode?) async -> ASTNode? {
@@ -666,10 +717,15 @@ public class TreeSitterParser {
             logger.debug("Not implemented")
 
         case .sym_lineComment:
+            // Pkl tree-sitter recognizes docComment as a usual lineComment for some reason, so we do a workaround:
+            let text = document.getTextInByteRange(node.byteRange)
+            if text.starts(with: "///") {
+                return await buildDocComment(node: node, in: document, importDepth: importDepth, parent: parent)
+            }
             logger.debug("Line comment at \(node.pointRange).")
 
         case .sym_docComment:
-            logger.debug("Not implemented")
+            return await buildDocComment(node: node, in: document, importDepth: importDepth, parent: parent)
 
         case .sym_blockComment:
             logger.debug("Block comment at \(node.pointRange)")

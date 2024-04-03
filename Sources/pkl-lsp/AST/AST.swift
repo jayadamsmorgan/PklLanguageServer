@@ -23,6 +23,8 @@ public class ASTNode: ASTEvaluation, IdentifiableNode {
     public var importDepth: Int
     public var document: Document
 
+    public var docComment: PklDocComment?
+
     public var parent: ASTNode?
 
     public var children: [ASTNode]? = nil
@@ -45,6 +47,10 @@ public protocol ASTEvaluation {
 public struct ASTRange: Hashable {
     let positionRange: Range<Position>
     let byteRange: Range<UInt32>
+
+    var pointRange: Range<Point> {
+        positionRange.lowerBound.getPoint() ..< positionRange.upperBound.getPoint()
+    }
 
     public init(positionRange: Range<Position>, byteRange: Range<UInt32>) {
         self.positionRange = positionRange

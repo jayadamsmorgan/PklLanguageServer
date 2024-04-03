@@ -125,15 +125,15 @@ public enum ASTHelper {
 
     static func getPositionContext(module: ASTNode, position: Position) -> ASTNode? {
         var contextNode: ASTNode?
-        var smallestRange: Int = Int.max
+        var smallestRange = Int.max
 
         enumerate(node: module) { node in
             let range = node.range.positionRange
-            if position.line >= range.lowerBound.line &&
-                (position.line > range.lowerBound.line || position.character >= range.lowerBound.character / 2) &&
-                position.line <= range.upperBound.line &&
-                (position.line < range.upperBound.line || position.character <= range.upperBound.character / 2) {
-
+            if position.line >= range.lowerBound.line,
+               position.line > range.lowerBound.line || position.character >= range.lowerBound.character / 2,
+               position.line <= range.upperBound.line,
+               position.line < range.upperBound.line || position.character <= range.upperBound.character / 2
+            {
                 let rangeSize = (range.upperBound.line - range.lowerBound.line) * 1000 + (range.upperBound.character - range.lowerBound.character)
                 if rangeSize < smallestRange {
                     smallestRange = rangeSize
