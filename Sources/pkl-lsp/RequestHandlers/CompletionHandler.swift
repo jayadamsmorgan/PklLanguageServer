@@ -13,43 +13,59 @@ public class CompletionHandler {
         var completions: [CompletionItem] = []
 
         ASTHelper.enumerate(node: module) { node in
+            var moduleName: String?
+            if node.importDepth != 0 {
+                moduleName = node.document.uri
+                if moduleName != nil, moduleName!.starts(with: "file:///") {
+                    moduleName = "\(moduleName!.split(separator: "/").last!)"
+                }
+            }
+            var detail = ""
+            if let moduleName {
+                detail = "From \(moduleName):\n\n"
+            }
             if let classObject = node as? PklClassDeclaration {
+                detail += node.docComment?.text ?? "Pkl object"
                 completions.append(CompletionItem(
                     label: classObject.classIdentifier?.value ?? "",
                     kind: .class,
-                    detail: node.docComment?.text ?? "Pickle object"
+                    detail: detail
                 ))
                 return
             }
             if let function = node as? PklFunctionDeclaration {
+                detail += node.docComment?.text ?? "Pkl function"
                 completions.append(CompletionItem(
                     label: function.body?.identifier?.value ?? "",
                     kind: .function,
-                    detail: node.docComment?.text ?? "Pickle function"
+                    detail: detail
                 ))
                 return
             }
             if let object = node as? PklObjectProperty {
+                detail += node.docComment?.text ?? "Pkl object property"
                 completions.append(CompletionItem(
                     label: object.identifier?.value ?? "",
                     kind: .property,
-                    detail: node.docComment?.text ?? "Pickle object property"
+                    detail: detail
                 ))
                 return
             }
             if let objectEntry = node as? PklObjectEntry {
+                detail += node.docComment?.text ?? "Pkl object entry"
                 completions.append(CompletionItem(
                     label: objectEntry.strIdentifier?.value ?? "",
                     kind: .property,
-                    detail: node.docComment?.text ?? "Pickle object entry"
+                    detail: detail
                 ))
                 return
             }
             if let classProperty = node as? PklClassProperty {
+                detail += node.docComment?.text ?? "Pkl property"
                 completions.append(CompletionItem(
                     label: classProperty.identifier?.value ?? "",
                     kind: .property,
-                    detail: node.docComment?.text ?? "Pickle property"
+                    detail: detail
                 ))
                 return
             }
@@ -58,7 +74,7 @@ public class CompletionHandler {
             CompletionItem(
                 label: keyword.rawValue,
                 kind: .keyword,
-                detail: "Pickle keyword"
+                detail: "Pkl keyword"
             )
         })
         // Remove duplicates from completions
