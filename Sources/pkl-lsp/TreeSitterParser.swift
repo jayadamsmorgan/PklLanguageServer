@@ -14,7 +14,6 @@ public class TreeSitterParser {
     private var documentProvider: DocumentProvider?
 
     private var variables: [Document: [PklVariable]] = [:]
-    private var importModules: [Document: [PklModuleImport]] = [:]
     private var objectReferences: [Document: [ASTNode]] = [:]
 
     let maxImportDepth: Int
@@ -112,7 +111,6 @@ public class TreeSitterParser {
         let astRoot = await tsNodeToASTNode(node: rootNode, in: document, importDepth: importDepth, parent: nil)
         astParsedTrees[document] = astRoot
         await parseVariableReferences(document: document)
-        await parseImportModules(document: document)
         if let astRoot {
             await processAndAttachDocComments(node: astRoot)
         }
@@ -166,48 +164,6 @@ public class TreeSitterParser {
                 child.docComment = docComment
             }
             docComment = nil
-        }
-    }
-
-    private func parseImportModules(document: Document) async {
-        guard let importModules = importModules[document] else {
-            logger.debug("No import modules found for document \(document.uri)")
-            return
-        }
-        for moduleIndex in 0 ..< importModules.count {
-            let module = importModules[importModules.count - moduleIndex - 1]
-            guard let documentToImport = module.documentToImport else {
-                logger.error("No document to import found for module \(module)")
-                return
-            }
-            if documentToImport.uri == document.uri {
-                logger.error("Document \(document.uri) is trying to import itself.")
-                return
-            }
-            if var astRoot = astParsedTrees[documentToImport] {
-                logger.debug("Found parsed module \(documentToImport.uri) from cache.")
-                if astRoot.importDepth != module.importDepth + 1 {
-                    logger.debug("Module has different importDepth, changing...")
-                    ASTHelper.enumerate(node: &astRoot, block: { node in
-                        node.importDepth = module.importDepth + 1
-                    })
-                }
-                logger.debug("Imported module \(documentToImport.uri) from cache.")
-                module.module = astRoot as? PklModule
-                return
-            }
-            guard module.importDepth < maxImportDepth else {
-                logger.error("Import depth exceeded for document \(document.uri)")
-                return
-            }
-            let tree = parser.parse(documentToImport.text)
-            guard let tree else {
-                logger.error("Failed to parse document \(documentToImport.uri)")
-                return
-            }
-            tsParsedTrees[documentToImport] = tree
-            await parseAST(document: documentToImport, tree: tree, importDepth: module.importDepth + 1)
-            logger.debug("Imported module \(documentToImport.uri) for document \(document.uri)")
         }
     }
 
@@ -291,26 +247,52 @@ public class TreeSitterParser {
             return nil
         }
         path.type = .importString
-        guard var pathValue = path.value else {
-            logger.error("Failed to parse path in building module import.")
+        path.value?.removeAll(where: { $0 == "\"" })
+        guard let pathValue = path.value else {
+            logger.error("Failed to parse path value in building module import.")
             return nil
         }
-        pathValue.removeAll(where: { $0 == "\"" })
         let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
         let module = PklModuleImport(module: nil, range: range, path: path,
                                      importDepth: importDepth, document: document, type: type)
         module.parent = parent
         path.parent = module
-        guard let importDocument = await includeModule(relPath: pathValue, currentDocument: document) else {
-            logger.error("Failed to include module \(pathValue) in \(document.uri).")
+        var importDocument: Document?
+        importDocument = astParsedTrees.keys.first(where: { $0.uri == pathValue })
+        if let importDocument {
+            module.documentToImport = importDocument
+            logger.debug("Module import for document \(importDocument.uri) already built.")
+            module.module = astParsedTrees[importDocument] as? PklModule
+            return module
+        }
+        importDocument = await includeModule(relPath: pathValue, currentDocument: document)
+        guard let importDocument else {
+            logger.error("Failed to include module \(pathValue) for document \(document.uri)")
             return module
         }
         module.documentToImport = importDocument
-        if var importModules = importModules[document] {
-            importModules.append(module)
-            self.importModules[document] = importModules
+        if let parsedTree = astParsedTrees[importDocument] as? PklModule {
+            logger.debug("Module import for document \(importDocument.uri) already built.")
+            module.module = parsedTree
+            return module
+        }
+        if importDepth >= maxImportDepth {
+            logger.error("Import depth exceeded for document \(document.uri)")
+            return nil
+        }
+        if let tsTree = tsParsedTrees[importDocument] {
+            await parseAST(document: importDocument, tree: tsTree, importDepth: importDepth + 1)
         } else {
-            importModules[document] = [module]
+            guard let tree = parser.parse(importDocument.text) else {
+                logger.error("Failed to parse document \(importDocument.uri).")
+                return module
+            }
+            tsParsedTrees[importDocument] = tree
+            await parseAST(document: importDocument, tree: tree, importDepth: importDepth + 1)
+        }
+        guard astParsedTrees[importDocument] as? PklModule != nil else {
+            logger.error("Failed to build module import for document \(importDocument.uri).")
+            return module
         }
         logger.debug("Module import for document \(importDocument.uri) built successfully.")
         return module
