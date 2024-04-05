@@ -51,6 +51,7 @@ public class TreeSitterParser {
         tsParsedTrees[document] = tree
         await parseAST(document: document, tree: tree)
         logger.debug("Document \(document.uri) parsed.")
+        await documentProvider?.sendClientWindowShowMessage(message: "Done parsing.", type: .info, document: document)
     }
 
     private func parseFullyWithChanges(document: Document, params: DidChangeTextDocumentParams) async -> Document {
@@ -104,6 +105,7 @@ public class TreeSitterParser {
 
     private func parseAST(document: Document, tree: MutableTree, importDepth: Int = 0) async {
         logger.debug("Parsing AST for document \(document.uri)")
+        await documentProvider?.sendClientWindowShowMessage(message: "Parsing AST for document \(document.uri)", type: .info, document: document)
         guard let rootNode = tree.rootNode else {
             logger.debug("No root node found for document \(document.uri)")
             return
@@ -119,6 +121,7 @@ public class TreeSitterParser {
                 listASTNodes(rootNode: astRoot)
             }
         }
+        await documentProvider?.sendClientWindowShowMessage(message: "AST parsed for document \(document.uri)", type: .info, document: document)
     }
 
     private func parseVariableReferences(document: Document) async {
@@ -756,6 +759,9 @@ public class TreeSitterParser {
             }
             let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
             let module = PklModule(contents: contents, range: range, importDepth: importDepth, document: document)
+            for child in module.contents {
+                child.parent = module
+            }
             if let errors = module.diagnosticErrors() {
                 for error in errors {
                     logger.debug("AST Diagnostic error: \(error)")

@@ -37,9 +37,9 @@ public actor PklServer {
     private let dispatcher: EventDispatcher
     var exitSemaphore: AsyncSemaphore
 
-    public init(_ dataChannel: DataChannel, logger: Logger, serverFlags: ServerFlags) {
+    public init(connection: JSONRPCClientConnection, logger: Logger, serverFlags: ServerFlags) {
+        self.connection = connection
         self.logger = logger
-        connection = JSONRPCClientConnection(dataChannel)
         let treeSitterParser = TreeSitterParser(logger: logger, maxImportDepth: serverFlags.maxImportDepth)
         let documentProvider = DocumentProvider(connection: connection, logger: logger, treeSitterParser: treeSitterParser, serverFlags: serverFlags)
         treeSitterParser.setDocumentProvider(documentProvider)

@@ -2,8 +2,9 @@ import ArgumentParser
 import Foundation
 import JSONRPC
 import pkl_lsp
-import Puppy
+import Logging
 import UniSocket
+import LanguageServer
 
 // Allow loglevel as `ArgumentParser.Option`
 extension Logger.Level: ExpressibleByArgument {}
@@ -19,10 +20,7 @@ struct PklLSPServer: AsyncParsableCommand {
     static var configuration = CommandConfiguration(commandName: "pkl-lsp-server")
 
     @Option(name: .shortAndLong, help: "Log level")
-    var log: Logger.Level = .info
-
-    @Option(name: [.customShort("f"), .long], help: "Log file")
-    var logFile: String?
+    var log: Logger.Level = .error
 
     @Option(name: .shortAndLong, help: "Named pipe transport")
     var pipe: String?
@@ -46,35 +44,13 @@ struct PklLSPServer: AsyncParsableCommand {
         pipe == nil && socket == nil
     }
 
-    func puppyLevel(_ level: Logger.Level) -> LogLevel {
-        switch level {
-        case .trace: .trace
-        case .debug: .debug
-        case .info: .info
-        case .notice: .notice
-        case .warning: .warning
-        case .error: .error
-        case .critical: .critical
-        }
-    }
+    func logHandlerFactory(_ label: String, rpcConnection: JSONRPCClientConnection) -> LogHandler {
 
-    func logHandlerFactory(_ label: String, fileLogger: FileLogger) -> LogHandler {
-        guard let _ = logFile else {
-            return NullLogHandler(label: label)
-        }
-
-        var puppy = Puppy()
-        puppy.add(fileLogger)
-
-        let puppyHandler = PuppyLogHandler(label: label, puppy: puppy)
-
-        if stdio {
-            return puppyHandler
-        }
+        let rpcLogHandler = JSONRPCLogHandler(label: label, logLevel: log, connnection: rpcConnection)
 
         return MultiplexLogHandler([
-            puppyHandler,
             StreamLogHandler.standardOutput(label: label),
+            rpcLogHandler
         ])
     }
 
@@ -87,13 +63,19 @@ struct PklLSPServer: AsyncParsableCommand {
         }
     }
 
-    func run(logger: Logger, channel: DataChannel) async {
+    func run(channel: DataChannel) async throws {
+        let connection = JSONRPCClientConnection(channel)
+
+        var logger = Logger(label: loggerLabel) { logHandlerFactory($0, rpcConnection: connection) }
+        logger.logLevel = log
+
         let serverFlags: ServerFlags = .init(
             enableExperimentalFeatures: enableExperimentalFeatures,
             disabledFeatures: disableFeature,
             maxImportDepth: importDepth
         )
-        let server = PklServer(channel, logger: logger, serverFlags: serverFlags)
+
+        let server = PklServer(connection: connection, logger: logger, serverFlags: serverFlags)
         await server.run()
     }
 
@@ -102,29 +84,19 @@ struct PklLSPServer: AsyncParsableCommand {
             print("Pkl Language Server version \(PklServer.pklLSVersion)")
             return
         }
-        var logger: Logger?
-        if let logFile {
-            let logFileURL = URL(fileURLWithPath: logFile)
-            let fileLogger = try FileLogger(loggerLabel, logLevel: puppyLevel(log), fileURL: logFileURL)
-            logger = Logger(label: fileLogger.label) { logHandlerFactory($0, fileLogger: fileLogger) }
-            logger?.logLevel = log
-        } else {
-            logger = Logger(label: loggerLabel)
-            logger?.logLevel = log
-        }
 
         if stdio {
-            await run(logger: logger!, channel: DataChannel.stdioPipe())
+            try await run(channel: DataChannel.stdioPipe())
         }
 
         if let socket {
             let socket = try UniSocket(type: .tcp, peer: socket, timeout: (connect: 5, read: nil, write: 5))
             try socket.attach()
-            await run(logger: logger!, channel: DataChannel(socket: socket))
+            try await run(channel: DataChannel(socket: socket))
         } else if let pipe {
             let socket = try UniSocket(type: .local, peer: pipe, timeout: (connect: 5, read: nil, write: 5))
             try socket.attach()
-            await run(logger: logger!, channel: DataChannel(socket: socket))
+            try await run(channel: DataChannel(socket: socket))
         }
     }
 }

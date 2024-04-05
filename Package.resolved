@@ -24,7 +24,7 @@
       "location" : "https://github.com/jayadamsmorgan/LanguageServer",
       "state" : {
         "branch" : "main",
-        "revision" : "6be5d02ea34bf1eccbf350966a08d72c21e73b0f"
+        "revision" : "9ecf41786395d8461b41e3699c5c471139deee61"
       }
     },
     {
@@ -33,7 +33,7 @@
       "location" : "https://github.com/jayadamsmorgan/LanguageServerProtocol",
       "state" : {
         "branch" : "main",
-        "revision" : "544f1d38e41d39964e59a90b81d2f0c968c3c1d7"
+        "revision" : "02801ceb6190ff573cf4c858eb50efa45a09303b"
       }
     },
     {

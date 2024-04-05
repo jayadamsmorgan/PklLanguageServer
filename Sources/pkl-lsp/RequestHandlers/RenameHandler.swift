@@ -35,6 +35,6 @@ public class RenameHandler {
             let edit = TextEdit(range: LSPRange(start: positionStart, end: positionEnd), newText: params.newName)
             changes.append(edit)
         }
-        return WorkspaceEdit(changes: [params.textDocument.uri: changes])
+        return WorkspaceEdit(changes: [params.textDocument.uri: changes], documentChanges: nil)
     }
 }

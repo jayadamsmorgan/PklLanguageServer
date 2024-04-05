@@ -1,37 +1,34 @@
 import Foundation
 import Logging
+import LanguageServer
+import LanguageServerProtocol
 
 public let loggerLabel: String = "pkl-lsp"
 
 extension Logger {
     func trace(_ message: String) {
-        let date = Date().description
-        trace(Logger.Message(stringLiteral: "[\(date)]: [TRACE] \(message)"))
+        trace(Logger.Message(stringLiteral: message))
     }
 
     func debug(_ message: String) {
-        let date = Date().description
-        debug(Logger.Message(stringLiteral: "[\(date)]: [DEBUG] \(message)"))
+        debug(Logger.Message(stringLiteral: message))
     }
 
     func info(_ message: String) {
-        let date = Date().description
-        info(Logger.Message(stringLiteral: "[\(date)]: [INFO] \(message)"))
+        info(Logger.Message(stringLiteral: message))
     }
 
     func warning(_ message: String) {
-        let date = Date().description
-        warning(Logger.Message(stringLiteral: "[\(date)]: [WARNING] \(message)"))
+        warning(Logger.Message(stringLiteral: message))
     }
 
     func error(_ message: String) {
-        let date = Date().description
-        error(Logger.Message(stringLiteral: "[\(date)]: [ERROR] \(message)"))
+        error(Logger.Message(stringLiteral: message))
     }
 }
 
-public struct NullLogHandler: LogHandler, Sendable {
-    public var logLevel: Logger.Level = .critical
+public struct JSONRPCLogHandler: LogHandler, Sendable {
+    public var logLevel: Logger.Level
     public var metadata: Logger.Metadata
 
     public subscript(metadataKey key: String) -> Logger.Metadata.Value? {
@@ -44,17 +41,39 @@ public struct NullLogHandler: LogHandler, Sendable {
     }
 
     private let label: String
+    private let rpcConnection: JSONRPCClientConnection
 
-    public init(label: String, metadata: Logger.Metadata = [:]) {
+    public init(label: String, logLevel: Logger.Level, connnection: JSONRPCClientConnection, metadata: Logger.Metadata = [:]) {
         self.label = label
+        self.logLevel = logLevel
+        self.rpcConnection = connnection
         self.metadata = metadata
     }
 
-    public func log(level _: Logger.Level,
-                    message _: Logger.Message,
-                    metadata _: Logger.Metadata?,
-                    source _: String,
-                    file _: String,
-                    function _: String,
-                    line _: UInt) {}
+
+    public func log(level: Logger.Level, message: Logger.Message, metadata: Logger.Metadata?, file: String, function: String, line: UInt) {
+        Task {
+            try await rpcConnection.sendNotification(.windowLogMessage(.init(type: loggerLevelToMessageType(.error), message: loggerLabel + ": " + message.description)))
+        }
+    }
+
+    private func loggerLevelToMessageType(_ logLevel: Logger.Level) -> MessageType {
+        switch logLevel {
+        case .info:
+            return .info
+        case .debug:
+            return .warning
+        case .error:
+            return .error
+        case .trace:
+            return .warning
+        case .notice:
+            return .warning
+        case .warning:
+            return .warning
+        case .critical:
+            return .error
+        }
+    }
+
 }

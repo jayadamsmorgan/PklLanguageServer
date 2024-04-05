@@ -33,7 +33,7 @@ And don't forget to check [Code of Conduct](CODE_OF_CONDUCT.md).
 | Diagnostics           |   🟠   |
 | Document Symbols      |   🟢   |
 | Renaming              |   🟠   |
-| Semantic Highlighting |  WIP   |
+| Semantic Highlighting |  TBA   |
 
 - **🟢** -- Feature is working
 - **🟠** -- Feature is working, however due to early development stage may be incomplete or not working as intended (disabled by default, can be enabled with `--enable-experimental-features`)
@@ -89,15 +89,11 @@ pkl-lsp-server -h
 
 ## Debugging
 
-By default, `pkl-lsp-server` will use standard output and `info` log level to print logs.
+`pkl-lsp-server` will use standard output and JSONRPC connection with `error` log level to print logs.
 
-To write debug info into the file you can use:
+`pkl-lsp-server -log debug` will print out logs with debug log level.
 
-```
-pkl-lsp-server --log debug --log-file pkl-lsp.log
-```
-
-This will run the server and print out debug information into `pkl-lsp.log` file created in the directory where server was started.
+Use your client's LSP log or standard output to check the logs.
 
 ## Honorable mentions
 
