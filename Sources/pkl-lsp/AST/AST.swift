@@ -16,7 +16,7 @@ public extension IdentifiableNode where Self: Hashable {
     }
 }
 
-public class ASTNode: ASTEvaluation, IdentifiableNode {
+public class ASTNode: ASTEvaluation, IdentifiableNode, Equatable {
     public let uniqueID: UUID = .init()
 
     public var range: ASTRange
@@ -37,6 +37,10 @@ public class ASTNode: ASTEvaluation, IdentifiableNode {
 
     public func diagnosticErrors() -> [ASTDiagnosticError]? {
         nil
+    }
+
+    public static func == (lhs: ASTNode, rhs: ASTNode) -> Bool {
+        lhs.uniqueID == rhs.uniqueID
     }
 }
 
