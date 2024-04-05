@@ -10,11 +10,11 @@ import {
 const serverOptions: ServerOptions = {
   run: {
     command: "pkl-lsp-server",
-    args: ["-l", "info", "-f", "pkl-lsp-server.log"],
+    args: [],
   },
   debug: {
     command: "pkl-lsp-server",
-    args: ["-l", "debug", "-f", "pkl-lsp-server.log"],
+    args: ["-l", "debug"],
   },
 };
 
