@@ -55,15 +55,6 @@
       }
     },
     {
-      "identity" : "puppy",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/sushichop/Puppy",
-      "state" : {
-        "revision" : "b5af02a72a5a1f92a68e6eceee19cac804067ad9",
-        "version" : "0.7.0"
-      }
-    },
-    {
       "identity" : "semaphore",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/groue/Semaphore",

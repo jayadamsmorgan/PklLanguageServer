@@ -16,8 +16,6 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-log.git", from: "1.5.4"),
         // Arg parsing
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.3.0"),
-        // Puppy logging
-        .package(url: "https://github.com/sushichop/Puppy", from: "0.7.0"),
         // UniSocket
         .package(url: "https://github.com/koliyo/swift-unisocket", branch: "master"),
         // Concurrency Semaphores
@@ -38,7 +36,6 @@ let package = Package(
                 .product(name: "LanguageServer", package: "LanguageServer"),
                 .product(name: "Logging", package: "swift-log"),
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
-                .product(name: "Puppy", package: "Puppy"),
                 .product(name: "UniSocket", package: "swift-unisocket"),
                 .product(name: "Semaphore", package: "Semaphore"),
                 .product(name: "SwiftTreeSitterLayer", package: "SwiftTreeSitter"),
@@ -56,7 +53,6 @@ let package = Package(
                 .product(name: "LanguageServer", package: "LanguageServer"),
                 .product(name: "Logging", package: "swift-log"),
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
-                .product(name: "Puppy", package: "Puppy"),
                 .product(name: "UniSocket", package: "swift-unisocket"),
             ],
             path: "Sources/pkl-lsp-server",
