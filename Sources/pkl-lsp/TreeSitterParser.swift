@@ -51,7 +51,6 @@ public class TreeSitterParser {
         tsParsedTrees[document] = tree
         await parseAST(document: document, tree: tree)
         logger.debug("Document \(document.uri) parsed.")
-        await documentProvider?.sendClientWindowShowMessage(message: "Done parsing.", type: .info, document: document)
     }
 
     private func parseFullyWithChanges(document: Document, params: DidChangeTextDocumentParams) async -> Document {
@@ -75,7 +74,7 @@ public class TreeSitterParser {
         do {
             edits = try Document.getTSInputEditsApplyingChanges(for: document, with: params.contentChanges, nextVersion: params.textDocument.version)
         } catch {
-            logger.error("Failed to get TS Input Edits from document \(document.uri): \(error). Trying to parse document from scratch.")
+            logger.debug("Failed to get TS Input Edits from document \(document.uri): \(error). Trying to parse document from scratch.")
             return await parseFullyWithChanges(document: document, params: params)
         }
         guard let edits else {
@@ -88,7 +87,7 @@ public class TreeSitterParser {
             tree.edit(edit)
         }
         guard let newTree = parser.parse(tree: tree, string: newDocument.text) else {
-            logger.error("Failed to parse document \(newDocument.uri) with changes. New tree is nil.")
+            logger.debug("Failed to parse document \(newDocument.uri) with changes. New tree is nil.")
             return document
         }
         if logger.logLevel == .trace {
@@ -105,7 +104,6 @@ public class TreeSitterParser {
 
     private func parseAST(document: Document, tree: MutableTree, importDepth: Int = 0) async {
         logger.debug("Parsing AST for document \(document.uri)")
-        await documentProvider?.sendClientWindowShowMessage(message: "Parsing AST for document \(document.uri)", type: .info, document: document)
         guard let rootNode = tree.rootNode else {
             logger.debug("No root node found for document \(document.uri)")
             return
@@ -121,7 +119,6 @@ public class TreeSitterParser {
                 listASTNodes(rootNode: astRoot)
             }
         }
-        await documentProvider?.sendClientWindowShowMessage(message: "AST parsed for document \(document.uri)", type: .info, document: document)
     }
 
     private func parseVariableReferences(document: Document) async {
@@ -230,7 +227,7 @@ public class TreeSitterParser {
             }
             logger.debug("Module include: fileURL: \(fileURL.absoluteURL)")
             guard let text = try? String(contentsOf: fileURL, encoding: .utf8) else {
-                logger.error("Module include: file not found: \(fileURL)")
+                logger.debug("Module include: file not found: \(fileURL)")
                 return nil
             }
             let document = Document(uri: fileURL.absoluteString, version: nil, text: text)
@@ -246,13 +243,13 @@ public class TreeSitterParser {
                                    type: PklModuleImportType = .normal, parent: ASTNode?) async -> PklModuleImport?
     {
         guard let path else {
-            logger.error("Failed to parse path in building module import.")
+            logger.debug("Failed to parse path in building module import.")
             return nil
         }
         path.type = .importString
         path.value?.removeAll(where: { $0 == "\"" })
         guard let pathValue = path.value else {
-            logger.error("Failed to parse path value in building module import.")
+            logger.debug("Failed to parse path value in building module import.")
             return nil
         }
         let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
@@ -270,7 +267,7 @@ public class TreeSitterParser {
         }
         importDocument = await includeModule(relPath: pathValue, currentDocument: document)
         guard let importDocument else {
-            logger.error("Failed to include module \(pathValue) for document \(document.uri)")
+            logger.debug("Failed to include module \(pathValue) for document \(document.uri)")
             return module
         }
         module.documentToImport = importDocument
@@ -280,7 +277,7 @@ public class TreeSitterParser {
             return module
         }
         if importDepth >= maxImportDepth {
-            logger.error("Import depth exceeded for document \(document.uri)")
+            logger.debug("Import depth exceeded for document \(document.uri)")
             return nil
         }
         if let tsTree = tsParsedTrees[importDocument] {
@@ -836,7 +833,7 @@ public class TreeSitterParser {
         case .sym_importClause: // IMPORT CLAUSE
             logger.debug("Starting building import clause...")
             if importDepth > 3 {
-                logger.error("Import depth is too high.")
+                logger.debug("Import depth is too high.")
                 return nil
             }
             var path: PklStringLiteral?

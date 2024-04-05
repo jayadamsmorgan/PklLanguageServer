@@ -338,6 +338,7 @@ public actor DocumentProvider {
         let document = Document(textDocument: params.textDocument)
         documents[documentUri] = document
         await treeSitterParser.parse(document: document)
+        await sendClientWindowShowMessage(message: "PklLanguageServer: Ready", type: .info, document: document)
 
         guard diagnosticsFeature.isEnabled else {
             return
