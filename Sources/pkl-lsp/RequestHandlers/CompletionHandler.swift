@@ -20,30 +20,67 @@ public class CompletionHandler {
                     moduleName = "\(moduleName!.split(separator: "/").last!)"
                 }
             }
-            var detail = ""
-            if let moduleName {
-                detail = "From \(moduleName):\n\n"
-            }
             if let classObject = node as? PklClassDeclaration {
-                detail += node.docComment?.text ?? "Pkl object"
+                let detail = classObject.classIdentifier?.value
+                let label = classObject.classIdentifier?.value ?? ""
+                if let docComment = classObject.docComment?.text
+                    .replacingOccurrences(of: "/// ", with: "")
+                    .replacingOccurrences(of: "///", with: "") {
+                    completions.append(CompletionItem(
+                        label: label,
+                        kind: .class,
+                        detail: detail,
+                        documentation: .optionA(docComment)
+                    ))
+                    return
+                }
                 completions.append(CompletionItem(
-                    label: classObject.classIdentifier?.value ?? "",
+                    label: label,
                     kind: .class,
                     detail: detail
                 ))
                 return
             }
             if let function = node as? PklFunctionDeclaration {
-                detail += node.docComment?.text ?? "Pkl function"
+                let ident = function.body?.identifier?.value ?? ""
+                var label = ident
+                let detail = function.body?.typeAnnotation?.type?.identifier
+                if let argsByteRange = function.body?.params?.range.byteRange {
+                    label += function.document.getTextInByteRange(argsByteRange)
+                }
+                if let docComment = node.docComment?.text
+                    .replacingOccurrences(of: "/// ", with: "")
+                    .replacingOccurrences(of: "///", with: "") {
+                    completions.append(CompletionItem(
+                        label: label,
+                        kind: .function,
+                        detail: detail,
+                        documentation: .optionA(docComment),
+                        insertText: ident
+                    ))
+                    return
+                }
                 completions.append(CompletionItem(
-                    label: function.body?.identifier?.value ?? "",
+                    label: label,
                     kind: .function,
-                    detail: detail
+                    detail: detail,
+                    insertText: ident
                 ))
                 return
             }
             if let object = node as? PklObjectProperty {
-                detail += node.docComment?.text ?? "Pkl object property"
+                let detail = object.typeAnnotation?.type?.identifier
+                if let docComment = object.docComment?.text
+                    .replacingOccurrences(of: "/// ", with: "")
+                    .replacingOccurrences(of: "///", with: "") {
+                    completions.append(CompletionItem(
+                        label: object.identifier?.value ?? "",
+                        kind: .property,
+                        detail: detail,
+                        documentation: .optionA(docComment)
+                    ))
+                    return
+                }
                 completions.append(CompletionItem(
                     label: object.identifier?.value ?? "",
                     kind: .property,
@@ -52,16 +89,38 @@ public class CompletionHandler {
                 return
             }
             if let objectEntry = node as? PklObjectEntry {
-                detail += node.docComment?.text ?? "Pkl object entry"
+                if let docComment = objectEntry.docComment?.text
+                    .replacingOccurrences(of: "/// ", with: "")
+                    .replacingOccurrences(of: "///", with: "") {
+                    completions.append(CompletionItem(
+                        label: objectEntry.strIdentifier?.value ?? "",
+                        kind: .property,
+                        documentation: .optionA(docComment)
+                    ))
+                    return
+                }
                 completions.append(CompletionItem(
                     label: objectEntry.strIdentifier?.value ?? "",
-                    kind: .property,
-                    detail: detail
+                    kind: .property
                 ))
                 return
             }
             if let classProperty = node as? PklClassProperty {
-                detail += node.docComment?.text ?? "Pkl property"
+                var detail: String?
+                if let typeIdent = classProperty.typeAnnotation?.type?.identifier {
+                    detail = typeIdent
+                }
+                if let docComment = classProperty.docComment?.text
+                    .replacingOccurrences(of: "/// ", with: "")
+                    .replacingOccurrences(of: "///", with: "") {
+                    completions.append(CompletionItem(
+                        label: classProperty.identifier?.value ?? "",
+                        kind: .property,
+                        detail: detail,
+                        documentation: .optionA(docComment)
+                    ))
+                    return
+                }
                 completions.append(CompletionItem(
                     label: classProperty.identifier?.value ?? "",
                     kind: .property,
@@ -73,8 +132,7 @@ public class CompletionHandler {
         completions.append(contentsOf: PklKeywords.allCases.map { keyword in
             CompletionItem(
                 label: keyword.rawValue,
-                kind: .keyword,
-                detail: "Pkl keyword"
+                kind: .keyword
             )
         })
         // Remove duplicates from completions
