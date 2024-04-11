@@ -9,16 +9,65 @@ public class CompletionHandler {
         self.logger = logger
     }
 
-    public func provide(module: ASTNode, params _: CompletionParams) async -> CompletionResponse {
+    public func provideWithKeywords(completions: [CompletionItem] = []) async -> CompletionResponse {
+        var completions = completions
+        completions.append(contentsOf: PklKeywords.allCases.map { keyword in
+            CompletionItem(
+                label: keyword.rawValue,
+                kind: .keyword
+            )
+        })
+        return CompletionResponse(.optionB(CompletionList(isIncomplete: false, items: completions)))
+    }
+
+    public func provide(module: ASTNode, params: CompletionParams, keywords: Bool = true) async -> CompletionResponse {
         var completions: [CompletionItem] = []
 
-        ASTHelper.enumerate(node: module) { node in
-            var moduleName: String?
-            if node.importDepth != 0 {
-                moduleName = node.document.uri
-                if moduleName != nil, moduleName!.starts(with: "file:///") {
-                    moduleName = "\(moduleName!.split(separator: "/").last!)"
+        guard let children = module.children else {
+            if keywords {
+                return await provideWithKeywords(completions: completions)
+            }
+            return CompletionResponse(.optionB(CompletionList(isIncomplete: false, items: completions)))
+        }
+
+        for node in children {
+            if let importNode = node as? PklModuleImport {
+                let moduleDeclaration =  importNode.module?.children?.first(where: { $0 is PklModuleHeader }) as? PklModuleHeader
+                var moduleName = moduleDeclaration?.moduleClause?.name?.value ??
+                    importNode.documentToImport?.uri.split(separator: "/").last?.description ?? ""
+                moduleName = moduleName.replacingOccurrences(of: ".pkl", with: "")
+                if moduleName.starts(with: "pkl.") {
+                    moduleName = moduleName.replacingOccurrences(of: "pkl.", with: "")
                 }
+                if let docComment = moduleDeclaration?.docComment?.text
+                    .replacingOccurrences(of: "/// ", with: "")
+                    .replacingOccurrences(of: "///", with: "")
+                {
+                    completions.append(CompletionItem(
+                        label: moduleName,
+                        kind: .module,
+                        detail: moduleName,
+                        documentation: .optionA(docComment)
+                    ))
+                    continue
+                }
+                if let docComment = moduleDeclaration?.moduleClause?.docComment?.text
+                    .replacingOccurrences(of: "/// ", with: "")
+                    .replacingOccurrences(of: "///", with: "")
+                {
+                    completions.append(CompletionItem(
+                        label: moduleName,
+                        kind: .module,
+                        detail: moduleName,
+                        documentation: .optionA(docComment)
+                    ))
+                    continue
+                }
+                completions.append(CompletionItem(
+                    label: moduleName,
+                    kind: .module,
+                    detail: moduleName
+                ))
             }
             if let classObject = node as? PklClassDeclaration {
                 let detail = classObject.classIdentifier?.value
@@ -33,16 +82,19 @@ public class CompletionHandler {
                         detail: detail,
                         documentation: .optionA(docComment)
                     ))
-                    return
+                    continue
                 }
                 completions.append(CompletionItem(
                     label: label,
                     kind: .class,
                     detail: detail
                 ))
-                return
+                continue
             }
             if let function = node as? PklFunctionDeclaration {
+                if let body = function.body, body.isLocal && function.importDepth > 0 {
+                    continue
+                }
                 let ident = function.body?.identifier?.value ?? ""
                 var label = ident
                 let detail = function.body?.typeAnnotation?.type?.identifier
@@ -60,7 +112,7 @@ public class CompletionHandler {
                         documentation: .optionA(docComment),
                         insertText: ident
                     ))
-                    return
+                    continue
                 }
                 completions.append(CompletionItem(
                     label: label,
@@ -68,7 +120,7 @@ public class CompletionHandler {
                     detail: detail,
                     insertText: ident
                 ))
-                return
+                continue
             }
             if let object = node as? PklObjectProperty {
                 let detail = object.typeAnnotation?.type?.identifier
@@ -82,14 +134,14 @@ public class CompletionHandler {
                         detail: detail,
                         documentation: .optionA(docComment)
                     ))
-                    return
+                    continue
                 }
                 completions.append(CompletionItem(
                     label: object.identifier?.value ?? "",
                     kind: .property,
                     detail: detail
                 ))
-                return
+                continue
             }
             if let objectEntry = node as? PklObjectEntry {
                 if let docComment = objectEntry.docComment?.text
@@ -101,15 +153,18 @@ public class CompletionHandler {
                         kind: .property,
                         documentation: .optionA(docComment)
                     ))
-                    return
+                    continue
                 }
                 completions.append(CompletionItem(
                     label: objectEntry.strIdentifier?.value ?? "",
                     kind: .property
                 ))
-                return
+                continue
             }
             if let classProperty = node as? PklClassProperty {
+                if classProperty.isLocal && classProperty.importDepth > 0 {
+                    continue
+                }
                 var detail: String?
                 if let typeIdent = classProperty.typeAnnotation?.type?.identifier {
                     detail = typeIdent
@@ -124,27 +179,24 @@ public class CompletionHandler {
                         detail: detail,
                         documentation: .optionA(docComment)
                     ))
-                    return
+                    continue
                 }
                 completions.append(CompletionItem(
                     label: classProperty.identifier?.value ?? "",
                     kind: .property,
                     detail: detail
                 ))
-                return
+                continue
             }
         }
-        completions.append(contentsOf: PklKeywords.allCases.map { keyword in
-            CompletionItem(
-                label: keyword.rawValue,
-                kind: .keyword
-            )
-        })
         // Remove duplicates from completions
         completions = completions.reduce(into: [CompletionItem]()) { result, completion in
             if !result.contains(completion) {
                 result.append(completion)
             }
+        }
+        if keywords {
+            return await provideWithKeywords(completions: completions)
         }
         return CompletionResponse(.optionB(CompletionList(isIncomplete: false, items: completions)))
     }

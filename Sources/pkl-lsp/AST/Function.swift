@@ -169,7 +169,7 @@ class PklFunctionDeclaration: ASTNode {
                 errors.append(contentsOf: valueErrors)
             }
         }
-        if functionValue == nil {
+        if functionValue == nil && body?.isExternal == false {
             let error = ASTDiagnosticError("Provide function value", .error, range)
             errors.append(error)
         }
@@ -182,6 +182,9 @@ class PklClassFunctionBody: ASTNode {
     var identifier: PklIdentifier?
     var params: PklFunctionParameterList?
     var typeAnnotation: PklTypeAnnotation?
+
+    var isLocal: Bool = false
+    var isExternal: Bool = false
 
     override var children: [ASTNode]? {
         get {

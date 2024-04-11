@@ -281,14 +281,22 @@ public class TreeSitterParser {
             return nil
         }
         if let tsTree = tsParsedTrees[importDocument] {
-            await parseAST(document: importDocument, tree: tsTree, importDepth: importDepth + 1)
+            if document.uri.starts(with: "stdlib:") {
+                await parseAST(document: importDocument, tree: tsTree, importDepth: maxImportDepth + 1)
+            } else {
+                await parseAST(document: importDocument, tree: tsTree, importDepth: importDepth + 1)
+            }
         } else {
             guard let tree = parser.parse(importDocument.text) else {
                 logger.error("Failed to parse document \(importDocument.uri).")
                 return module
             }
             tsParsedTrees[importDocument] = tree
-            await parseAST(document: importDocument, tree: tree, importDepth: importDepth + 1)
+            if document.uri.starts(with: "stdlib:") {
+                await parseAST(document: importDocument, tree: tree, importDepth: maxImportDepth + 1)
+            } else {
+                await parseAST(document: importDocument, tree: tree, importDepth: importDepth + 1)
+            }
         }
         guard astParsedTrees[importDocument] as? PklModule != nil else {
             logger.error("Failed to build module import for document \(importDocument.uri).")
@@ -1025,6 +1033,14 @@ public class TreeSitterParser {
                                                     params: nil, typeAnnotation: nil, range: range, importDepth: importDepth, document: document)
             for childPosition in 0 ..< node.childCount {
                 guard let childNode = node.child(at: childPosition) else {
+                    continue
+                }
+                if childNode.symbol == PklTreeSitterSymbols.anon_sym_external.rawValue {
+                    functionBody.isExternal = true
+                    continue
+                }
+                if childNode.symbol == PklTreeSitterSymbols.anon_sym_local.rawValue {
+                    functionBody.isLocal = true
                     continue
                 }
                 if childNode.symbol == PklTreeSitterSymbols.anon_sym_function.rawValue {

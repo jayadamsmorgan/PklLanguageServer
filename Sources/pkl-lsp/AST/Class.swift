@@ -8,6 +8,7 @@ class PklClassProperty: ASTNode {
     var value: ASTNode?
     var isHidden: Bool
     var isLocal: Bool
+    var isExternal: Bool = false
 
     override var children: [ASTNode]? {
         get {
