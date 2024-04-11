@@ -25,7 +25,8 @@ public class CompletionHandler {
                 let label = classObject.classIdentifier?.value ?? ""
                 if let docComment = classObject.docComment?.text
                     .replacingOccurrences(of: "/// ", with: "")
-                    .replacingOccurrences(of: "///", with: "") {
+                    .replacingOccurrences(of: "///", with: "")
+                {
                     completions.append(CompletionItem(
                         label: label,
                         kind: .class,
@@ -50,7 +51,8 @@ public class CompletionHandler {
                 }
                 if let docComment = node.docComment?.text
                     .replacingOccurrences(of: "/// ", with: "")
-                    .replacingOccurrences(of: "///", with: "") {
+                    .replacingOccurrences(of: "///", with: "")
+                {
                     completions.append(CompletionItem(
                         label: label,
                         kind: .function,
@@ -72,7 +74,8 @@ public class CompletionHandler {
                 let detail = object.typeAnnotation?.type?.identifier
                 if let docComment = object.docComment?.text
                     .replacingOccurrences(of: "/// ", with: "")
-                    .replacingOccurrences(of: "///", with: "") {
+                    .replacingOccurrences(of: "///", with: "")
+                {
                     completions.append(CompletionItem(
                         label: object.identifier?.value ?? "",
                         kind: .property,
@@ -91,7 +94,8 @@ public class CompletionHandler {
             if let objectEntry = node as? PklObjectEntry {
                 if let docComment = objectEntry.docComment?.text
                     .replacingOccurrences(of: "/// ", with: "")
-                    .replacingOccurrences(of: "///", with: "") {
+                    .replacingOccurrences(of: "///", with: "")
+                {
                     completions.append(CompletionItem(
                         label: objectEntry.strIdentifier?.value ?? "",
                         kind: .property,
@@ -112,7 +116,8 @@ public class CompletionHandler {
                 }
                 if let docComment = classProperty.docComment?.text
                     .replacingOccurrences(of: "/// ", with: "")
-                    .replacingOccurrences(of: "///", with: "") {
+                    .replacingOccurrences(of: "///", with: "")
+                {
                     completions.append(CompletionItem(
                         label: classProperty.identifier?.value ?? "",
                         kind: .property,

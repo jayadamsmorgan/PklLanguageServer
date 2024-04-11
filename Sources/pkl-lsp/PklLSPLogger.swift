@@ -1,7 +1,7 @@
 import Foundation
-import Logging
 import LanguageServer
 import LanguageServerProtocol
+import Logging
 
 public let loggerLabel: String = "pkl-lsp"
 
@@ -46,12 +46,11 @@ public struct JSONRPCLogHandler: LogHandler, Sendable {
     public init(label: String, logLevel: Logger.Level, connnection: JSONRPCClientConnection, metadata: Logger.Metadata = [:]) {
         self.label = label
         self.logLevel = logLevel
-        self.rpcConnection = connnection
+        rpcConnection = connnection
         self.metadata = metadata
     }
 
-
-    public func log(level: Logger.Level, message: Logger.Message, metadata: Logger.Metadata?, file: String, function: String, line: UInt) {
+    public func log(level _: Logger.Level, message: Logger.Message, metadata _: Logger.Metadata?, file _: String, function _: String, line _: UInt) {
         Task {
             try await rpcConnection.sendNotification(.windowLogMessage(.init(type: loggerLevelToMessageType(.error), message: loggerLabel + ": " + message.description)))
         }
@@ -60,20 +59,19 @@ public struct JSONRPCLogHandler: LogHandler, Sendable {
     private func loggerLevelToMessageType(_ logLevel: Logger.Level) -> MessageType {
         switch logLevel {
         case .info:
-            return .info
+            .info
         case .debug:
-            return .warning
+            .warning
         case .error:
-            return .error
+            .error
         case .trace:
-            return .warning
+            .warning
         case .notice:
-            return .warning
+            .warning
         case .warning:
-            return .warning
+            .warning
         case .critical:
-            return .error
+            .error
         }
     }
-
 }

@@ -361,17 +361,16 @@ public actor DocumentProvider {
         documents[documentUri] = nil
     }
 
-    public func sendClientWindowShowMessage(message: String, type: MessageType, document: Document) async {
+    public func sendClientWindowShowMessage(message: String, type: MessageType, document _: Document) async {
         do {
             let params = LogMessageParams(type: type, message: message)
             try await connection.sendNotification(.windowShowMessage(params))
         } catch {
             logger.error("Error sending client notification: \(error)")
         }
-
     }
 
-    public func sendClientProgressMessage(message: String, document: Document) async {
+    public func sendClientProgressMessage(message: String, document _: Document) async {
         do {
             let params = ProgressParams(token: .optionB(message))
             try await connection.sendNotification(.protocolProgress(params))
@@ -380,7 +379,7 @@ public actor DocumentProvider {
         }
     }
 
-    public func sendClientProgressMessage(progress: Int, document: Document) async {
+    public func sendClientProgressMessage(progress: Int, document _: Document) async {
         do {
             let params = ProgressParams(token: .optionA(progress))
             try await connection.sendNotification(.protocolProgress(params))

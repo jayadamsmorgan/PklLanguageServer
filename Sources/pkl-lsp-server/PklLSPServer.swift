@@ -1,10 +1,10 @@
 import ArgumentParser
 import Foundation
 import JSONRPC
-import pkl_lsp
-import Logging
-import UniSocket
 import LanguageServer
+import Logging
+import pkl_lsp
+import UniSocket
 
 // Allow loglevel as `ArgumentParser.Option`
 extension Logger.Level: ExpressibleByArgument {}
@@ -45,12 +45,11 @@ struct PklLSPServer: AsyncParsableCommand {
     }
 
     func logHandlerFactory(_ label: String, rpcConnection: JSONRPCClientConnection) -> LogHandler {
-
         let rpcLogHandler = JSONRPCLogHandler(label: label, logLevel: log, connnection: rpcConnection)
 
         return MultiplexLogHandler([
             StreamLogHandler.standardOutput(label: label),
-            rpcLogHandler
+            rpcLogHandler,
         ])
     }
 
