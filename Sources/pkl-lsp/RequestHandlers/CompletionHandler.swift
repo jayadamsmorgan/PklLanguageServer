@@ -20,7 +20,29 @@ public class CompletionHandler {
         return CompletionResponse(.optionB(CompletionList(isIncomplete: false, items: completions)))
     }
 
+    public func provideWithContext(module: ASTNode, params: CompletionParams) async -> CompletionResponse {
+        let text = module.document.text
+        let cursorPos = params.position
+        do {
+            guard let dotIndex = try Document.findPosition(cursorPos, in: text) else {
+                logger.error("Cannot provide completions with context: Unable to find position \(cursorPos) in document \(module.document.uri). Index is nil.")
+                return await provideWithKeywords()
+            }
+            let textBeforeDot = text[text.startIndex..<dotIndex]
+
+        } catch {
+            logger.error("Cannot provide completions with context: Unable to find position \(cursorPos) in document \(module.document.uri). \(error)")
+            return await provideWithKeywords() 
+        }
+        return nil
+    }
+
     public func provide(module: ASTNode, params: CompletionParams, keywords: Bool = true) async -> CompletionResponse {
+
+        if params.context?.triggerKind == .triggerCharacter && params.context?.triggerCharacter == "." {
+            return await provideWithContext(module: module, params: params)
+        }
+
         var completions: [CompletionItem] = []
 
         guard let children = module.children else {

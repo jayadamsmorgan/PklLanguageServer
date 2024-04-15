@@ -113,9 +113,7 @@ public class TreeSitterParser {
         await parseVariableReferences(document: document)
         if let astRoot {
             await processAndAttachDocComments(node: astRoot)
-        }
-        if logger.logLevel == .trace {
-            if let astRoot {
+            if logger.logLevel == .trace {
                 listASTNodes(rootNode: astRoot)
             }
         }
@@ -169,7 +167,7 @@ public class TreeSitterParser {
 
     private func listTreeSitterNodes(rootNode: Node, depth: Int = 0, document: Document) {
         rootNode.enumerateChildren(block: { node in
-            guard let treeSitterSymbol = PklTreeSitterSymbols(node.symbol) else {
+            guard let treeSitterSymbol = PklTreeSitterSymbols(rawValue: UInt32(node.symbol)) else {
                 return
             }
             let text = document.getTextInByteRange(node.byteRange)
@@ -335,7 +333,7 @@ public class TreeSitterParser {
     }
 
     private func tsNodeToASTNode(node: Node, in document: Document, importDepth: Int, parent: ASTNode?) async -> ASTNode? {
-        guard let tsSymbol = PklTreeSitterSymbols(node.symbol) else {
+        guard let tsSymbol = PklTreeSitterSymbols(rawValue: UInt32(node.symbol)) else {
             logger.debug("Unable to parse node with symbol \(node.symbol)")
             return nil
         }
@@ -1551,6 +1549,11 @@ public class TreeSitterParser {
             logger.debug("Not implemented")
         case .aux_sym_qualifiedIdentifier_repeat1:
             logger.debug("Not implemented")
+        case .undefined:
+            let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
+            let undefined = PklUnidentified(text: document.getTextInByteRange(node.byteRange), range: range, importDepth: importDepth, document: document)
+            logger.debug("Undefined built successfully.")
+            return undefined
         }
         return nil
     }
