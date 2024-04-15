@@ -1,0 +1,12 @@
+id = "pklls-extension"
+name = "PklLanguageServer extension"
+description = "PklLanguageServer extension for Zed"
+version = "0.0.3"
+schema_version = 1
+authors = ["Herman Berdnikov <berdnikov1802@gmail.com>"]
+repository = "https://github.com/jayadamsmorgan/PklLanguageServer"
+
+[language_servers.pklls]
+name = "pklls"
+language = "pkl"
+

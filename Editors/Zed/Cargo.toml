@@ -1,0 +1,16 @@
+[package]
+name = "zed-pklls-extension"
+version = "0.0.3"
+edition = "2021"
+license = "Apache-2.0"
+description = "PklLanguageServer extension for Zed"
+repository = "https://github.com/jayadamsmorgan/PklLanguageServer"
+keywords = ["zed", "extension", "pkl"]
+categories = ["development-tools"]
+
+[lib]
+path = "src/pkl.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+zed_extension_api = "0.0.6"
