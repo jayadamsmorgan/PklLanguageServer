@@ -128,10 +128,10 @@ class PklObjectProperty: ASTNode {
             let error = ASTDiagnosticError("Provide property identifier", .error, range)
             errors.append(error)
         }
-        if typeAnnotation == nil, value == nil {
-            let error = ASTDiagnosticError("Provide property type or value", .error, range)
-            errors.append(error)
-        }
+        // if typeAnnotation == nil, value == nil {
+        //     let error = ASTDiagnosticError("Provide property type or value", .error, range)
+        //     errors.append(error)
+        // }
         if value is PklObjectBody, isEqualsPresent {
             let error = ASTDiagnosticError("Extraneous equals sign before object body", .error, range)
             errors.append(error)
@@ -204,10 +204,10 @@ class PklObjectEntry: ASTNode {
             let error = ASTDiagnosticError("Provide object entry string identifier", .error, range)
             errors.append(error)
         }
-        if value == nil {
-            let error = ASTDiagnosticError("Provide object value", .error, range)
-            errors.append(error)
-        }
+        // if value == nil {
+        //     let error = ASTDiagnosticError("Provide object value", .error, range)
+        //     errors.append(error)
+        // }
         if !isLeftBracketPresent {
             let error = ASTDiagnosticError("Provide left square bracket", .error, range)
             errors.append(error)

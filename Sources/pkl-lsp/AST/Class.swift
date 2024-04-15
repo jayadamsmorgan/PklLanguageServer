@@ -66,19 +66,19 @@ class PklClassProperty: ASTNode {
             let error = ASTDiagnosticError("Extra equals sign", .error, range)
             errors.append(error)
         }
-        if isEqualsPresent, value == nil {
-            let error = ASTDiagnosticError("Provide a value", .error, range)
-            errors.append(error)
-        }
+        // if isEqualsPresent, value == nil {
+        //     let error = ASTDiagnosticError("Provide a value", .error, range)
+        //     errors.append(error)
+        // }
         if value != nil {
             if let valueErrors = value?.diagnosticErrors() {
                 errors.append(contentsOf: valueErrors)
             }
         }
-        if typeAnnotation == nil, value == nil {
-            let error = ASTDiagnosticError("Provide property type or value", .error, range)
-            errors.append(error)
-        }
+        // if typeAnnotation == nil, value == nil {
+        //     let error = ASTDiagnosticError("Provide property type or value", .error, range)
+        //     errors.append(error)
+        // }
         if identifier == nil {
             let error = ASTDiagnosticError("Provide property identifier", .error, range)
             errors.append(error)

@@ -169,10 +169,10 @@ class PklFunctionDeclaration: ASTNode {
                 errors.append(contentsOf: valueErrors)
             }
         }
-        if functionValue == nil && body?.isExternal == false {
-            let error = ASTDiagnosticError("Provide function value", .error, range)
-            errors.append(error)
-        }
+        // if functionValue == nil && body?.isExternal == false {
+        //     let error = ASTDiagnosticError("Provide function value", .error, range)
+        //     errors.append(error)
+        // }
         return errors.count > 0 ? errors : nil
     }
 }

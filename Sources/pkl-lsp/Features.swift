@@ -28,6 +28,6 @@ public let renameFeature = Feature(type: .rename, isExperimental: true, isEnable
 public let documentSymbolsFeature = Feature(type: .documentSymbols, isExperimental: false, isEnabled: true)
 public let semanticTokensFeature = Feature(type: .semanticTokens, isExperimental: true, isEnabled: false)
 public let definitionFeature = Feature(type: .definition, isExperimental: false, isEnabled: true)
-public let diagnosticsFeature = Feature(type: .diagnostics, isExperimental: true, isEnabled: false)
+public let diagnosticsFeature = Feature(type: .diagnostics, isExperimental: false, isEnabled: true)
 
 public let features: [Feature] = [completionFeature, renameFeature, documentSymbolsFeature, semanticTokensFeature, definitionFeature, diagnosticsFeature]

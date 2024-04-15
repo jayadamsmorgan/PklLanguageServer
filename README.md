@@ -30,7 +30,7 @@ And don't forget to check [Code of Conduct](CODE_OF_CONDUCT.md).
 | --------------------- | :----: |
 | Completion            |   🟢   |
 | Definition            |   🟢   |
-| Diagnostics           |   🟠   |
+| Diagnostics           |   🟢   |
 | Document Symbols      |   🟢   |
 | Renaming              |   🟠   |
 | Semantic Highlighting |  TBA   |
@@ -40,6 +40,12 @@ And don't forget to check [Code of Conduct](CODE_OF_CONDUCT.md).
 - **🔴** -- Not planned
 - **TBA** -- Work on the feature is not yet in progress, but it's being looked into
 - **WIP** -- Development work on the feature is actively progressing
+
+### State of features and details
+
+- Module imports are indexed for completion only with relative paths or standard pkl library. `import*` expression also does not work yet.
+
+- Diagnostics are working on a basic level. Type checking isn't a thing yet.
 
 ## Installing and running from source
 
