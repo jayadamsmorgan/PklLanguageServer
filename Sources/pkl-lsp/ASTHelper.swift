@@ -123,11 +123,14 @@ public enum ASTHelper {
         }
     }
 
-    static func getPositionContext(module: ASTNode, position: Position) -> ASTNode? {
+    static func getPositionContext(module: ASTNode, position: Position, importDepth: Int? = nil) -> ASTNode? {
         var contextNode: ASTNode?
         var smallestRange = Int.max
 
         enumerate(node: module) { node in
+            if let importDepth, node.importDepth > importDepth {
+                return
+            }
             let range = node.range.positionRange
             if position.line >= range.lowerBound.line,
                position.line > range.lowerBound.line || position.character >= range.lowerBound.character / 2,

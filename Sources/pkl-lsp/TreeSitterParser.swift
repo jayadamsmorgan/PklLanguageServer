@@ -113,8 +113,8 @@ public class TreeSitterParser {
         await parseVariableReferences(document: document)
         if let astRoot {
             await processAndAttachDocComments(node: astRoot)
+            listASTNodes(rootNode: astRoot)
             if logger.logLevel == .trace {
-                listASTNodes(rootNode: astRoot)
             }
         }
     }
@@ -187,8 +187,10 @@ public class TreeSitterParser {
         }
         for childNode in children {
             let text = childNode.document.getTextInByteRange(childNode.range.byteRange)
-            logger.trace(
-                "AST Node: \(type(of: childNode))," +
+            let tab = String(repeating: "  ", count: depth)
+            logger.debug(
+                "\(tab)" +
+                    "\(type(of: childNode))," +
                     " depth: \(depth)," +
                     " range: \(childNode.range.positionRange)," +
                     " importDepth: \(childNode.importDepth)," +

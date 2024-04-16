@@ -20,27 +20,120 @@ public class CompletionHandler {
         return CompletionResponse(.optionB(CompletionList(isIncomplete: false, items: completions)))
     }
 
-    public func provideWithContext(module: ASTNode, params: CompletionParams) async -> CompletionResponse {
-        let text = module.document.text
-        let cursorPos = params.position
-        do {
-            guard let dotIndex = try Document.findPosition(cursorPos, in: text) else {
-                logger.error("Cannot provide completions with context: Unable to find position \(cursorPos) in document \(module.document.uri). Index is nil.")
-                return await provideWithKeywords()
-            }
-            let textBeforeDot = text[text.startIndex..<dotIndex]
+    private func getModuleNameAndDocCommentByModuleImport(importNode: PklModuleImport) async -> (String, String?) {
+        let moduleDeclaration =  importNode.module?.children?.first(where: { $0 is PklModuleHeader }) as? PklModuleHeader
+        var moduleName = moduleDeclaration?.moduleClause?.name?.value ??
+        importNode.documentToImport?.uri.split(separator: "/").last?.description ?? ""
+        moduleName = moduleName.replacingOccurrences(of: ".pkl", with: "")
+        if moduleName.starts(with: "pkl.") {
+            moduleName = moduleName.replacingOccurrences(of: "pkl.", with: "")
+        }
+        if let docComment = moduleDeclaration?.docComment?.text
+                    .replacingOccurrences(of: "/// ", with: "")
+                    .replacingOccurrences(of: "///", with: "") {
+            return (moduleName, docComment)
+        }
+        if let docComment = moduleDeclaration?.moduleClause?.docComment?.text
+                    .replacingOccurrences(of: "/// ", with: "")
+                    .replacingOccurrences(of: "///", with: "") {
+            return (moduleName, docComment)
+        }
+        return (moduleName, nil)
+    }
 
-        } catch {
-            logger.error("Cannot provide completions with context: Unable to find position \(cursorPos) in document \(module.document.uri). \(error)")
-            return await provideWithKeywords() 
+    private func findContextNode(node: ASTNode, key: String) async -> ASTNode? {
+        guard let children = node.children else {
+            return nil
+        }
+        for node in children {
+            if let node = node as? PklModuleImport {
+                let (moduleName, _) = await getModuleNameAndDocCommentByModuleImport(importNode: node)
+                if key == moduleName {
+                    if let module = node.module {
+                        return module
+                    }
+                }
+            }
+            if let node = node as? PklClassDeclaration {
+                if let name = node.classIdentifier?.value, key == name {
+                    return node.classNode
+                }
+            }
+            if let node = node as? PklObjectProperty,
+                let identifier = node.identifier?.value,
+                let value = node.value as? PklObjectBody,
+                key == identifier {
+                return value
+            }
+            if let node = node as? PklClassProperty,
+                let identifier = node.identifier?.value,
+                node.value is PklObjectBody,
+                key == identifier {
+                return node.value
+            }
         }
         return nil
     }
 
-    public func provide(module: ASTNode, params: CompletionParams, keywords: Bool = true) async -> CompletionResponse {
+    public func provideWithContext(module: ASTNode, params: CompletionParams) async -> CompletionResponse {
+        let cursorPos = params.position
+        logger.debug("cursorPos: \(cursorPos)")
+        guard let undefined = ASTHelper.getPositionContext(module: module, position: cursorPos, importDepth: module.importDepth) else {
+            logger.debug("Unable to find undefined AST Node at position \(cursorPos) for providing context completions.")
+            return await provideWithKeywords()
+        }
+        logger.debug("undefined range: \(undefined.range.positionRange)")
 
-        if params.context?.triggerKind == .triggerCharacter && params.context?.triggerCharacter == "." {
-            return await provideWithContext(module: module, params: params)
+        var undefinedText = undefined.document.getTextInByteRange(undefined.range.byteRange)
+        logger.debug("undefinedText: \(undefinedText)")
+        let undefinedPosLower = undefined.range.positionRange.lowerBound
+        let line = cursorPos.line - undefinedPosLower.line
+        let character = cursorPos.character - undefinedPosLower.character - 1
+        do {
+            guard let dotRelativeIndex = try Document.findPosition(Position((line, character)), in: undefinedText) else {
+                logger.debug("Cannot provide completions with context: dotRelativeIndex is nil.")
+                return await provideWithKeywords()
+            }
+            undefinedText = undefinedText[undefinedText.startIndex..<dotRelativeIndex].description
+            logger.debug("Filtered undefinedText: \(undefinedText)")
+        } catch {
+            logger.error("Cannot provide completions with context: \(error)")
+            return await provideWithKeywords()
+        }
+
+        var keys = undefinedText.split(separator: ".")
+        keys = keys.map { key in
+            return key.replacingOccurrences(of: "\n", with: " ").split(separator: " ").last ?? ""
+        }
+        logger.debug("Keys: \(keys)")
+        guard let firstKey = keys.first?.replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "\n", with: "") else {
+            logger.debug("Cannot provide completions with context: firstKey is not present.")
+            return await provideWithKeywords()
+        }
+        guard var context: ASTNode = await findContextNode(node: module, key: firstKey) else {
+            logger.debug("Cannot provide completions with context: first context is nil.")
+            return await provideWithKeywords()
+        }
+        for x in 0..<keys.count {
+            if x == 0 {
+                continue
+            }
+            let key = keys[x].replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "\n", with: "")
+            let newContext = await findContextNode(node: context, key: key)
+            guard let newContext else {
+                return await provideWithKeywords()
+            }
+            context = newContext
+        }
+        return await provide(module: context)
+    }
+
+    public func provide(module: ASTNode, params: CompletionParams? = nil, keywords: Bool = true) async -> CompletionResponse {
+
+        if let params {
+            if params.context?.triggerKind == .triggerCharacter && params.context?.triggerCharacter == "." {
+                return await provideWithContext(module: module, params: params)
+            }
         }
 
         var completions: [CompletionItem] = []
@@ -53,30 +146,16 @@ public class CompletionHandler {
         }
 
         for node in children {
+            if let moduleHeader = node as? PklModuleHeader,
+                let module = moduleHeader.extendsOrAmends?.module {
+                let response = await provide(module: module)
+                if let items = response?.items, items.count > 0 {
+                    completions.append(contentsOf: items)
+                }
+            }
             if let importNode = node as? PklModuleImport {
-                let moduleDeclaration =  importNode.module?.children?.first(where: { $0 is PklModuleHeader }) as? PklModuleHeader
-                var moduleName = moduleDeclaration?.moduleClause?.name?.value ??
-                    importNode.documentToImport?.uri.split(separator: "/").last?.description ?? ""
-                moduleName = moduleName.replacingOccurrences(of: ".pkl", with: "")
-                if moduleName.starts(with: "pkl.") {
-                    moduleName = moduleName.replacingOccurrences(of: "pkl.", with: "")
-                }
-                if let docComment = moduleDeclaration?.docComment?.text
-                    .replacingOccurrences(of: "/// ", with: "")
-                    .replacingOccurrences(of: "///", with: "")
-                {
-                    completions.append(CompletionItem(
-                        label: moduleName,
-                        kind: .module,
-                        detail: moduleName,
-                        documentation: .optionA(docComment)
-                    ))
-                    continue
-                }
-                if let docComment = moduleDeclaration?.moduleClause?.docComment?.text
-                    .replacingOccurrences(of: "/// ", with: "")
-                    .replacingOccurrences(of: "///", with: "")
-                {
+                let (moduleName, docComment) = await getModuleNameAndDocCommentByModuleImport(importNode: importNode)
+                if let docComment {
                     completions.append(CompletionItem(
                         label: moduleName,
                         kind: .module,
@@ -222,6 +301,7 @@ public class CompletionHandler {
         }
         return CompletionResponse(.optionB(CompletionList(isIncomplete: false, items: completions)))
     }
+
 }
 
 enum PklKeywords: String, CaseIterable {
