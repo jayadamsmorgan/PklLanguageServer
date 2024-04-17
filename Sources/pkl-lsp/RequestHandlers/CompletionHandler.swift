@@ -67,21 +67,29 @@ public class CompletionHandler {
             }
             if let node = node as? PklClassProperty,
                 let identifier = node.identifier?.value,
-                node.value is PklObjectBody,
                 key == identifier {
-                return node.value
+                if node.value is PklObjectBody {
+                    return node.value
+                }
+                return node
             }
         }
         return nil
     }
 
     public func provideWithContext(module: ASTNode, params: CompletionParams) async -> CompletionResponse {
-        let cursorPos = params.position
+        var cursorPos = Position.zero
+        if params.position.character >= 2 {
+            cursorPos = Position((params.position.line, params.position.character - 2))
+        } else {
+            cursorPos = params.position
+        }
         logger.debug("cursorPos: \(cursorPos)")
         guard let undefined = ASTHelper.getPositionContext(module: module, position: cursorPos, importDepth: module.importDepth) else {
             logger.debug("Unable to find undefined AST Node at position \(cursorPos) for providing context completions.")
             return nil
         }
+        cursorPos = params.position
         logger.debug("undefined range: \(undefined.range.positionRange)")
 
         var undefinedText = undefined.document.getTextInByteRange(undefined.range.byteRange)
@@ -99,6 +107,17 @@ public class CompletionHandler {
         } catch {
             logger.error("Cannot provide completions with context: \(error)")
             return nil
+        }
+
+        guard let lastChar = undefinedText.last else {
+            logger.error("Cannot provide completions with context: lastChar is nil.")
+            return nil
+        }
+
+        if lastChar == "\"" {
+            // String literal (probably)
+            let completions = await provideStandardFunctionsForStandardTypeNode(type: "String")
+            return .optionB(CompletionList(isIncomplete: false, items: completions))
         }
 
         var keys = undefinedText.split(separator: ".")
@@ -140,7 +159,7 @@ public class CompletionHandler {
 
         guard let children = module.children else {
             if module is PklModule && module.importDepth == 0 {
-                completions = await providerStandardFunctionsForStandardTypeNode(type: "Module")
+                completions = await provideStandardFunctionsForStandardTypeNode(type: "Module")
                 return await provideWithKeywords(completions: completions)
             }
             return await provideWithKeywords()
@@ -298,13 +317,13 @@ public class CompletionHandler {
             }
         }
         if module is PklModule && module.importDepth == 0 {
-            completions.append(contentsOf: await providerStandardFunctionsForStandardTypeNode(type: "Module"))
+            completions.append(contentsOf: await provideStandardFunctionsForStandardTypeNode(type: "Module"))
             return await provideWithKeywords(completions: completions)
         }
         return .optionB(CompletionList(isIncomplete: false, items: completions))
     }
 
-    private func providerStandardFunctionsForStandardTypeNode(type identifier: String) async -> [CompletionItem] {
+    private func provideStandardFunctionsForStandardTypeNode(type identifier: String) async -> [CompletionItem] {
         if identifier == "Module" {
             var completions = [
                 CompletionItem(
@@ -314,7 +333,7 @@ public class CompletionHandler {
                     insertText: "isBetween()"
                 ),
             ]
-            completions.append(contentsOf: DefaultTypes.allCases.map { type in
+            completions.append(contentsOf: PklDefaultTypes.allCases.map { type in
                 return CompletionItem(
                     label: type.rawValue,
                     kind: .class
@@ -333,10 +352,513 @@ public class CompletionHandler {
         }
         if identifier == "String" {
             return [
+                // Properties
                 CompletionItem(
-                    label: "",
+                    label: "length",
+                    kind: .property,
+                    detail: "Int",
+                    documentation: .optionA("The number of characters in this string.")
+                ),
+                CompletionItem(
+                    label: "lastIndex",
+                    kind: .property,
+                    detail: "Int",
+                    documentation: .optionA("The index of the last character in this string (same as length - 1).")
+                ),
+                CompletionItem(
+                    label: "isEmpty",
+                    kind: .property,
+                    detail: "Boolean",
+                    documentation: .optionA("Tells whether this string is empty.")
+                ),
+                CompletionItem(
+                    label: "isBlank",
+                    kind: .property,
+                    detail: "Boolean",
+                    documentation: .optionA("Tells if all characters in this string have Unicode property \"White_Space\".")
+                ),
+                CompletionItem(
+                    label: "isRegex",
+                    kind: .property,
+                    detail: "Boolean",
+                    documentation: .optionA("Tells if this string is a valid regular expression according to Regex.")
+                ),
+                CompletionItem(
+                    label: "md5",
+                    kind: .property,
+                    detail: "String",
+                    documentation: .optionA("The MD5 hash of this string's UTF-8 byte sequence as hexadecimal string.")
+                ),
+                CompletionItem(
+                    label: "sha1",
+                    kind: .property,
+                    detail: "String",
+                    documentation: .optionA("The SHA-1 hash of this string's UTF-8 byte sequence.")
+                ),
+                CompletionItem(
+                    label: "sha256",
+                    kind: .property,
+                    detail: "String",
+                    documentation: .optionA("The SHA-256 cryptographic hash of this string's UTF-8 byte sequence as hexadecimal string.")
+                ),
+                CompletionItem(
+                    label: "sha256Int",
+                    kind: .property,
+                    detail: "Int",
+                    documentation: .optionA("The first 64 bits of the SHA-256 cryptographic hash of this string's UTF-8 byte sequence.")
+                ),
+                CompletionItem(
+                    label: "base64",
+                    kind: .property,
+                    detail: "String",
+                    documentation: .optionA("The Base64 encoding of this string's UTF-8 byte sequence.")
+                ),
+                CompletionItem(
+                    label: "base64Decoded",
+                    kind: .property,
+                    detail: "String",
+                    documentation: .optionA("The inverse of base64.")
+                ),
+                CompletionItem(
+                    label: "chars",
+                    kind: .property,
+                    detail: "List<Char>(this.length == length)",
+                    documentation: .optionA("The Unicode characters in this string.")
+                ),
+                CompletionItem(
+                    label: "codePoints",
+                    kind: .property,
+                    detail: "List<Int(isBetween(0, 0x10FFFF))>(this.length == length)",
+                    documentation: .optionA("The Unicode code points in this string.")
+                ),
+
+                // Methods
+                CompletionItem(
+                    label: "getOrNull(index: Int)",
                     kind: .function,
-                    detail: ""
+                    detail: "Char?",
+                    documentation: .optionA("Returns the character at index, or null if index is out of range."),
+                    insertText: "getOrNull"
+                ),
+                CompletionItem(
+                    label: "substring(start: Int, exclusiveEnd: Int)",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("Returns the substring from start until exclusiveEnd."),
+                    insertText: "substring"
+                ),
+                CompletionItem(
+                    label: "substringOrNull(start: Int, exclusiveEnd: Int)",
+                    kind: .function,
+                    detail: "String?",
+                    documentation: .optionA("Returns the substring from start until exclusiveEnd."),
+                    insertText: "substringOrNull"
+                ),
+                CompletionItem(
+                    label: "repeat(count: UInt)",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("Concatenates count copies of this string."),
+                    insertText: "repeat"
+                ),
+                CompletionItem(
+                    label: "contains(pattern: String|Regex)",
+                    kind: .function,
+                    detail: "Boolean",
+                    documentation: .optionA("Tells whether this string contains pattern."),
+                    insertText: "contains"
+                ),
+                CompletionItem(
+                    label: "matches(regex: Regex)",
+                    kind: .function,
+                    detail: "Boolean",
+                    documentation: .optionA("Tells whether this string matches regex in its entirety."),
+                    insertText: "matches"
+                ),
+                CompletionItem(
+                    label: "startsWith(pattern: String|Regex)",
+                    kind: .function,
+                    detail: "Boolean",
+                    documentation: .optionA("Tells whether this string starts with pattern."),
+                    insertText: "startsWith"
+                ),
+                CompletionItem(
+                    label: "endsWith(pattern: String|Regex)",
+                    kind: .function,
+                    detail: "Boolean",
+                    documentation: .optionA("Tells whether this string ends with pattern."),
+                    insertText: "endsWith"
+                ),
+                CompletionItem(
+                    label: "indexOf(pattern: String|Regex)",
+                    kind: .function,
+                    detail: "Int",
+                    documentation: .optionA("Returns the zero-based index of the first occurrence of pattern in this string."),
+                    insertText: "indexOf"
+                ),
+                CompletionItem(
+                    label: "indexOfOrNull(pattern: String|Regex)",
+                    kind: .function,
+                    detail: "Int?",
+                    documentation: .optionA("Returns the zero-based index of the first occurrence of pattern in this string, or null if pattern does not occur in this string."),
+                    insertText: "substring"
+                ),
+                CompletionItem(
+                    label: "lastIndexOf(pattern: String|Regex)",
+                    kind: .function,
+                    detail: "Int",
+                    documentation: .optionA("Returns the zero-based index of the last occurrence of pattern in this string."),
+                    insertText: "lastIndexOf"
+                ),
+                CompletionItem(
+                    label: "lastIndexOfOrNull(pattern: String|Regex)",
+                    kind: .function,
+                    detail: "Int?",
+                    documentation: .optionA("Returns the zero-based index of the last occurrence of pattern in this string, or null if pattern does not occur in this string."),
+                    insertText: "lastIndexOfOrNull"
+                ),
+                CompletionItem(
+                    label: "take(n: Int)",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("Returns the first n characters of this string."),
+                    insertText: "take"
+                ),
+                CompletionItem(
+                    label: "takeWhile(predicate: (String) -> Boolean)",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("Returns the longest prefix of this string that satisfies predicate."),
+                    insertText: "takeWhile"
+                ),
+                CompletionItem(
+                    label: "takeLast(n: Int)",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("Returns the last n characters of this string."),
+                    insertText: "takeLast"
+                ),
+                CompletionItem(
+                    label: "takeLastWhile(predicate: (String) -> Boolean)",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("Returns the longest suffix of this string that satisfies predicate."),
+                    insertText: "takeLastWhile"
+                ),
+                CompletionItem(
+                    label: "drop(n: Int)",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("""
+                    Removes the first n characters of this string.
+
+                    Also known as: skip
+
+                    Returns the empty string if n is greater than or equal to length.
+                    """),
+                    insertText: "drop"
+                ),
+                CompletionItem(
+                    label: "dropWhile(predicate: (String) -> Boolean)",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("""
+                    Removes the longest prefix of this string that satisfies predicate.
+
+                    Also known as: skipWhile
+                    """),
+                    insertText: "dropWhile"
+                ),
+                CompletionItem(
+                    label: "dropLast(n: Int)",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("""
+                    Removes the last n characters of this string.
+
+                    Also known as: skipLast
+
+                    Returns the empty string if n is greater than or equal to length.
+                    """),
+                    insertText: "dropLast"
+                ),
+                CompletionItem(
+                    label: "dropWhile(predicate: (String) -> Boolean)",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("""
+                    Removes the longest prefix of this string that satisfies predicate.
+
+                    Also known as: skipWhile
+                    """),
+                    insertText: "substring"
+                ),
+                CompletionItem(
+                    label: "dropLastWhile(predicate: (String) -> Boolean)",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("""
+                    Removes the longest suffix of this string that satisfies predicate.
+
+                    Also known as: skipLastWhile
+                    """),
+                    insertText: "dropLastWhile"
+                ),
+                CompletionItem(
+                    label: "replaceFirst(pattern: String|Regex, replacement: String)",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("""
+                    Replaces the first occurrence of pattern in this string with replacement.
+
+                    Returns this string unchanged if pattern does not occur in this string. 
+                    """),
+                    insertText: "replaceFirst"
+                ),
+                CompletionItem(
+                    label: "replaceLast(pattern: String|Regex, replacement: String)",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("""
+                    Replaces the last occurrence of pattern in this string with replacement.
+
+                    Returns this string unchanged if pattern does not occur in this string.
+                    """),
+                    insertText: "replaceLast"
+                ),
+                CompletionItem(
+                    label: "replaceAll(pattern: String|Regex, replacement: String)",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("""
+                    Replaces all occurrences of pattern in this string with replacement.
+
+                    Returns this string unchanged if pattern does not occur in this string.
+                    """),
+                    insertText: "replaceAll"
+                ),
+                CompletionItem(
+                    label: "replaceFirstMapped(pattern: String|Regex, mapper: (RegexMatch) -> String)",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("""
+                    Replaces the first occurrence of pattern in this string with the return value of mapper.
+
+                    Returns this string unchanged if pattern does not occur in this string. 
+                    """),
+                    insertText: "replaceFirstMapped"
+                ),
+                CompletionItem(
+                    label: "replaceLastMapped(pattern: String|Regex, mapper: (RegexMatch) -> String)",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("""
+                    Replaces the last occurrence of pattern in this string with the return value of mapper.
+
+                    Returns this string unchanged if pattern does not occur in this string. 
+                    """),
+                    insertText: "replaceLastMapped"
+                ),
+                CompletionItem(
+                    label: "replaceAllMapped(pattern: String|Regex, mapper: (RegexMatch) -> String)",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("""
+                    Replaces all occurrences of pattern in this string with replacement.
+
+                    Returns this string unchanged if pattern does not occur in this string.
+                    """),
+                    insertText: "replaceAllMapped"
+                ),
+                CompletionItem(
+                    label: "replaceRange(start: Int, exclusiveEnd: Int, replacement: String)",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("""
+                    Replaces the characters between start and exclusiveEnd with replacement.
+
+                    Inserts replacement at index start if start == exclusiveEnd. 
+                    """),
+                    insertText: "replaceRange"
+                ),
+                CompletionItem(
+                    label: "toUpperCase()",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("""
+                    Performs a locale-independent character-by-character conversion of this string to uppercase.                   
+                    """),
+                    insertText: "toUpperCase"
+                ),
+                CompletionItem(
+                    label: "toLowerCase()",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("""
+                    Performs a locale-independent character-by-character conversion of this string to lowercase.
+                    """),
+                    insertText: "toLowerCase"
+                ),
+                CompletionItem(
+                    label: "reverse()",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("""
+                    Reverses the order of characters in this string.
+                    """),
+                    insertText: "reverse"
+                ),
+                CompletionItem(
+                    label: "trim()",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("""
+                    Removes any leading and trailing characters with Unicode property "White_Space" from this string.
+
+                    Also known as: strip
+                    """),
+                    insertText: "trim"
+                ),
+                CompletionItem(
+                    label: "trimStart()",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("""
+                    Removes any leading characters with Unicode property "White_Space" from this string.
+
+                    Also known as: stripLeft, stripStart, stripLeading, trimLeft, trimLeading
+                    """),
+                    insertText: "trimStart"
+                ),
+                CompletionItem(
+                    label: "trimEnd()",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("""
+                    Removes any trailing characters with Unicode property "White_Space" from this string.
+
+                    Also known as: stripRight, stripEnd, stripTrailing, trimRight, trimTrailin
+                    """),
+                    insertText: "trimEnd"
+                ),
+                CompletionItem(
+                    label: "padStart(width: Int, char: Char)",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("""
+                    Increases the length of this string to width by adding leading chars.
+
+                    Also known as: padLeft
+
+                    Returns this string unchanged if its length is already equal to or greater than width.
+                    """),
+                    insertText: "padStart"
+                ),
+                CompletionItem(
+                    label: "padEnd(width: Int, char: Char)",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("""
+                    Increases the length of this string to width by adding trailing chars.
+
+                    Also known as: padRight
+
+                    Returns this string unchanged if its length is already equal to or greater than width.
+                    """),
+                    insertText: "padEnd"
+                ),
+                CompletionItem(
+                    label: "split(pattern: String|Regex)",
+                    kind: .function,
+                    detail: "List<String>",
+                    documentation: .optionA("""
+                    Splits this string around matches of pattern.
+                    """),
+                    insertText: "split"
+                ),
+                CompletionItem(
+                    label: "capitalize()",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("""
+                    Converts the first character of this string to title case.
+                    """),
+                    insertText: "capitalize"
+                ),
+                CompletionItem(
+                    label: "decapitalize()",
+                    kind: .function,
+                    detail: "String",
+                    documentation: .optionA("""
+                    Converts the first character of this string to lower case.
+                    """),
+                    insertText: "decapitalize"
+                ),
+                CompletionItem(
+                    label: "toInt()",
+                    kind: .function,
+                    detail: "Int",
+                    documentation: .optionA("""
+                    Parses this string as a signed decimal (base 10) integer.
+
+                    Throws if this string cannot be parsed as a signed decimal integer, or if the integer is too large to fit into Int.
+                    """),
+                    insertText: "toInt"
+                ),
+                CompletionItem(
+                    label: "toIntOrNull()",
+                    kind: .function,
+                    detail: "Int?",
+                    documentation: .optionA("""
+                    Parses this string as a signed decimal (base 10) integer.
+
+                    Returns null if this string cannot be parsed as a signed decimal integer, or if the integer is too large to fit into Int.
+                    """),
+                    insertText: "toIntOrNull"
+                ),
+                CompletionItem(
+                    label: "toFloat()",
+                    kind: .function,
+                    detail: "Float",
+                    documentation: .optionA("""
+                    Parses this string as a floating point number.
+
+                    Throws if this string cannot be parsed as a floating point number.
+                    """),
+                    insertText: "toFloat"
+                ),
+                CompletionItem(
+                    label: "toFloatOrNull()",
+                    kind: .function,
+                    detail: "Float?",
+                    documentation: .optionA("""
+                    Parses this string as a floating point number.
+
+                    Returns null if this string cannot be parsed as a floating point number.
+                    """),
+                    insertText: "toFloatOrNull"
+                ),
+                CompletionItem(
+                    label: "toBoolean()",
+                    kind: .function,
+                    detail: "Boolean",
+                    documentation: .optionA("""
+                    Parses "true" to true and "false" to false (case-insensitive).
+
+                    Throws if this string is neither "true" nor "false" (case-insensitive).
+                    """),
+                    insertText: "toBoolean"
+                ),
+                CompletionItem(
+                    label: "toBooleanOrNull()",
+                    kind: .function,
+                    detail: "Boolean",
+                    documentation: .optionA("""
+                    Parses "true" to true and "false" to false (case-insensitive).
+
+                    Returns null if this string is neither "true" nor "false" (case-insensitive).
+                    """),
+                    insertText: "toBooleanOrNull"
                 ),
             ]
         }
@@ -363,7 +885,7 @@ public class CompletionHandler {
 
 }
 
-enum DefaultTypes: String, CaseIterable {
+enum PklDefaultTypes: String, CaseIterable {
     case `Any`
     case Int
     case Number
