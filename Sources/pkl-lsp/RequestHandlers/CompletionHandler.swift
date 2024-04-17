@@ -28,14 +28,10 @@ public class CompletionHandler {
         if moduleName.starts(with: "pkl.") {
             moduleName = moduleName.replacingOccurrences(of: "pkl.", with: "")
         }
-        if let docComment = moduleDeclaration?.docComment?.text
-                    .replacingOccurrences(of: "/// ", with: "")
-                    .replacingOccurrences(of: "///", with: "") {
+        if let docComment = docCommentForNode(node: moduleDeclaration) {
             return (moduleName, docComment)
         }
-        if let docComment = moduleDeclaration?.moduleClause?.docComment?.text
-                    .replacingOccurrences(of: "/// ", with: "")
-                    .replacingOccurrences(of: "///", with: "") {
+        if let docComment = docCommentForNode(node: moduleDeclaration?.moduleClause) {
             return (moduleName, docComment)
         }
         return (moduleName, nil)
@@ -73,6 +69,18 @@ public class CompletionHandler {
                 }
                 return node
             }
+        }
+        return nil
+    }
+
+    private func docCommentForNode(node: ASTNode?) -> String? {
+        guard let node = node else {
+            return nil
+        }
+        if let docComment = node.docComment?.text
+            .replacingOccurrences(of: "/// ", with: "")
+            .replacingOccurrences(of: "///", with: "") {
+            return docComment
         }
         return nil
     }
@@ -165,6 +173,11 @@ public class CompletionHandler {
             return await provideWithKeywords()
         }
 
+        if let property = module as? PklClassProperty, !(property.value is PklObjectBody) {
+            completions = await provideStandardFunctionsForStandardTypeNode(type: property.typeAnnotation?.type?.identifier ?? "")
+            return await provideWithKeywords(completions: completions)
+        }
+
         for node in children {
             if let moduleHeader = node as? PklModuleHeader,
                 let module = moduleHeader.extendsOrAmends?.module {
@@ -193,10 +206,7 @@ public class CompletionHandler {
             if let classObject = node as? PklClassDeclaration {
                 let detail = classObject.classIdentifier?.value
                 let label = classObject.classIdentifier?.value ?? ""
-                if let docComment = classObject.docComment?.text
-                    .replacingOccurrences(of: "/// ", with: "")
-                    .replacingOccurrences(of: "///", with: "")
-                {
+                if let docComment = docCommentForNode(node: classObject) {
                     completions.append(CompletionItem(
                         label: label,
                         kind: .class,
@@ -222,10 +232,7 @@ public class CompletionHandler {
                 if let argsByteRange = function.body?.params?.range.byteRange {
                     label += function.document.getTextInByteRange(argsByteRange)
                 }
-                if let docComment = node.docComment?.text
-                    .replacingOccurrences(of: "/// ", with: "")
-                    .replacingOccurrences(of: "///", with: "")
-                {
+                if let docComment = docCommentForNode(node: node) {
                     completions.append(CompletionItem(
                         label: label,
                         kind: .function,
@@ -245,10 +252,7 @@ public class CompletionHandler {
             }
             if let object = node as? PklObjectProperty {
                 let detail = object.typeAnnotation?.type?.identifier
-                if let docComment = object.docComment?.text
-                    .replacingOccurrences(of: "/// ", with: "")
-                    .replacingOccurrences(of: "///", with: "")
-                {
+                if let docComment = docCommentForNode(node: object) {
                     completions.append(CompletionItem(
                         label: object.identifier?.value ?? "",
                         kind: .property,
@@ -265,10 +269,7 @@ public class CompletionHandler {
                 continue
             }
             if let objectEntry = node as? PklObjectEntry {
-                if let docComment = objectEntry.docComment?.text
-                    .replacingOccurrences(of: "/// ", with: "")
-                    .replacingOccurrences(of: "///", with: "")
-                {
+                if let docComment = docCommentForNode(node: objectEntry) {
                     completions.append(CompletionItem(
                         label: objectEntry.strIdentifier?.value ?? "",
                         kind: .property,
@@ -290,10 +291,7 @@ public class CompletionHandler {
                 if let typeIdent = classProperty.typeAnnotation?.type?.identifier {
                     detail = typeIdent
                 }
-                if let docComment = classProperty.docComment?.text
-                    .replacingOccurrences(of: "/// ", with: "")
-                    .replacingOccurrences(of: "///", with: "")
-                {
+                if let docComment = docCommentForNode(node: classProperty) {
                     completions.append(CompletionItem(
                         label: classProperty.identifier?.value ?? "",
                         kind: .property,
@@ -325,20 +323,520 @@ public class CompletionHandler {
 
     private func provideStandardFunctionsForStandardTypeNode(type identifier: String) async -> [CompletionItem] {
         if identifier == "Module" {
-            var completions = [
+            let completions = [
                 CompletionItem(
                     label: "isBetween(x: Number, y: Number)",
                     kind: .function,
                     detail: "Number",
                     insertText: "isBetween()"
                 ),
+                
+                // Properties
+                CompletionItem(
+                    label: "NaN",
+                    kind: .property,
+                    detail: "Float",
+                    documentation: .optionA("The Float value that is not a number (NaN).")
+                ),
+                CompletionItem(
+                    label: "Infinity",
+                    kind: .property,
+                    detail: "Float",
+                    documentation: .optionA("The Float value that is positive Infinity. For negative infinity, use -Infinity.")
+                ),
+
+                // Methods
+                CompletionItem(
+                    label: "Regex(pattern: String)",
+                    kind: .function,
+                    detail: "Regex",
+                    documentation: .optionA("""
+                    Constructs a regular expression described by pattern.
+
+                    Throws if pattern is not a valid regular expression.
+
+                    To test if pattern is a valid regular expression, use String.isRegex.
+                    """),
+                    insertText: "Regex()"
+                ),
+                CompletionItem(
+                    label: "Undefined()",
+                    kind: .function,
+                    detail: "nothing",
+                    documentation: .optionA("Throws an error indicating that the requested value is undefined."),
+                    insertText: "Undefined()"
+                ),
+                CompletionItem(
+                    label: "TODO()",
+                    kind: .function,
+                    detail: "nothing",
+                    documentation: .optionA("Throws an error indicating that the requested functionality has not yet been implemented."),
+                    insertText: "TODO()"
+                ),
+                CompletionItem(
+                    label: "Null(defaultValue: Object|Function<Object>)",
+                    kind: .function,
+                    detail: "Null",
+                    documentation: .optionA("Creates a null value that turns into defaultValue when amended."),
+                    insertText: "Null()"
+                ),
+                CompletionItem(
+                    label: "Pair<First, Second>(first: First, second: Second)",
+                    kind: .function,
+                    detail: "Pair<First, Second>",
+                    documentation: .optionA("Constructs a Pair."),
+                    insertText: "Pair<>()"
+                ),
+                CompletionItem(
+                    label: "IntSeq(start: Int, end: Int)",
+                    kind: .function,
+                    detail: "IntSeq",
+                    documentation: .optionA("""
+                    Constructs an IntSeq with the given start, end, and step 1.
+
+                    To set a step other than 1, use method IntSeq.step().
+                    """),
+                    insertText: "IntSeq()"
+                ),
+                CompletionItem(
+                    label: "List<Element>(elements: VarArgs<Element>)",
+                    kind: .function,
+                    detail: "List<Element>",
+                    documentation: .optionA("""
+                    Creates a list containing the given elements.
+
+                    This method accepts any number of arguments.
+                    """),
+                    insertText: "List<>()"
+                ),
+                CompletionItem(
+                    label: "Set<Element>(elements: VarArgs<Element>)",
+                    kind: .function,
+                    detail: "Set<Element>",
+                    documentation: .optionA("""
+                    Creates a set containing the given elements.
+
+                    This method accepts any number of arguments.
+                    """),
+                    insertText: "Set<>()"
+                ),
+                CompletionItem(
+                    label: "Map<Key, Value>(keysAndValues: VarArgs<(Key|Value)>)",
+                    kind: .function,
+                    detail: "Map<Key, Value>",
+                    documentation: .optionA("Creates a map containing the given alternating keysAndValues."),
+                    insertText: "Map<>()"
+                ),
+                
+                // Classes
+                CompletionItem(
+                    label: "Any",
+                    kind: .class,
+                    documentation: .optionA("The top type of the type hierarchy.")
+                ),
+                CompletionItem(
+                    label: "Null",
+                    kind: .class,
+                    detail: "extends Any",
+                    documentation: .optionA("The type of null and null values created with Null().")
+                ),
+                CompletionItem(
+                    label: "Class<out Type>",
+                    kind: .class,
+                    detail: "extends Any",
+                    documentation: .optionA("The runtime representation of a class.")
+                ),
+                CompletionItem(
+                    label: "TypeAlias",
+                    kind: .class,
+                    detail: "extends Any",
+                    documentation: .optionA("The runtime representation of a type alias.")
+                ),
+                CompletionItem(
+                    label: "Module",
+                    kind: .class,
+                    documentation: .optionA("Base class for modules.")
+                ),
+                CompletionItem(
+                    label: "Annotation",
+                    kind: .class,
+                    documentation: .optionA("Base class for annotation types.")
+                ),
+                CompletionItem(
+                    label: "Since",
+                    kind: .class,
+                    detail: "extends Annotation",
+                    documentation: .optionA("Indicates that the annotated member was introduced in version.")
+                ),
+                CompletionItem(
+                    label: "Deprecated",
+                    kind: .class,
+                    detail: "extends Annotation",
+                    documentation: .optionA("Indicates that the annotated member is deprecated and will likely be removed in the future.")
+                ),
+                CompletionItem(
+                    label: "AlsoKnownAs",
+                    kind: .class,
+                    detail: "extends Annotation",
+                    documentation: .optionA("Lists alternative names that the annotated member is known under.")
+                ),
+                CompletionItem(
+                    label: "Unlisted",
+                    kind: .class,
+                    detail: "extends Annotation",
+                    documentation: .optionA("Indicates that the annotated member should not be advertised by Pkldoc and other tools.")
+                ),
+                CompletionItem(
+                    label: "DocExample",
+                    kind: .class,
+                    detail: "extends Annotation",
+                    documentation: .optionA("Indicates to Pkldoc that the annotated module is an example for how to use subjects.")
+                ),
+                CompletionItem(
+                    label: "SourceCode",
+                    kind: .class,
+                    detail: "extends Annotation",
+                    documentation: .optionA("Indicates that the annotated property's string value contains source code written in language.")
+                ),
+                CompletionItem(
+                    label: "ModuleInfo",
+                    kind: .class,
+                    detail: "extends Annotation",
+                    documentation: .optionA("Metadata for a module.")
+                ),
+                CompletionItem(
+                    label: "FileOutput",
+                    kind: .class,
+                    documentation: .optionA("A representation of a rendered output.")
+                ),
+                CompletionItem(
+                    label: "ModuleOutput",
+                    kind: .class,
+                    detail: "extends FileOutput",
+                    documentation: .optionA("The contents and appearance of a module's output.")
+                ),
+                CompletionItem(
+                    label: "ValueRenderer",
+                    kind: .class,
+                    documentation: .optionA("Base class for rendering Pkl values in some output format.")
+                ),
+                CompletionItem(
+                    label: "PcfRenderer",
+                    kind: .class,
+                    detail: "extends ValueRenderer",
+                    documentation: .optionA("Renders values as Pcf, a static subset of Pkl.")
+                ),
+                CompletionItem(
+                    label: "RenderDirective",
+                    kind: .class,
+                    documentation: .optionA("Directs a ValueRenderer to output text as-is in place of this directive.")
+                ),
+                CompletionItem(
+                    label: "PcfRenderDirective",
+                    kind: .class,
+                    documentation: .optionA("Directs PcfRenderer to output additional text before and/or after rendering a value.")
+                ),
+                CompletionItem(
+                    label: "JsonRenderer",
+                    kind: .class,
+                    detail: "extends ValueRenderer",
+                    documentation: .optionA("Renders values as JSON.")
+                ),
+                CompletionItem(
+                    label: "YamlRenderer",
+                    kind: .class,
+                    detail: "extends ValueRenderer",
+                    documentation: .optionA("Renders values as YAML.")
+                ),
+                CompletionItem(
+                    label: "PListRenderer",
+                    kind: .class,
+                    detail: "extends ValueRenderer",
+                    documentation: .optionA("Renders values as XML property lists.")
+                ),
+                CompletionItem(
+                    label: "PropertiesRenderer",
+                    kind: .class,
+                    detail: "extends ValueRenderer",
+                    documentation: .optionA("Renders values as Java Properties.")
+                ),
+                CompletionItem(
+                    label: "Resource",
+                    kind: .class,
+                    documentation: .optionA("An external (file, HTTP, etc.) resource.")
+                ),
+                CompletionItem(
+                    label: "Number",
+                    kind: .class,
+                    detail: "extends Any",
+                    documentation: .optionA("Common base class of Int and Float.")
+                ),
+                CompletionItem(
+                    label: "Int",
+                    kind: .class,
+                    detail: "extends Number",
+                    documentation: .optionA("A 64-bit signed integer.")
+                ),
+                CompletionItem(
+                    label: "Float",
+                    kind: .class,
+                    detail: "extends Number",
+                    documentation: .optionA("A 64-bit floating-point number conforming to the IEEE 754 binary64 format.")
+                ),
+                CompletionItem(
+                    label: "Boolean",
+                    kind: .class,
+                    detail: "extends Any",
+                    documentation: .optionA("A boolean value, either true or false.")
+                ),
+                CompletionItem(
+                    label: "String",
+                    kind: .class,
+                    detail: "extends Any",
+                    documentation: .optionA("A sequence of Unicode characters (code points).")
+                ),
+                CompletionItem(
+                    label: "Regex",
+                    kind: .class,
+                    documentation: .optionA("A regular expression to match strings against.")
+                ),
+                CompletionItem(
+                    label: "RegexMatch",
+                    kind: .class,
+                    documentation: .optionA("A match of a regular expression in a string.")
+                ),
+                CompletionItem(
+                    label: "Duration",
+                    kind: .class,
+                    detail: "extends Any",
+                    documentation: .optionA("A quantity of elapsed time, represented as a value (e.g. 30.5) and unit (e.g. min).")
+                ),
+                CompletionItem(
+                    label: "DataSize",
+                    kind: .class,
+                    detail: "extends Any",
+                    documentation: .optionA("A quantity of binary data, represented as a value (e.g. 30.5) and unit (e.g. mb).")
+                ),
+                CompletionItem(
+                    label: "Object",
+                    kind: .class,
+                    detail: "extends Any",
+                    documentation: .optionA("A composite value containing members (properties, elements, entries).")
+                ),
+                CompletionItem(
+                    label: "Typed",
+                    kind: .class,
+                    detail: "extends Object",
+                    documentation: .optionA("Base class for objects whose members are described by a class definition.")
+                ),
+                CompletionItem(
+                    label: "Dynamic",
+                    kind: .class,
+                    detail: "extends Object",
+                    documentation: .optionA("An object that can contain arbitrary properties, elements, and entries.")
+                ),
+                CompletionItem(
+                    label: "Listing<out Element>",
+                    kind: .class,
+                    detail: "extends Object",
+                    documentation: .optionA("An object containing an ordered sequence of elements."),
+                    insertText: "Listing<>"
+                ),
+                CompletionItem(
+                    label: "Mapping<out Key, out Value>",
+                    kind: .class,
+                    detail: "extends Object",
+                    documentation: .optionA("An object containing an ordered sequence of key-value pairs."),
+                    insertText: "Mapping<>"
+                ),
+                CompletionItem(
+                    label: "Function<out Result>",
+                    kind: .class,
+                    detail: "extends Any",
+                    documentation: .optionA("Base class for function literals (also known as lambda expressions)."),
+                    insertText: "Function<>"
+                ),
+                CompletionItem(
+                    label: "Function0<out Result>",
+                    kind: .class,
+                    detail: "extends Function<Result>",
+                    documentation: .optionA("A function literal with zero parameters."),
+                    insertText: "Function0<>"
+                ),
+                CompletionItem(
+                    label: "Function1<out Result>",
+                    kind: .class,
+                    detail: "extends Function<Result>",
+                    documentation: .optionA("A function literal with one parameter."),
+                    insertText: "Function1<>"
+                ),
+                CompletionItem(
+                    label: "Function2<out Result>",
+                    kind: .class,
+                    detail: "extends Function<Result>",
+                    documentation: .optionA("A function literal with two parameters."),
+                    insertText: "Function2<>"
+                ),
+                CompletionItem(
+                    label: "Function3<out Result>",
+                    kind: .class,
+                    detail: "extends Function<Result>",
+                    documentation: .optionA("A function literal with three parameters."),
+                    insertText: "Function3<>"
+                ),
+                CompletionItem(
+                    label: "Function4<out Result>",
+                    kind: .class,
+                    detail: "extends Function<Result>",
+                    documentation: .optionA("A function literal with four parameters."),
+                    insertText: "Function4<>"
+                ),
+                CompletionItem(
+                    label: "Function5<out Result>",
+                    kind: .class,
+                    detail: "extends Function<Result>",
+                    documentation: .optionA("A function literal with five parameters."),
+                    insertText: "Function5<>"
+                ),
+                CompletionItem(
+                    label: "Pair<out First, out Second>",
+                    kind: .class,
+                    detail: "extends Any",
+                    documentation: .optionA("An ordered pair of elements."),
+                    insertText: "Pair<>"
+                ),
+                CompletionItem(
+                    label: "Collection<out Element>",
+                    kind: .class,
+                    detail: "extends Any",
+                    documentation: .optionA("Common base class for List and Set."),
+                    insertText: "Collection<>"
+                ),
+                CompletionItem(
+                    label: "IntSeq",
+                    kind: .class,
+                    detail: "extends Any",
+                    documentation: .optionA("A finite arithmetic sequence of integers.")
+                ),
+                CompletionItem(
+                    label: "VarArgs<Type>",
+                    kind: .class,
+                    detail: "extends Any",
+                    documentation: .optionA("A variable number of method arguments of type Type."),
+                    insertText: "VarArgs<>"
+                ),
+                CompletionItem(
+                    label: "List<out Element>",
+                    kind: .class,
+                    detail: "extends Collection<Element>",
+                    documentation: .optionA("An indexed sequence of elements."),
+                    insertText: "List<>"
+                ),
+                CompletionItem(
+                    label: "Set<out Element>",
+                    kind: .class,
+                    detail: "extends Collection<Element>",
+                    documentation: .optionA("An unordered collection of unique elements."),
+                    insertText: "Set<>"
+                ),
+                CompletionItem(
+                    label: "Map<out Key, out Value>",
+                    kind: .class,
+                    detail: "extends Any",
+                    documentation: .optionA("An unordered mapping from keys to values."),
+                    insertText: "Map<>"
+                ),
+
+                // Type Aliases
+                CompletionItem(
+                    label: "NonNull",
+                    kind: .typeParameter,
+                    detail: "Any(!(this is Null))",
+                    documentation: .optionA("A non-null value.")
+                ),
+                CompletionItem(
+                    label: "Int8",
+                    kind: .typeParameter,
+                    detail: "Int(isBetween(-128, 127))",
+                    documentation: .optionA("An Int value in range math.minInt8..math.maxInt8.")
+                ),
+                CompletionItem(
+                    label: "Int16",
+                    kind: .typeParameter,
+                    detail: "Int(isBetween(-32768, 32767))",
+                    documentation: .optionA("A non-null value.")
+                ),
+                CompletionItem(
+                    label: "Int32",
+                    kind: .typeParameter,
+                    detail: "Int(isBetween(-2147483648, 2147483647))",
+                    documentation: .optionA("An Int value in range math.minInt32..math.maxInt32.")
+                ),
+                CompletionItem(
+                    label: "UInt8",
+                    kind: .typeParameter,
+                    detail: "Int(isBetween(0, 255))",
+                    documentation: .optionA("An Int value in range 0..math.maxUInt8.")
+                ),
+                CompletionItem(
+                    label: "UInt16",
+                    kind: .typeParameter,
+                    detail: "Int(isBetween(0, 65535))",
+                    documentation: .optionA("An Int value in range 0..math.maxUInt16.")
+                ),
+                CompletionItem(
+                    label: "UInt32",
+                    kind: .typeParameter,
+                    detail: "Int(isBetween(0, 4294967295))",
+                    documentation: .optionA("An Int value in range 0..math.maxUInt32.")
+                ),
+                CompletionItem(
+                    label: "UInt",
+                    kind: .typeParameter,
+                    detail: "Int(isPositive)",
+                    documentation: .optionA("""
+                    An Int value in range 0..math.maxUInt.
+
+                    Note that math.maxUInt is equal to math.maxInt, not maxInt * 2 + 1 as one might expect. That is, UInt has half the range of Int.
+                    """)
+                ),
+                CompletionItem(
+                    label: "Comparable",
+                    kind: .typeParameter,
+                    detail: "String|Number|Duration|DataSize",
+                    documentation: .optionA("A value that can be compared to another value of the same type with <, >, <=, and >=.")
+                ),
+                CompletionItem(
+                    label: "Char",
+                    kind: .typeParameter,
+                    detail: "String(this.length == 1)",
+                    documentation: .optionA("A Unicode character (code point).")
+                ),
+                CompletionItem(
+                    label: "Uri",
+                    kind: .typeParameter,
+                    detail: "String",
+                    documentation: .optionA("A string representing a URI.")
+                ),
+                CompletionItem(
+                    label: "DurationUnit",
+                    kind: .typeParameter,
+                    detail: "\"ns\"|\"us\"|\"ms\"|\"s\"|\"min\"|\"h\"|\"d\"",
+                    documentation: .optionA("The unit of a Duration.")
+                ),
+                CompletionItem(
+                    label: "DataSizeUnit",
+                    kind: .typeParameter,
+                    detail: "\"b\"|\"kb\"|\"kib\"|\"mb\"|\"mib\"|\"gb\"|\"gib\"|\"tb\"|\"tib\"|\"pb\"|\"pib\"",
+                    documentation: .optionA("The unit of a DataSize.")
+                ),
+                CompletionItem(
+                    label: "Mixin<Type>",
+                    kind: .typeParameter,
+                    detail: "(Type) -> Type",
+                    documentation: .optionA("An anonymous function used to apply the same modification to different objects.")
+                ),
             ]
-            completions.append(contentsOf: PklDefaultTypes.allCases.map { type in
-                return CompletionItem(
-                    label: type.rawValue,
-                    kind: .class
-                )
-            })
             return completions
         }
         if identifier == "Int" {
@@ -438,112 +936,112 @@ public class CompletionHandler {
                     kind: .function,
                     detail: "Char?",
                     documentation: .optionA("Returns the character at index, or null if index is out of range."),
-                    insertText: "getOrNull"
+                    insertText: "getOrNull()"
                 ),
                 CompletionItem(
                     label: "substring(start: Int, exclusiveEnd: Int)",
                     kind: .function,
                     detail: "String",
                     documentation: .optionA("Returns the substring from start until exclusiveEnd."),
-                    insertText: "substring"
+                    insertText: "substring()"
                 ),
                 CompletionItem(
                     label: "substringOrNull(start: Int, exclusiveEnd: Int)",
                     kind: .function,
                     detail: "String?",
                     documentation: .optionA("Returns the substring from start until exclusiveEnd."),
-                    insertText: "substringOrNull"
+                    insertText: "substringOrNull()"
                 ),
                 CompletionItem(
                     label: "repeat(count: UInt)",
                     kind: .function,
                     detail: "String",
                     documentation: .optionA("Concatenates count copies of this string."),
-                    insertText: "repeat"
+                    insertText: "repeat()"
                 ),
                 CompletionItem(
                     label: "contains(pattern: String|Regex)",
                     kind: .function,
                     detail: "Boolean",
                     documentation: .optionA("Tells whether this string contains pattern."),
-                    insertText: "contains"
+                    insertText: "contains()"
                 ),
                 CompletionItem(
                     label: "matches(regex: Regex)",
                     kind: .function,
                     detail: "Boolean",
                     documentation: .optionA("Tells whether this string matches regex in its entirety."),
-                    insertText: "matches"
+                    insertText: "matches()"
                 ),
                 CompletionItem(
                     label: "startsWith(pattern: String|Regex)",
                     kind: .function,
                     detail: "Boolean",
                     documentation: .optionA("Tells whether this string starts with pattern."),
-                    insertText: "startsWith"
+                    insertText: "startsWith()"
                 ),
                 CompletionItem(
                     label: "endsWith(pattern: String|Regex)",
                     kind: .function,
                     detail: "Boolean",
                     documentation: .optionA("Tells whether this string ends with pattern."),
-                    insertText: "endsWith"
+                    insertText: "endsWith()"
                 ),
                 CompletionItem(
                     label: "indexOf(pattern: String|Regex)",
                     kind: .function,
                     detail: "Int",
                     documentation: .optionA("Returns the zero-based index of the first occurrence of pattern in this string."),
-                    insertText: "indexOf"
+                    insertText: "indexOf()"
                 ),
                 CompletionItem(
                     label: "indexOfOrNull(pattern: String|Regex)",
                     kind: .function,
                     detail: "Int?",
                     documentation: .optionA("Returns the zero-based index of the first occurrence of pattern in this string, or null if pattern does not occur in this string."),
-                    insertText: "substring"
+                    insertText: "substring()"
                 ),
                 CompletionItem(
                     label: "lastIndexOf(pattern: String|Regex)",
                     kind: .function,
                     detail: "Int",
                     documentation: .optionA("Returns the zero-based index of the last occurrence of pattern in this string."),
-                    insertText: "lastIndexOf"
+                    insertText: "lastIndexOf()"
                 ),
                 CompletionItem(
                     label: "lastIndexOfOrNull(pattern: String|Regex)",
                     kind: .function,
                     detail: "Int?",
                     documentation: .optionA("Returns the zero-based index of the last occurrence of pattern in this string, or null if pattern does not occur in this string."),
-                    insertText: "lastIndexOfOrNull"
+                    insertText: "lastIndexOfOrNull()"
                 ),
                 CompletionItem(
                     label: "take(n: Int)",
                     kind: .function,
                     detail: "String",
                     documentation: .optionA("Returns the first n characters of this string."),
-                    insertText: "take"
+                    insertText: "take()"
                 ),
                 CompletionItem(
                     label: "takeWhile(predicate: (String) -> Boolean)",
                     kind: .function,
                     detail: "String",
                     documentation: .optionA("Returns the longest prefix of this string that satisfies predicate."),
-                    insertText: "takeWhile"
+                    insertText: "takeWhile()"
                 ),
                 CompletionItem(
                     label: "takeLast(n: Int)",
                     kind: .function,
                     detail: "String",
                     documentation: .optionA("Returns the last n characters of this string."),
-                    insertText: "takeLast"
+                    insertText: "takeLast()"
                 ),
                 CompletionItem(
                     label: "takeLastWhile(predicate: (String) -> Boolean)",
                     kind: .function,
                     detail: "String",
                     documentation: .optionA("Returns the longest suffix of this string that satisfies predicate."),
-                    insertText: "takeLastWhile"
+                    insertText: "takeLastWhile()"
                 ),
                 CompletionItem(
                     label: "drop(n: Int)",
@@ -556,7 +1054,7 @@ public class CompletionHandler {
 
                     Returns the empty string if n is greater than or equal to length.
                     """),
-                    insertText: "drop"
+                    insertText: "drop()"
                 ),
                 CompletionItem(
                     label: "dropWhile(predicate: (String) -> Boolean)",
@@ -567,7 +1065,7 @@ public class CompletionHandler {
 
                     Also known as: skipWhile
                     """),
-                    insertText: "dropWhile"
+                    insertText: "dropWhile()"
                 ),
                 CompletionItem(
                     label: "dropLast(n: Int)",
@@ -580,7 +1078,7 @@ public class CompletionHandler {
 
                     Returns the empty string if n is greater than or equal to length.
                     """),
-                    insertText: "dropLast"
+                    insertText: "dropLast()"
                 ),
                 CompletionItem(
                     label: "dropWhile(predicate: (String) -> Boolean)",
@@ -591,7 +1089,7 @@ public class CompletionHandler {
 
                     Also known as: skipWhile
                     """),
-                    insertText: "substring"
+                    insertText: "substring()"
                 ),
                 CompletionItem(
                     label: "dropLastWhile(predicate: (String) -> Boolean)",
@@ -602,7 +1100,7 @@ public class CompletionHandler {
 
                     Also known as: skipLastWhile
                     """),
-                    insertText: "dropLastWhile"
+                    insertText: "dropLastWhile()"
                 ),
                 CompletionItem(
                     label: "replaceFirst(pattern: String|Regex, replacement: String)",
@@ -613,7 +1111,7 @@ public class CompletionHandler {
 
                     Returns this string unchanged if pattern does not occur in this string. 
                     """),
-                    insertText: "replaceFirst"
+                    insertText: "replaceFirst()"
                 ),
                 CompletionItem(
                     label: "replaceLast(pattern: String|Regex, replacement: String)",
@@ -624,7 +1122,7 @@ public class CompletionHandler {
 
                     Returns this string unchanged if pattern does not occur in this string.
                     """),
-                    insertText: "replaceLast"
+                    insertText: "replaceLast()"
                 ),
                 CompletionItem(
                     label: "replaceAll(pattern: String|Regex, replacement: String)",
@@ -635,7 +1133,7 @@ public class CompletionHandler {
 
                     Returns this string unchanged if pattern does not occur in this string.
                     """),
-                    insertText: "replaceAll"
+                    insertText: "replaceAll()"
                 ),
                 CompletionItem(
                     label: "replaceFirstMapped(pattern: String|Regex, mapper: (RegexMatch) -> String)",
@@ -646,7 +1144,7 @@ public class CompletionHandler {
 
                     Returns this string unchanged if pattern does not occur in this string. 
                     """),
-                    insertText: "replaceFirstMapped"
+                    insertText: "replaceFirstMapped()"
                 ),
                 CompletionItem(
                     label: "replaceLastMapped(pattern: String|Regex, mapper: (RegexMatch) -> String)",
@@ -657,7 +1155,7 @@ public class CompletionHandler {
 
                     Returns this string unchanged if pattern does not occur in this string. 
                     """),
-                    insertText: "replaceLastMapped"
+                    insertText: "replaceLastMapped()"
                 ),
                 CompletionItem(
                     label: "replaceAllMapped(pattern: String|Regex, mapper: (RegexMatch) -> String)",
@@ -668,7 +1166,7 @@ public class CompletionHandler {
 
                     Returns this string unchanged if pattern does not occur in this string.
                     """),
-                    insertText: "replaceAllMapped"
+                    insertText: "replaceAllMapped()"
                 ),
                 CompletionItem(
                     label: "replaceRange(start: Int, exclusiveEnd: Int, replacement: String)",
@@ -679,7 +1177,7 @@ public class CompletionHandler {
 
                     Inserts replacement at index start if start == exclusiveEnd. 
                     """),
-                    insertText: "replaceRange"
+                    insertText: "replaceRange()"
                 ),
                 CompletionItem(
                     label: "toUpperCase()",
@@ -688,7 +1186,7 @@ public class CompletionHandler {
                     documentation: .optionA("""
                     Performs a locale-independent character-by-character conversion of this string to uppercase.                   
                     """),
-                    insertText: "toUpperCase"
+                    insertText: "toUpperCase()"
                 ),
                 CompletionItem(
                     label: "toLowerCase()",
@@ -697,7 +1195,7 @@ public class CompletionHandler {
                     documentation: .optionA("""
                     Performs a locale-independent character-by-character conversion of this string to lowercase.
                     """),
-                    insertText: "toLowerCase"
+                    insertText: "toLowerCase()"
                 ),
                 CompletionItem(
                     label: "reverse()",
@@ -706,7 +1204,7 @@ public class CompletionHandler {
                     documentation: .optionA("""
                     Reverses the order of characters in this string.
                     """),
-                    insertText: "reverse"
+                    insertText: "reverse()"
                 ),
                 CompletionItem(
                     label: "trim()",
@@ -717,7 +1215,7 @@ public class CompletionHandler {
 
                     Also known as: strip
                     """),
-                    insertText: "trim"
+                    insertText: "trim()"
                 ),
                 CompletionItem(
                     label: "trimStart()",
@@ -728,7 +1226,7 @@ public class CompletionHandler {
 
                     Also known as: stripLeft, stripStart, stripLeading, trimLeft, trimLeading
                     """),
-                    insertText: "trimStart"
+                    insertText: "trimStart()"
                 ),
                 CompletionItem(
                     label: "trimEnd()",
@@ -739,7 +1237,7 @@ public class CompletionHandler {
 
                     Also known as: stripRight, stripEnd, stripTrailing, trimRight, trimTrailin
                     """),
-                    insertText: "trimEnd"
+                    insertText: "trimEnd()"
                 ),
                 CompletionItem(
                     label: "padStart(width: Int, char: Char)",
@@ -752,7 +1250,7 @@ public class CompletionHandler {
 
                     Returns this string unchanged if its length is already equal to or greater than width.
                     """),
-                    insertText: "padStart"
+                    insertText: "padStart()"
                 ),
                 CompletionItem(
                     label: "padEnd(width: Int, char: Char)",
@@ -765,7 +1263,7 @@ public class CompletionHandler {
 
                     Returns this string unchanged if its length is already equal to or greater than width.
                     """),
-                    insertText: "padEnd"
+                    insertText: "padEnd()"
                 ),
                 CompletionItem(
                     label: "split(pattern: String|Regex)",
@@ -774,7 +1272,7 @@ public class CompletionHandler {
                     documentation: .optionA("""
                     Splits this string around matches of pattern.
                     """),
-                    insertText: "split"
+                    insertText: "split()"
                 ),
                 CompletionItem(
                     label: "capitalize()",
@@ -783,7 +1281,7 @@ public class CompletionHandler {
                     documentation: .optionA("""
                     Converts the first character of this string to title case.
                     """),
-                    insertText: "capitalize"
+                    insertText: "capitalize()"
                 ),
                 CompletionItem(
                     label: "decapitalize()",
@@ -792,7 +1290,7 @@ public class CompletionHandler {
                     documentation: .optionA("""
                     Converts the first character of this string to lower case.
                     """),
-                    insertText: "decapitalize"
+                    insertText: "decapitalize()"
                 ),
                 CompletionItem(
                     label: "toInt()",
@@ -803,7 +1301,7 @@ public class CompletionHandler {
 
                     Throws if this string cannot be parsed as a signed decimal integer, or if the integer is too large to fit into Int.
                     """),
-                    insertText: "toInt"
+                    insertText: "toInt()"
                 ),
                 CompletionItem(
                     label: "toIntOrNull()",
@@ -814,7 +1312,7 @@ public class CompletionHandler {
 
                     Returns null if this string cannot be parsed as a signed decimal integer, or if the integer is too large to fit into Int.
                     """),
-                    insertText: "toIntOrNull"
+                    insertText: "toIntOrNull()"
                 ),
                 CompletionItem(
                     label: "toFloat()",
@@ -825,7 +1323,7 @@ public class CompletionHandler {
 
                     Throws if this string cannot be parsed as a floating point number.
                     """),
-                    insertText: "toFloat"
+                    insertText: "toFloat()"
                 ),
                 CompletionItem(
                     label: "toFloatOrNull()",
@@ -836,7 +1334,7 @@ public class CompletionHandler {
 
                     Returns null if this string cannot be parsed as a floating point number.
                     """),
-                    insertText: "toFloatOrNull"
+                    insertText: "toFloatOrNull()"
                 ),
                 CompletionItem(
                     label: "toBoolean()",
@@ -847,7 +1345,7 @@ public class CompletionHandler {
 
                     Throws if this string is neither "true" nor "false" (case-insensitive).
                     """),
-                    insertText: "toBoolean"
+                    insertText: "toBoolean()"
                 ),
                 CompletionItem(
                     label: "toBooleanOrNull()",
@@ -858,8 +1356,30 @@ public class CompletionHandler {
 
                     Returns null if this string is neither "true" nor "false" (case-insensitive).
                     """),
-                    insertText: "toBooleanOrNull"
+                    insertText: "toBooleanOrNull()"
                 ),
+            ]
+        }
+        if identifier == "Boolean" {
+            return [
+                CompletionItem(
+                    label: "xor(other: Boolean)",
+                    kind: .function,
+                    detail: "Boolean",
+                    documentation: .optionA("Tells if exactly one of this and other is true (exclusive or)."),
+                    insertText: "xor()"
+                ),
+                CompletionItem(
+                    label: "implies(other: Boolean)",
+                    kind: .function,
+                    detail: "Boolean",
+                    documentation: .optionA("""
+                    Tells if this implies other (logical consequence).
+
+                    Note: This function does not short-circuit; other is always evaluated.
+                    """),
+                    insertText: "implies()"
+                )
             ]
         }
         if identifier.starts(with: "Listing") {
@@ -883,18 +1403,6 @@ public class CompletionHandler {
         return []
     }
 
-}
-
-enum PklDefaultTypes: String, CaseIterable {
-    case `Any`
-    case Int
-    case Number
-    case Float
-    case String
-    case Boolean
-    case Listing
-    case Map
-    case Mapping
 }
 
 enum PklKeywords: String, CaseIterable {
