@@ -35,7 +35,7 @@ struct PklLSPServer: AsyncParsableCommand {
     var enableExperimentalFeatures: Bool = false
 
     @Option(name: .shortAndLong, help: "Maximum number of dependencies parsed in depth")
-    var importDepth: Int = 3
+    var importDepth: Int = 1
 
     @Option(name: .shortAndLong, help: "Disable feature")
     var disableFeature: [FeatureType] = []
