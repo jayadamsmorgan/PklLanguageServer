@@ -8,7 +8,7 @@ public enum PklStandardTypesIdentifiers: String, CaseIterable {
     case String
 }
 
-class PklType: ASTNode {
+public class PklType: ASTNode {
     var identifier: String?
 
     init(identifier: String? = nil, range: ASTRange, importDepth: Int, document: Document) {

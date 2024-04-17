@@ -9,7 +9,7 @@ public class CompletionHandler {
         self.logger = logger
     }
 
-    public func provideWithKeywords(completions: [CompletionItem] = []) async -> CompletionResponse {
+    private func provideWithKeywords(completions: [CompletionItem] = []) async -> CompletionResponse {
         var completions = completions
         completions.append(contentsOf: PklKeywords.allCases.map { keyword in
             CompletionItem(
@@ -80,7 +80,7 @@ public class CompletionHandler {
         logger.debug("cursorPos: \(cursorPos)")
         guard let undefined = ASTHelper.getPositionContext(module: module, position: cursorPos, importDepth: module.importDepth) else {
             logger.debug("Unable to find undefined AST Node at position \(cursorPos) for providing context completions.")
-            return await provideWithKeywords()
+            return nil
         }
         logger.debug("undefined range: \(undefined.range.positionRange)")
 
@@ -92,13 +92,13 @@ public class CompletionHandler {
         do {
             guard let dotRelativeIndex = try Document.findPosition(Position((line, character)), in: undefinedText) else {
                 logger.debug("Cannot provide completions with context: dotRelativeIndex is nil.")
-                return await provideWithKeywords()
+                return nil
             }
             undefinedText = undefinedText[undefinedText.startIndex..<dotRelativeIndex].description
             logger.debug("Filtered undefinedText: \(undefinedText)")
         } catch {
             logger.error("Cannot provide completions with context: \(error)")
-            return await provideWithKeywords()
+            return nil
         }
 
         var keys = undefinedText.split(separator: ".")
@@ -108,11 +108,11 @@ public class CompletionHandler {
         logger.debug("Keys: \(keys)")
         guard let firstKey = keys.first?.replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "\n", with: "") else {
             logger.debug("Cannot provide completions with context: firstKey is not present.")
-            return await provideWithKeywords()
+            return nil
         }
         guard var context: ASTNode = await findContextNode(node: module, key: firstKey) else {
             logger.debug("Cannot provide completions with context: first context is nil.")
-            return await provideWithKeywords()
+            return nil
         }
         for x in 0..<keys.count {
             if x == 0 {
@@ -121,14 +121,14 @@ public class CompletionHandler {
             let key = keys[x].replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "\n", with: "")
             let newContext = await findContextNode(node: context, key: key)
             guard let newContext else {
-                return await provideWithKeywords()
+                return nil
             }
             context = newContext
         }
         return await provide(module: context)
     }
 
-    public func provide(module: ASTNode, params: CompletionParams? = nil, keywords: Bool = true) async -> CompletionResponse {
+    public func provide(module: ASTNode, params: CompletionParams? = nil) async -> CompletionResponse {
 
         if let params {
             if params.context?.triggerKind == .triggerCharacter && params.context?.triggerCharacter == "." {
@@ -139,10 +139,11 @@ public class CompletionHandler {
         var completions: [CompletionItem] = []
 
         guard let children = module.children else {
-            if keywords {
+            if module is PklModule && module.importDepth == 0 {
+                completions = await providerStandardFunctionsForStandardTypeNode(type: "Module")
                 return await provideWithKeywords(completions: completions)
             }
-            return CompletionResponse(.optionB(CompletionList(isIncomplete: false, items: completions)))
+            return await provideWithKeywords()
         }
 
         for node in children {
@@ -296,15 +297,30 @@ public class CompletionHandler {
                 result.append(completion)
             }
         }
-        if keywords {
+        if module is PklModule && module.importDepth == 0 {
+            completions.append(contentsOf: await providerStandardFunctionsForStandardTypeNode(type: "Module"))
             return await provideWithKeywords(completions: completions)
         }
-        return CompletionResponse(.optionB(CompletionList(isIncomplete: false, items: completions)))
+        return .optionB(CompletionList(isIncomplete: false, items: completions))
     }
 
-    private func standardFunctionsForStandardTypeNode(type: PklType) async -> [CompletionItem] {
-        guard let identifier = type.identifier else {
-            return []
+    private func providerStandardFunctionsForStandardTypeNode(type identifier: String) async -> [CompletionItem] {
+        if identifier == "Module" {
+            var completions = [
+                CompletionItem(
+                    label: "isBetween(x: Number, y: Number)",
+                    kind: .function,
+                    detail: "Number",
+                    insertText: "isBetween()"
+                ),
+            ]
+            completions.append(contentsOf: DefaultTypes.allCases.map { type in
+                return CompletionItem(
+                    label: type.rawValue,
+                    kind: .class
+                )
+            })
+            return completions
         }
         if identifier == "Int" {
             return [
@@ -324,7 +340,7 @@ public class CompletionHandler {
                 ),
             ]
         }
-        if identifier == "List" {
+        if identifier.starts(with: "Listing") {
             return [
                 CompletionItem(
                     label: "",
@@ -345,6 +361,18 @@ public class CompletionHandler {
         return []
     }
 
+}
+
+enum DefaultTypes: String, CaseIterable {
+    case `Any`
+    case Int
+    case Number
+    case Float
+    case String
+    case Boolean
+    case Listing
+    case Map
+    case Mapping
 }
 
 enum PklKeywords: String, CaseIterable {
