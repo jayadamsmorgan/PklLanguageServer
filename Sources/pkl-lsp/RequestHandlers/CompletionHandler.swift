@@ -302,6 +302,49 @@ public class CompletionHandler {
         return CompletionResponse(.optionB(CompletionList(isIncomplete: false, items: completions)))
     }
 
+    private func standardFunctionsForStandardTypeNode(type: PklType) async -> [CompletionItem] {
+        guard let identifier = type.identifier else {
+            return []
+        }
+        if identifier == "Int" {
+            return [
+                CompletionItem(
+                    label: "",
+                    kind: .function,
+                    detail: ""
+                ),
+            ]
+        }
+        if identifier == "String" {
+            return [
+                CompletionItem(
+                    label: "",
+                    kind: .function,
+                    detail: ""
+                ),
+            ]
+        }
+        if identifier == "List" {
+            return [
+                CompletionItem(
+                    label: "",
+                    kind: .function,
+                    detail: ""
+                ),
+            ]
+        }
+        if identifier == "Map" {
+            return [
+                CompletionItem(
+                    label: "",
+                    kind: .function,
+                    detail: ""
+                ),
+            ]
+        }
+        return []
+    }
+
 }
 
 enum PklKeywords: String, CaseIterable {
