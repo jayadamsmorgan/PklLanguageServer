@@ -187,8 +187,8 @@ public class TreeSitterParser {
         }
         for childNode in children {
             let text = childNode.document.getTextInByteRange(childNode.range.byteRange)
-            let tab = String(repeating: "  ", count: depth)
-            logger.debug(
+            let tab = String(repeating: "  ", count: depth + childNode.importDepth)
+            logger.error(
                 "\(tab)" +
                     "\(type(of: childNode))," +
                     " depth: \(depth)," +
@@ -276,7 +276,7 @@ public class TreeSitterParser {
             module.module = parsedTree
             return module
         }
-        if importDepth >= maxImportDepth {
+        if importDepth >= maxImportDepth && type == .normal {
             logger.debug("Import depth exceeded for document \(document.uri)")
             return nil
         }
@@ -298,20 +298,24 @@ public class TreeSitterParser {
                 await parseAST(document: importDocument, tree: tree, importDepth: importDepth + 1)
             }
         }
-        guard astParsedTrees[importDocument] as? PklModule != nil else {
+        guard let built = astParsedTrees[importDocument] as? PklModule else {
             logger.error("Failed to build module import for document \(importDocument.uri).")
             return module
         }
+        module.module = built
         logger.debug("Module import for document \(importDocument.uri) built successfully.")
         return module
     }
 
     private func buildDocComment(node: Node, in document: Document, importDepth: Int, parent: ASTNode?) async -> PklDocComment? {
         var text = document.getTextInByteRange(node.byteRange)
-        if let previousSubling = node.previousSibling {
-            if previousSubling.symbol == PklTreeSitterSymbols.sym_docComment.rawValue {
-                // If the previous sibling is a docComment, we don't want to build another one
-                return nil
+        if let previousSibling = node.previousSibling {
+            // If the previous sibling is a docComment, we don't want to build another one
+            if previousSibling.symbol == PklTreeSitterSymbols.sym_lineComment.rawValue {
+                let text = document.getTextInByteRange(node.byteRange)
+                if text.starts(with: "///") {
+                    return nil
+                }
             }
         }
         logger.debug("Starting building doc comment...")
@@ -754,19 +758,17 @@ public class TreeSitterParser {
         case .sym_module: // MODULE (ROOT)
             logger.debug("Starting building module...")
             var contents: [ASTNode] = []
+            let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
+            let module = PklModule(contents: contents, range: range, importDepth: importDepth, document: document)
             for childPosition in 0 ..< node.childCount {
                 guard let childNode = node.child(at: childPosition) else {
                     continue
                 }
-                if let astNode = await tsNodeToASTNode(node: childNode, in: document, importDepth: importDepth, parent: nil) {
+                if let astNode = await tsNodeToASTNode(node: childNode, in: document, importDepth: importDepth, parent: module) {
                     contents.append(astNode)
                 }
             }
-            let range = ASTRange(pointRange: node.pointRange, byteRange: node.byteRange)
-            let module = PklModule(contents: contents, range: range, importDepth: importDepth, document: document)
-            for child in module.contents {
-                child.parent = module
-            }
+            module.contents = contents
             if let errors = module.diagnosticErrors() {
                 for error in errors {
                     logger.debug("AST Diagnostic error: \(error)")
@@ -840,10 +842,6 @@ public class TreeSitterParser {
 
         case .sym_importClause: // IMPORT CLAUSE
             logger.debug("Starting building import clause...")
-            if importDepth > 3 {
-                logger.debug("Import depth is too high.")
-                return nil
-            }
             var path: PklStringLiteral?
             for childPosition in 0 ..< node.childCount {
                 guard let childNode = node.child(at: childPosition) else {

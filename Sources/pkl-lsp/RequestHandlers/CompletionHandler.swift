@@ -25,9 +25,8 @@ public class CompletionHandler {
         var moduleName = moduleDeclaration?.moduleClause?.name?.value ??
         importNode.documentToImport?.uri.split(separator: "/").last?.description ?? ""
         moduleName = moduleName.replacingOccurrences(of: ".pkl", with: "")
-        if moduleName.starts(with: "pkl.") {
-            moduleName = moduleName.replacingOccurrences(of: "pkl.", with: "")
-        }
+            .replacingOccurrences(of: "pkl.", with: "")
+            .replacingOccurrences(of: "stdlib:", with: "")
         if let docComment = docCommentForNode(node: moduleDeclaration) {
             return (moduleName, docComment)
         }
