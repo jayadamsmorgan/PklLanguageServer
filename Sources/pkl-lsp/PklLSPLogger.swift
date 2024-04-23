@@ -50,9 +50,10 @@ public struct JSONRPCLogHandler: LogHandler, Sendable {
         self.metadata = metadata
     }
 
-    public func log(level _: Logger.Level, message: Logger.Message, metadata _: Logger.Metadata?, file _: String, function _: String, line _: UInt) {
+    // This does not work right... Check what can be done with Mattie
+    public func log(level: Logger.Level, message: Logger.Message, metadata _: Logger.Metadata?, file _: String, function _: String, line _: UInt) {
         Task {
-            try await rpcConnection.sendNotification(.windowLogMessage(.init(type: loggerLevelToMessageType(.error), message: loggerLabel + ": " + message.description)))
+            try await rpcConnection.sendNotification(.windowLogMessage(.init(type: loggerLevelToMessageType(level), message: loggerLabel + ": " + message.description)))
         }
     }
 
@@ -61,11 +62,11 @@ public struct JSONRPCLogHandler: LogHandler, Sendable {
         case .info:
             .info
         case .debug:
-            .warning
+            .info
         case .error:
             .error
         case .trace:
-            .warning
+            .log
         case .notice:
             .warning
         case .warning:

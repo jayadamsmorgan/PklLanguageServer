@@ -112,12 +112,12 @@ public class CompletionHandler {
             undefinedText = undefinedText[undefinedText.startIndex..<dotRelativeIndex].description
             logger.debug("Filtered undefinedText: \(undefinedText)")
         } catch {
-            logger.error("Cannot provide completions with context: \(error)")
+            logger.debug("Cannot provide completions with context: \(error)")
             return nil
         }
 
         guard let lastChar = undefinedText.last else {
-            logger.error("Cannot provide completions with context: lastChar is nil.")
+            logger.debug("Cannot provide completions with context: lastChar is nil.")
             return nil
         }
 

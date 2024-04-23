@@ -40,7 +40,7 @@ public class TreeSitterParser {
         logger.debug("Parsing document \(document.uri)")
         let tree = parser.parse(document.text)
         guard let tree else {
-            logger.error("Failed to parse document \(document.uri)")
+            logger.debug("Failed to parse document \(document.uri)")
             return
         }
         if logger.logLevel == .trace {
@@ -59,7 +59,7 @@ public class TreeSitterParser {
             await parse(document: newDocument)
             return newDocument
         } catch {
-            logger.error("Failed to apply changes to document \(document.uri).")
+            logger.debug("Failed to apply changes to document \(document.uri).")
             return document
         }
     }
@@ -78,7 +78,7 @@ public class TreeSitterParser {
             return await parseFullyWithChanges(document: document, params: params)
         }
         guard let edits else {
-            logger.error("Failed to apply changes to document \(document.uri): Nil edits.")
+            logger.debug("Failed to apply changes to document \(document.uri): Nil edits.")
             return document
         }
         let newDocument = edits.document
@@ -188,7 +188,7 @@ public class TreeSitterParser {
         for childNode in children {
             let text = childNode.document.getTextInByteRange(childNode.range.byteRange)
             let tab = String(repeating: "  ", count: depth + childNode.importDepth)
-            logger.error(
+            logger.debug(
                 "\(tab)" +
                     "\(type(of: childNode))," +
                     " depth: \(depth)," +
@@ -288,7 +288,7 @@ public class TreeSitterParser {
             }
         } else {
             guard let tree = parser.parse(importDocument.text) else {
-                logger.error("Failed to parse document \(importDocument.uri).")
+                logger.debug("Failed to parse document \(importDocument.uri).")
                 return module
             }
             tsParsedTrees[importDocument] = tree
@@ -299,7 +299,7 @@ public class TreeSitterParser {
             }
         }
         guard let built = astParsedTrees[importDocument] as? PklModule else {
-            logger.error("Failed to build module import for document \(importDocument.uri).")
+            logger.debug("Failed to build module import for document \(importDocument.uri).")
             return module
         }
         module.module = built

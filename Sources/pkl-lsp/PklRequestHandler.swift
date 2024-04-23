@@ -18,7 +18,7 @@ public struct PklRequestHandler: RequestHandler, Sendable {
     }
 
     public func internalError(_ error: Error) async {
-        logger.error("LSP stream error: \(error)")
+        logger.debug("LSP stream error: \(error)")
     }
 
     public func handleRequest(id: JSONId, request: ClientRequest) async {
