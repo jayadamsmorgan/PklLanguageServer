@@ -235,10 +235,10 @@ class PklClassFunctionBody: ASTNode {
                 errors.append(contentsOf: typeErrors)
             }
         }
-        if typeAnnotation == nil {
-            let error = ASTDiagnosticError("Provide function type annotation", .error, range)
-            errors.append(error)
-        }
+        // if typeAnnotation == nil {
+        //     let error = ASTDiagnosticError("Provide function type annotation", .error, range)
+        //     errors.append(error)
+        // }
         if identifier == nil {
             let error = ASTDiagnosticError("Provide function identifier", .error, range)
             errors.append(error)
@@ -430,10 +430,10 @@ class PklNestedMethodCallExpression: ASTNode {
     }
 
     override public func diagnosticErrors() -> [ASTDiagnosticError]? {
-        guard methodCalls.count == 0 else {
-            let error = ASTDiagnosticError("Zero amount of nested method calls", .error, range)
-            return [error]
-        }
+        // guard methodCalls.count == 0 else {
+        //     let error = ASTDiagnosticError("Zero amount of nested method calls", .error, range)
+        //     return [error]
+        // }
         var errors: [ASTDiagnosticError] = []
         for child in methodCalls {
             if let childErrors = child.diagnosticErrors() {

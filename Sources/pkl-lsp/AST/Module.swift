@@ -155,9 +155,9 @@ class PklModuleImport: ASTNode {
         if type == .error {
             return [ASTDiagnosticError("Provide either extends or amends", .error, range)]
         }
-        if documentToImport == nil {
-            return [ASTDiagnosticError("Module cannot be found", .error, range)]
-        }
+        // if documentToImport == nil {
+        //     return [ASTDiagnosticError("Module cannot be found", .error, range)]
+        // }
         guard var moduleErrors = module?.diagnosticErrors() else {
             return nil
         }

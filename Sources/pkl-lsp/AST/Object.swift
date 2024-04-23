@@ -50,14 +50,14 @@ class PklObjectBody: ASTNode {
 
     override public func diagnosticErrors() -> [ASTDiagnosticError]? {
         var errors: [ASTDiagnosticError] = []
-        if !isLeftBracePresent {
-            let error = ASTDiagnosticError("Provide left brace", .error, range)
-            errors.append(error)
-        }
-        if !isRightBracePresent {
-            let error = ASTDiagnosticError("Provide right brace", .error, range)
-            errors.append(error)
-        }
+        // if !isLeftBracePresent {
+        //     let error = ASTDiagnosticError("Provide left brace", .error, range)
+        //     errors.append(error)
+        // }
+        // if !isRightBracePresent {
+        //     let error = ASTDiagnosticError("Provide right brace", .error, range)
+        //     errors.append(error)
+        // }
         if let objectProperties {
             for property in objectProperties {
                 if let propertyErrors = property.diagnosticErrors() {
