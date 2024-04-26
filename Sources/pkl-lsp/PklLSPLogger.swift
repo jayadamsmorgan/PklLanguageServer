@@ -66,7 +66,7 @@ public struct JSONRPCLogHandler: LogHandler, Sendable {
         case .error:
             .warning
         case .trace:
-            .log
+            .warning
         case .notice:
             .warning
         case .warning:

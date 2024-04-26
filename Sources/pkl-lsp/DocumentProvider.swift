@@ -136,12 +136,12 @@ public actor DocumentProvider {
             return nil
         }
         guard let document = documents[params.textDocument.uri] else {
-            logger.debug("LSP Completion: Document \(params.textDocument.uri) is not registered.")
+            logger.error("LSP Completion: Document \(params.textDocument.uri) is not registered.")
             return nil
         }
         let astTree = treeSitterParser.astParsedTrees[document]
         guard let module = astTree else {
-            logger.debug("LSP Completion: Document \(params.textDocument.uri) is not available.")
+            logger.error("LSP Completion: Document \(params.textDocument.uri) is not available.")
             return nil
         }
         return await completionHandler.provide(module: module, params: params)
@@ -152,12 +152,12 @@ public actor DocumentProvider {
             return nil
         }
         guard let document = documents[params.textDocument.uri] else {
-            logger.debug("LSP Rename: Document \(params.textDocument.uri) is not registered.")
+            logger.error("LSP Rename: Document \(params.textDocument.uri) is not registered.")
             return nil
         }
         let astTree = treeSitterParser.astParsedTrees[document]
         guard let module = astTree else {
-            logger.debug("LSP Rename: AST for \(params.textDocument.uri) is not available.")
+            logger.error("LSP Rename: AST for \(params.textDocument.uri) is not available.")
             return nil
         }
         return await renameHandler.provide(document: document, module: module, params: params)
@@ -168,12 +168,12 @@ public actor DocumentProvider {
             return nil
         }
         guard let document = documents[params.textDocument.uri] else {
-            logger.debug("LSP Document Symbols: Document \(params.textDocument.uri) is not registered.")
+            logger.error("LSP Document Symbols: Document \(params.textDocument.uri) is not registered.")
             return nil
         }
         let astTree = treeSitterParser.astParsedTrees[document]
         guard let module = astTree else {
-            logger.debug("LSP Document Symbols: AST for \(params.textDocument.uri) is not available.")
+            logger.error("LSP Document Symbols: AST for \(params.textDocument.uri) is not available.")
             return nil
         }
         return await documentSymbolsHandler.provide(document: document, module: module, params: params)
@@ -184,12 +184,12 @@ public actor DocumentProvider {
             return nil
         }
         guard let document = documents[params.textDocument.uri] else {
-            logger.debug("LSP Semantic Tokens: Document \(params.textDocument.uri) is not registered.")
+            logger.error("LSP Semantic Tokens: Document \(params.textDocument.uri) is not registered.")
             return nil
         }
         let astTree = treeSitterParser.astParsedTrees[document]
         guard let module = astTree else {
-            logger.debug("LSP Semantic Tokens: AST for \(params.textDocument.uri) is not available.")
+            logger.error("LSP Semantic Tokens: AST for \(params.textDocument.uri) is not available.")
             return nil
         }
         return await semanticTokensHandler.provide(document: document, module: module, params: params)
@@ -200,12 +200,12 @@ public actor DocumentProvider {
             return nil
         }
         guard let document = documents[params.textDocument.uri] else {
-            logger.debug("LSP Definition: Document \(params.textDocument.uri) is not registered.")
+            logger.error("LSP Definition: Document \(params.textDocument.uri) is not registered.")
             return nil
         }
         let astTree = treeSitterParser.astParsedTrees[document]
         guard let module = astTree else {
-            logger.debug("LSP Definition: AST for \(params.textDocument.uri) is not available.")
+            logger.error("LSP Definition: AST for \(params.textDocument.uri) is not available.")
             return nil
         }
         return await definitionHandler.provide(module: module, params: params)
@@ -216,7 +216,7 @@ public actor DocumentProvider {
             return
         }
         guard let diagnostics = treeSitterParser.astParsedTrees[document]?.diagnosticErrors() else {
-            logger.debug("LSP Diagnostics: AST for \(document.uri) is not available.")
+            logger.error("LSP Diagnostics: AST for \(document.uri) is not available.")
             try await connection.sendNotification(ServerNotification.textDocumentPublishDiagnostics(.init(uri: document.uri, diagnostics: [])))
             return
         }
@@ -306,12 +306,12 @@ public actor DocumentProvider {
     public func updateDocument(_ params: DidChangeTextDocumentParams) async {
         let uri = params.textDocument.uri
         guard let documentUri = DocumentProvider.validateDocumentUri(uri) else {
-            logger.debug("Invalid document uri: \(uri)")
+            logger.error("Invalid document uri: \(uri)")
             return
         }
 
         guard let document = documents[documentUri] else {
-            logger.debug("Document not opened: \(uri)")
+            logger.error("Document not opened: \(uri)")
             return
         }
 
@@ -325,14 +325,14 @@ public actor DocumentProvider {
         do {
             try await provideDiagnostics(document: newDocument)
         } catch {
-            logger.debug("Error providing diagnostics: \(error)")
+            logger.error("Error providing diagnostics: \(error)")
         }
     }
 
     public func registerDocument(_ params: DidOpenTextDocumentParams) async {
         let uri = params.textDocument.uri
         guard let documentUri = DocumentProvider.validateDocumentUri(uri) else {
-            logger.debug("Invalid document uri: \(uri)")
+            logger.error("Invalid document uri: \(uri)")
             return
         }
 
@@ -348,14 +348,14 @@ public actor DocumentProvider {
         do {
             try await provideDiagnostics(document: document)
         } catch {
-            logger.debug("Error providing diagnostics: \(error)")
+            logger.error("Error providing diagnostics: \(error)")
         }
     }
 
     public func unregisterDocument(_ params: DidCloseTextDocumentParams) async {
         let uri = params.textDocument.uri
         guard let documentUri = DocumentProvider.validateDocumentUri(uri) else {
-            logger.debug("Invalid document uri: \(uri)")
+            logger.error("Invalid document uri: \(uri)")
             return
         }
 
@@ -367,7 +367,7 @@ public actor DocumentProvider {
             let params = LogMessageParams(type: type, message: message)
             try await connection.sendNotification(.windowShowMessage(params))
         } catch {
-            logger.debug("Error sending client notification: \(error)")
+            logger.error("Error sending client notification: \(error)")
         }
     }
 
@@ -376,7 +376,7 @@ public actor DocumentProvider {
             let params = ProgressParams(token: .optionB(message))
             try await connection.sendNotification(.protocolProgress(params))
         } catch {
-            logger.debug("Error sending client notification: \(error)")
+            logger.error("Error sending client notification: \(error)")
         }
     }
 
@@ -385,7 +385,7 @@ public actor DocumentProvider {
             let params = ProgressParams(token: .optionA(progress))
             try await connection.sendNotification(.protocolProgress(params))
         } catch {
-            logger.debug("Error sending client notification: \(error)")
+            logger.error("Error sending client notification: \(error)")
         }
     }
 }

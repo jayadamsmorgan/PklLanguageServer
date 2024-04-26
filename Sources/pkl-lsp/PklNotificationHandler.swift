@@ -12,7 +12,7 @@ public struct PklNotificationHandler: NotificationHandler {
     var exitSemaphore: AsyncSemaphore
 
     public func internalError(_ error: Error) async {
-        logger.debug("LSP stream error: \(error)")
+        logger.error("LSP stream error: \(error)")
     }
 
     public func handleNotification(_ notification: ClientNotification) async {
@@ -21,6 +21,14 @@ public struct PklNotificationHandler: NotificationHandler {
         await defaultNotificationDispatch(notification)
         let t = Date().timeIntervalSince(t0)
         logger.trace("Complete handle notification: \(notification.method), after \(Int(t * 1000))ms")
+    }
+
+    private func withErrorLogging(_ fn: () async throws -> Void) async {
+        do {
+            try await fn()
+        } catch {
+            logger.error("Error: \(error)")
+        }
     }
 
     public func initialized(_: InitializedParams) async {}
