@@ -124,9 +124,10 @@ public actor DocumentProvider {
             rootUri = rootPath
         }
 
-        logger.info("Initialize in working directory: \(FileManager.default.currentDirectoryPath), with rootUri: \(rootUri ?? "nil"), workspace folders: \(workspaceFolders)")
-
         let serverInfo = ServerInfo(name: "pkl-lsp-server", version: PklServer.pklLSVersion)
+        defer {
+            logger.info("Initialized in working directory: \(FileManager.default.currentDirectoryPath), with rootUri: \(rootUri ?? "nil"), workspace folders: \(workspaceFolders)")
+        }
         return .success(InitializationResponse(capabilities: getServerCapabilities(), serverInfo: serverInfo))
     }
 

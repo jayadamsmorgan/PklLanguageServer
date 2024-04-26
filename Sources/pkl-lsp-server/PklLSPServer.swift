@@ -45,12 +45,9 @@ struct PklLSPServer: AsyncParsableCommand {
     }
 
     func logHandlerFactory(_ label: String, rpcConnection: JSONRPCClientConnection) -> LogHandler {
-        let rpcLogHandler = JSONRPCLogHandler(label: label, logLevel: log, connnection: rpcConnection)
+        let rpcLogHandler = JSONRPCLogHandler(label: label, logLevel: log, connection: rpcConnection)
 
-        return MultiplexLogHandler([
-            StreamLogHandler.standardOutput(label: label),
-            rpcLogHandler,
-        ])
+        return rpcLogHandler
     }
 
     func validate() throws {

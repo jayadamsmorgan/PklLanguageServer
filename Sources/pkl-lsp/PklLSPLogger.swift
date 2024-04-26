@@ -3,7 +3,7 @@ import LanguageServer
 import LanguageServerProtocol
 import Logging
 
-public let loggerLabel: String = "pkl-lsp"
+public let loggerLabel: String = "pkl-lsp-server"
 
 extension Logger {
     func trace(_ message: String) {
@@ -31,6 +31,7 @@ public struct JSONRPCLogHandler: LogHandler, Sendable {
     public var logLevel: Logger.Level
     public var metadata: Logger.Metadata
 
+
     public subscript(metadataKey key: String) -> Logger.Metadata.Value? {
         get {
             metadata[key]
@@ -43,17 +44,16 @@ public struct JSONRPCLogHandler: LogHandler, Sendable {
     private let label: String
     private let rpcConnection: JSONRPCClientConnection
 
-    public init(label: String, logLevel: Logger.Level, connnection: JSONRPCClientConnection, metadata: Logger.Metadata = [:]) {
+    public init(label: String, logLevel: Logger.Level, connection: JSONRPCClientConnection, metadata: Logger.Metadata = [:]) {
         self.label = label
         self.logLevel = logLevel
-        rpcConnection = connnection
+        rpcConnection = connection
         self.metadata = metadata
     }
 
-    // This does not work right... Check what can be done with Mattie
     public func log(level: Logger.Level, message: Logger.Message, metadata _: Logger.Metadata?, file _: String, function _: String, line _: UInt) {
         Task {
-            try await rpcConnection.sendNotification(.windowLogMessage(.init(type: loggerLevelToMessageType(level), message: loggerLabel + ": " + message.description)))
+            try await rpcConnection.sendNotification(.windowLogMessage(.init(type: loggerLevelToMessageType(level), message: message.description)))
         }
     }
 
@@ -62,9 +62,9 @@ public struct JSONRPCLogHandler: LogHandler, Sendable {
         case .info:
             .info
         case .debug:
-            .info
+            .log
         case .error:
-            .error
+            .warning
         case .trace:
             .log
         case .notice:

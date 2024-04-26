@@ -30,7 +30,6 @@ public struct PklRequestHandler: RequestHandler, Sendable {
     }
 
     public func initialize(id: JSONId, params: InitializeParams) async -> Result<InitializationResponse, AnyJSONRPCResponseError> {
-        logger.trace("Initialize request id \(id)")
         return await documentProvider.initialize(params)
     }
 
