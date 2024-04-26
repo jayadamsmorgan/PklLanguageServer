@@ -37,8 +37,18 @@ public class CompletionHandler {
     }
 
     private func findContextNode(node: ASTNode, key: String) async -> ASTNode? {
-        guard let children = node.children else {
+        guard var children = node.children else {
             return nil
+        }
+        while var module = node as? PklModule {
+            guard let moduleHeader = module.children?.first(where: { $0 is PklModuleHeader }) as? PklModuleHeader,
+                    let extendsOrAmends = moduleHeader.extendsOrAmends else {
+                break
+            }
+            if let extended = extendsOrAmends.module {
+                children.append(contentsOf: extended.children ?? [])
+                module = extended
+            }
         }
         for node in children {
             if let node = node as? PklModuleImport {
@@ -174,7 +184,7 @@ public class CompletionHandler {
 
         if let property = module as? PklClassProperty, !(property.value is PklObjectBody) {
             completions = await provideStandardFunctionsForStandardTypeNode(type: property.typeAnnotation?.type?.identifier ?? "")
-            return await provideWithKeywords(completions: completions)
+            return CompletionResponse(.optionB(CompletionList(isIncomplete: false, items: completions)))
         }
 
         for node in children {
