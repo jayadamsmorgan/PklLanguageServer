@@ -216,7 +216,6 @@ public actor DocumentProvider {
             return
         }
         guard let diagnostics = treeSitterParser.astParsedTrees[document]?.diagnosticErrors() else {
-            logger.error("LSP Diagnostics: AST for \(document.uri) is not available.")
             try await connection.sendNotification(ServerNotification.textDocumentPublishDiagnostics(.init(uri: document.uri, diagnostics: [])))
             return
         }
