@@ -1,4 +1,4 @@
-.PHONY: build buildRelease install
+.PHONY: build buildRelease install clean
 
 build:
 	./generate_resources
