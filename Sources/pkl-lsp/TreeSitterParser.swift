@@ -43,7 +43,7 @@ public class TreeSitterParser {
             logger.error("Failed to parse document \(document.uri)")
             return
         }
-        if logger.logLevel == .trace {
+        if logger.logLevel == .trace || logger.logLevel == .debug {
             if let rootNode = tree.rootNode {
                 listTreeSitterNodes(rootNode: rootNode, document: document)
             }
@@ -90,7 +90,7 @@ public class TreeSitterParser {
             logger.debug("Failed to parse document \(newDocument.uri) with changes. New tree is nil.")
             return document
         }
-        if logger.logLevel == .trace {
+        if logger.logLevel == .trace || logger.logLevel == .debug {
             if let rootNode = newTree.rootNode {
                 listTreeSitterNodes(rootNode: rootNode, document: newDocument)
             }
@@ -113,8 +113,8 @@ public class TreeSitterParser {
         await parseVariableReferences(document: document)
         if let astRoot {
             await processAndAttachDocComments(node: astRoot)
-            listASTNodes(rootNode: astRoot)
-            if logger.logLevel == .trace {
+            if logger.logLevel == .trace || logger.logLevel == .debug {
+                listASTNodes(rootNode: astRoot)
             }
         }
     }
@@ -188,7 +188,7 @@ public class TreeSitterParser {
         for childNode in children {
             let text = childNode.document.getTextInByteRange(childNode.range.byteRange)
             let tab = String(repeating: "  ", count: depth + childNode.importDepth)
-            logger.error(
+            logger.debug(
                 "\(tab)" +
                     "\(type(of: childNode))," +
                     " depth: \(depth)," +
