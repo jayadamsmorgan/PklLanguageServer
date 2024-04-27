@@ -40,15 +40,19 @@ public class CompletionHandler {
         guard var children = node.children else {
             return nil
         }
-        while var module = node as? PklModule {
-            guard let moduleHeader = module.children?.first(where: { $0 is PklModuleHeader }) as? PklModuleHeader,
+        var module: PklModule? = node as? PklModule
+        while module != nil {
+            guard let moduleHeader = module?.children?.first(where: { $0 is PklModuleHeader }) as? PklModuleHeader,
                     let extendsOrAmends = moduleHeader.extendsOrAmends else {
                 break
             }
             if let extended = extendsOrAmends.module {
                 children.append(contentsOf: extended.children ?? [])
                 module = extended
+                logger.error("\(extended.document.uri)")
+                continue
             }
+            break
         }
         for node in children {
             if let node = node as? PklModuleImport {
