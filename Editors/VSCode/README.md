@@ -22,7 +22,7 @@ npx vsce package
 3. Install this extension:
 
 ```bash
-code --install-extension pkl-lsp-vscode-0.0.1.vsix
+code --install-extension pkl-lsp-vscode-0.1.0.vsix
 ```
 
 [uri-npm]: https://www.npmjs.com/package/npm

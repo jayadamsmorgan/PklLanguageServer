@@ -30,7 +30,7 @@ public struct ServerFlags {
 }
 
 public actor PklServer {
-    public static let pklLSVersion: String = "0.0.3"
+    public static let pklLSVersion: String = "0.1.0"
 
     let connection: JSONRPCClientConnection
     private let logger: Logger

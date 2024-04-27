@@ -1,5 +1,5 @@
 if vim.g.pklls_plugin_version then
-  return
+	return
 end
 
-vim.g.pklls_plugin_version = '0.0.3'
+vim.g.pklls_plugin_version = "0.1.0"

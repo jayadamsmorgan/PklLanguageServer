@@ -29,8 +29,8 @@ public struct PklRequestHandler: RequestHandler, Sendable {
         logger.trace("Complete handle request: \(request.method), after \(Int(t * 1000))ms")
     }
 
-    public func initialize(id: JSONId, params: InitializeParams) async -> Result<InitializationResponse, AnyJSONRPCResponseError> {
-        return await documentProvider.initialize(params)
+    public func initialize(id _: JSONId, params: InitializeParams) async -> Result<InitializationResponse, AnyJSONRPCResponseError> {
+        await documentProvider.initialize(params)
     }
 
     public func completionItemResolve(id: JSONId, params: CompletionItem) async -> Response<CompletionItem> {

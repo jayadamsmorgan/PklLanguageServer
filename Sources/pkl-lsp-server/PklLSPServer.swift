@@ -20,7 +20,7 @@ struct PklLSPServer: AsyncParsableCommand {
     static var configuration = CommandConfiguration(commandName: "pkl-lsp-server")
 
     @Option(name: .shortAndLong, help: "Log level")
-    var log: Logger.Level = .error
+    var log: Logger.Level = .info
 
     @Option(name: .shortAndLong, help: "Named pipe transport")
     var pipe: String?
@@ -35,7 +35,7 @@ struct PklLSPServer: AsyncParsableCommand {
     var enableExperimentalFeatures: Bool = false
 
     @Option(name: .shortAndLong, help: "Maximum number of dependencies parsed in depth")
-    var importDepth: Int = 1
+    var importDepth: Int = 10
 
     @Option(name: .shortAndLong, help: "Disable feature")
     var disableFeature: [FeatureType] = []

@@ -21,9 +21,9 @@ public class CompletionHandler {
     }
 
     private func getModuleNameAndDocCommentByModuleImport(importNode: PklModuleImport) async -> (String, String?) {
-        let moduleDeclaration =  importNode.module?.children?.first(where: { $0 is PklModuleHeader }) as? PklModuleHeader
+        let moduleDeclaration = importNode.module?.children?.first(where: { $0 is PklModuleHeader }) as? PklModuleHeader
         var moduleName = moduleDeclaration?.moduleClause?.name?.value ??
-        importNode.documentToImport?.uri.split(separator: "/").last?.description ?? ""
+            importNode.documentToImport?.uri.split(separator: "/").last?.description ?? ""
         moduleName = moduleName.replacingOccurrences(of: ".pkl", with: "")
             .replacingOccurrences(of: "pkl.", with: "")
             .replacingOccurrences(of: "stdlib:", with: "")
@@ -43,13 +43,13 @@ public class CompletionHandler {
         var module: PklModule? = node as? PklModule
         while module != nil {
             guard let moduleHeader = module?.children?.first(where: { $0 is PklModuleHeader }) as? PklModuleHeader,
-                    let extendsOrAmends = moduleHeader.extendsOrAmends else {
+                  let extendsOrAmends = moduleHeader.extendsOrAmends
+            else {
                 break
             }
             if let extended = extendsOrAmends.module {
                 children.append(contentsOf: extended.children ?? [])
                 module = extended
-                logger.error("\(extended.document.uri)")
                 continue
             }
             break
@@ -69,14 +69,16 @@ public class CompletionHandler {
                 }
             }
             if let node = node as? PklObjectProperty,
-                let identifier = node.identifier?.value,
-                let value = node.value as? PklObjectBody,
-                key == identifier {
+               let identifier = node.identifier?.value,
+               let value = node.value as? PklObjectBody,
+               key == identifier
+            {
                 return value
             }
             if let node = node as? PklClassProperty,
-                let identifier = node.identifier?.value,
-                key == identifier {
+               let identifier = node.identifier?.value,
+               key == identifier
+            {
                 if node.value is PklObjectBody {
                     return node.value
                 }
@@ -87,12 +89,13 @@ public class CompletionHandler {
     }
 
     private func docCommentForNode(node: ASTNode?) -> String? {
-        guard let node = node else {
+        guard let node else {
             return nil
         }
         if let docComment = node.docComment?.text
             .replacingOccurrences(of: "/// ", with: "")
-            .replacingOccurrences(of: "///", with: "") {
+            .replacingOccurrences(of: "///", with: "")
+        {
             return docComment
         }
         return nil
@@ -123,7 +126,7 @@ public class CompletionHandler {
                 logger.debug("Cannot provide completions with context: dotRelativeIndex is nil.")
                 return nil
             }
-            undefinedText = undefinedText[undefinedText.startIndex..<dotRelativeIndex].description
+            undefinedText = undefinedText[undefinedText.startIndex ..< dotRelativeIndex].description
             logger.debug("Filtered undefinedText: \(undefinedText)")
         } catch {
             logger.error("Cannot provide completions with context: \(error)")
@@ -143,7 +146,7 @@ public class CompletionHandler {
 
         var keys = undefinedText.split(separator: ".")
         keys = keys.map { key in
-            return key.replacingOccurrences(of: "\n", with: " ").split(separator: " ").last ?? ""
+            key.replacingOccurrences(of: "\n", with: " ").split(separator: " ").last ?? ""
         }
         logger.debug("Keys: \(keys)")
         guard let firstKey = keys.first?.replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "\n", with: "") else {
@@ -154,7 +157,7 @@ public class CompletionHandler {
             logger.debug("Cannot provide completions with context: first context is nil.")
             return nil
         }
-        for x in 0..<keys.count {
+        for x in 0 ..< keys.count {
             if x == 0 {
                 continue
             }
@@ -169,9 +172,8 @@ public class CompletionHandler {
     }
 
     public func provide(module: ASTNode, params: CompletionParams? = nil) async -> CompletionResponse {
-
         if let params {
-            if params.context?.triggerKind == .triggerCharacter && params.context?.triggerCharacter == "." {
+            if params.context?.triggerKind == .triggerCharacter, params.context?.triggerCharacter == "." {
                 return await provideWithContext(module: module, params: params)
             }
         }
@@ -179,7 +181,7 @@ public class CompletionHandler {
         var completions: [CompletionItem] = []
 
         guard let children = module.children else {
-            if module is PklModule && module.importDepth == 0 {
+            if module is PklModule, module.importDepth == 0 {
                 completions = await provideStandardFunctionsForStandardTypeNode(type: "Module")
                 return await provideWithKeywords(completions: completions)
             }
@@ -193,7 +195,8 @@ public class CompletionHandler {
 
         for node in children {
             if let moduleHeader = node as? PklModuleHeader,
-                let module = moduleHeader.extendsOrAmends?.module {
+               let module = moduleHeader.extendsOrAmends?.module
+            {
                 let response = await provide(module: module)
                 if let items = response?.items, items.count > 0 {
                     completions.append(contentsOf: items)
@@ -236,7 +239,7 @@ public class CompletionHandler {
                 continue
             }
             if let function = node as? PklFunctionDeclaration {
-                if let body = function.body, body.isLocal && function.importDepth > 0 {
+                if let body = function.body, body.isLocal, function.importDepth > 0 {
                     continue
                 }
                 let ident = function.body?.identifier?.value ?? ""
@@ -297,7 +300,7 @@ public class CompletionHandler {
                 continue
             }
             if let classProperty = node as? PklClassProperty {
-                if classProperty.isLocal && classProperty.importDepth > 0 {
+                if classProperty.isLocal, classProperty.importDepth > 0 {
                     continue
                 }
                 var detail: String?
@@ -327,8 +330,8 @@ public class CompletionHandler {
                 result.append(completion)
             }
         }
-        if module is PklModule && module.importDepth == 0 {
-            completions.append(contentsOf: await provideStandardFunctionsForStandardTypeNode(type: "Module"))
+        if module is PklModule, module.importDepth == 0 {
+            await completions.append(contentsOf: provideStandardFunctionsForStandardTypeNode(type: "Module"))
             return await provideWithKeywords(completions: completions)
         }
         return .optionB(CompletionList(isIncomplete: false, items: completions))
@@ -343,7 +346,7 @@ public class CompletionHandler {
                     detail: "Number",
                     insertText: "isBetween()"
                 ),
-                
+
                 // Properties
                 CompletionItem(
                     label: "NaN",
@@ -440,7 +443,7 @@ public class CompletionHandler {
                     documentation: .optionA("Creates a map containing the given alternating keysAndValues."),
                     insertText: "Map<>()"
                 ),
-                
+
                 // Classes
                 CompletionItem(
                     label: "Any",
@@ -1392,7 +1395,7 @@ public class CompletionHandler {
                     Note: This function does not short-circuit; other is always evaluated.
                     """),
                     insertText: "implies()"
-                )
+                ),
             ]
         }
         if identifier.starts(with: "Listing") {
@@ -1415,7 +1418,6 @@ public class CompletionHandler {
         }
         return []
     }
-
 }
 
 enum PklKeywords: String, CaseIterable {

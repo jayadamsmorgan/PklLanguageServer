@@ -2,7 +2,7 @@
   "name": "pkl-lsp-vscode",
   "displayName": "pkl-lsp-vscode",
   "description": "LSP Extenstion for Pkl language",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.87.0"
   },

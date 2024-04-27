@@ -31,7 +31,6 @@ public struct JSONRPCLogHandler: LogHandler, Sendable {
     public var logLevel: Logger.Level
     public var metadata: Logger.Metadata
 
-
     public subscript(metadataKey key: String) -> Logger.Metadata.Value? {
         get {
             metadata[key]
@@ -62,11 +61,11 @@ public struct JSONRPCLogHandler: LogHandler, Sendable {
         case .info:
             .info
         case .debug:
-            .log
+            .info
         case .error:
-            .warning
+            .error
         case .trace:
-            .warning
+            .info
         case .notice:
             .warning
         case .warning:

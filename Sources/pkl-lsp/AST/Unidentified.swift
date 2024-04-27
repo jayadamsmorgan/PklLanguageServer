@@ -10,6 +10,6 @@ class PklUnidentified: ASTNode {
     }
 
     override func diagnosticErrors() -> [ASTDiagnosticError]? {
-        return [ASTDiagnosticError("Unexpected identifier", .error, range)]
+        [ASTDiagnosticError("Unexpected identifier", .error, range)]
     }
 }

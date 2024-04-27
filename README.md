@@ -69,6 +69,8 @@ cd PklLanguageServer
 make install
 ```
 
+You will be prompted to type in your password so the server could be installed to `/usr/local/bin` folder.
+
 Now you can run the server with:
 
 ```

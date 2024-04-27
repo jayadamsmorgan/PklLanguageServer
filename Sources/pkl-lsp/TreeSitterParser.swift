@@ -276,7 +276,7 @@ public class TreeSitterParser {
             module.module = parsedTree
             return module
         }
-        if importDepth >= maxImportDepth && type == .normal {
+        if importDepth >= maxImportDepth, type == .normal {
             logger.debug("Import depth exceeded for document \(document.uri)")
             return nil
         }
